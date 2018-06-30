@@ -3,34 +3,32 @@
 #define __CLUSTER__
 
 #include "vector2.hpp"
-// #include <unordered_set>
 #include <vector>
+#include <functional>
 
-// namespace std
-// {
-//     template <>
-//     struct hash<Vector2>
-//     {
-//         size_t operator()(const Vector2& vec2) const noexcept
-//         {
-//             return (5939 + std::hash<double>()(vec2[0])) * 5939 + std::hash<double>()(vec2[0]);
-//         }
-//     };
-// }
+struct Student
+{
+    Vector2 position;
+};
 
 class Cluster
 {
-    Cluster(double, double);
+    Vector2 centroid;
+
+    std::vector<Cluster *> children;
 
 public:
 
-    Vector2 centroid;
+    Cluster();
+    Cluster(const Vector2&);
+    ~Cluster();
 
-    std::vector<Cluster *> elements;
-
-    static const unsigned bfactor;
-
-    static const std::vector<Cluster> * hierarchical(const std::vector<Vector2>&);
+    static const Cluster * hierarchical
+    (
+        const std::vector<Vector2>&,
+        unsigned,
+        const std::function<bool(const Cluster*, const Cluster*)>&
+    );
 };
 
 #endif
