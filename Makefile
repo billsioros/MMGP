@@ -1,10 +1,15 @@
 
-PATH_BIN = ./Routing_Algorithm_Binaries/
+PATH_BIN = ./bin
+PATH_SRC = ./src
 
 .PHONY: all
 all:
-	$(MAKE) -C ./src/
+	make routing
+
+.PHONY: routing
+routing:
+	$(MAKE) -C $(PATH_SRC)/Routing_Algorithm/
 
 .PHONY: clean
 clean:
-	rm -rI $(PATH_BIN)
+	rm -rvI $(PATH_BIN)
