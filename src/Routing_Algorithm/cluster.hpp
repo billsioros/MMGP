@@ -25,7 +25,7 @@ public:
     static const Cluster * hierarchical
     (
         const std::list<Student>&,
-        const std::function<bool(const Cluster*, const Cluster*)>&
+        const std::function<double(const Cluster&, const Cluster&)>&
     );
 };
 
