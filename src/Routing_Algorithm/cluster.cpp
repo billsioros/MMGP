@@ -3,7 +3,9 @@
 #include "vector2.hpp"
 #include "student.hpp"
 #include "heap.hpp"
+#include <vector>
 #include <algorithm>
+#include <utility>
 
 // Cluster Base Class:
 Cluster::Cluster()
@@ -31,37 +33,35 @@ const Cluster * Cluster::hierarchical
    for (const auto& student : students)
        clusters.push_back(new OCluster(student));
 
-    bool priority = [](const Cluster& A, const Cluster& B, const Cluster& target)
-    {
-        return evaluation(A, target) < evaluation(B, target);
-    }
-
     while (clusters.size() > 1)
     {
+        std::pair<Cluster *, Cluster *> nearest;
         for (const auto& current : clusters)
         {
-            heap<Cluster *> candidates(clusters.size() - 1UL, cmp);
+            auto priority = [&](const Cluster * A, const Cluster * B)
+            {
+                return evaluation(*A, *current) < evaluation(*B, *current);
+            };
+
+            heap<Cluster *> candidates(clusters.size() - 1UL, priority);
             for (const auto& other : clusters)
                 if (other != current)
                     candidates.push(other);
 
-            Cluster * parent = new Cluster({ { 0.0, 0.0 } });
-            for (size_t candidate = 0; candidate < bfactor; candidate++)
+            Cluster * top; candidates.pop(top);
+            if (!nearest.first || !nearest.second
+            || (evaluation(*nearest.first, *nearest.second) < evaluation(*current, *top)))
             {
-                Cluster * child; candidates.pop(child);
-                
-                parent->children.push_back(child);
-                parent->centroid += child->centroid;
-
-                std::vector<Cluster *>::iterator end = clusters.begin() + lvlsize;
-                clusters.erase(std::remove(clusters.begin(), end, child), end);
-                lvlsize--;
+                nearest.first = current; nearest.second = top;
             }
-
-            parent->centroid *= 1.0 / (double) parent->children.size();
-            
-            clusters.push_back(parent);
         }
+        
+        Cluster * parent;
+        parent = new ICluster((*nearest.first->centroid() + *nearest.second->centroid()) / 2.0);
+        parent->_left  = nearest.first;
+        parent->_right = nearest.second;
+        
+        clusters.push_back(parent);
     }
 
     return clusters.front();

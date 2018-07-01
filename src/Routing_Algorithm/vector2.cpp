@@ -68,10 +68,18 @@ inline double operator*(const Vector2& A, const Vector2& B)
     return A.coordinates[0] * B.coordinates[0] + A.coordinates[1] * B.coordinates[1];
 }
 
-Vector2 operator*(const Vector2& vec2, const double lambda)
+Vector2 operator*(const Vector2& vec2, double lambda)
 {
     double x = vec2.coordinates[0] * lambda;
     double y = vec2.coordinates[1] * lambda;
+
+    return Vector2(x, y);
+}
+
+Vector2 operator/(const Vector2& vec2, double lambda)
+{
+    double x = vec2.coordinates[0] / lambda;
+    double y = vec2.coordinates[1] / lambda;
 
     return Vector2(x, y);
 }
@@ -119,12 +127,4 @@ inline bool operator==(const Vector2& A, const Vector2& B)
 inline bool operator!=(const Vector2& A, const Vector2& B)
 {
     return !(A == B);
-}
-
-double Vector2::dist(const Vector2& A, const Vector2& B)
-{
-    double xdiff = A.coordinates[0] - B.coordinates[0];
-    double ydiff = A.coordinates[1] - B.coordinates[1];
-
-    return std::sqrt(xdiff * xdiff + ydiff * ydiff);
 }

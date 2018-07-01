@@ -16,6 +16,9 @@ class heap
 
 public:
     
+    static bool less(const T&, const T&);
+    static bool greater(const T&, const T&);
+
     heap(size_t, const std::function<bool(const T&, const T&)>& priority);
     ~heap();
 
@@ -24,6 +27,18 @@ public:
 };
 
 // Heap Implementation:
+template <typename T>
+bool heap<T>::less(const T& a, const T& b)
+{
+    return a < b;
+}
+
+template <typename T>
+bool heap<T>::greater(const T& a, const T& b)
+{
+    return a > b;
+}
+
 template <typename T>
 heap<T>::heap(size_t max, const std::function<bool(const T&, const T&)>& priority)
 :

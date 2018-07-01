@@ -26,18 +26,17 @@ public:
     friend Vector2 operator+(const Vector2&, const Vector2&);
     friend Vector2 operator-(const Vector2&, const Vector2&);
     friend double  operator*(const Vector2&, const Vector2&);
-    friend Vector2 operator*(const Vector2&, const double);
+    friend Vector2 operator*(const Vector2&, double);
+    friend Vector2 operator/(const Vector2&, double);
 
     Vector2& operator+=(const Vector2&);
     Vector2& operator-=(const Vector2&);
-    Vector2& operator*=(const double);
+    Vector2& operator*=(double);
 
     friend bool operator< (const Vector2&, const Vector2&);
     friend bool operator> (const Vector2&, const Vector2&);
     friend bool operator==(const Vector2&, const Vector2&);
     friend bool operator!=(const Vector2&, const Vector2&);
-
-    static double dist(const Vector2&, const Vector2&);
 };
 
 #endif
