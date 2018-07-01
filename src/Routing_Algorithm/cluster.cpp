@@ -3,41 +3,47 @@
 #include "vector2.hpp"
 #include "student.hpp"
 #include "heap.hpp"
-#include <vector>
 #include <algorithm>
 
-Cluster::Cluster(const Student& student)
+// Cluster Base Class:
+Cluster::Cluster()
 :
-centroid(student.position)
+_left(nullptr), _right(nullptr)
 {
 }
 
 Cluster::~Cluster()
 {
-    for (auto& child : children)
-        if (child)
-            delete child;
+    if (_left)
+        delete _left;
+    
+    if (_right)
+        delete _right;
 }
 
 const Cluster * Cluster::hierarchical
 (
     const std::list<Student>& students,
-    unsigned bfactor,
-    const std::function<bool(const Cluster*, const Cluster*)>& evaluation
+    const std::function<double(const Cluster&, const Cluster&)>& evaluation
 )
 {
    std::vector<Cluster *> clusters;
-   for (auto& student : students)
-       clusters.push_back(new Cluster(student));
+   for (const auto& student : students)
+       clusters.push_back(new OCluster(student));
+
+    bool priority = [](const Cluster& A, const Cluster& B, const Cluster& target)
+    {
+        return evaluation(A, target) < evaluation(B, target);
+    }
 
     while (clusters.size() > 1)
     {
-        size_t lvlsize = clusters.size();
-        for (size_t current = 0U; current < lvlsize; current++)
+        for (const auto& current : clusters)
         {
-            heap<Cluster *> candidates(lvlsize - current, evaluation);
-            for (size_t other = current + 1U; other < lvlsize; other++)
-                candidates.push(clusters[other]);
+            heap<Cluster *> candidates(clusters.size() - 1UL, cmp);
+            for (const auto& other : clusters)
+                if (other != current)
+                    candidates.push(other);
 
             Cluster * parent = new Cluster({ { 0.0, 0.0 } });
             for (size_t candidate = 0; candidate < bfactor; candidate++)
@@ -59,4 +65,18 @@ const Cluster * Cluster::hierarchical
     }
 
     return clusters.front();
+}
+
+// Outer Cluster Class:
+OCluster::OCluster(const Student& _student)
+:
+Cluster(), _student(_student)
+{
+}
+
+// Inner Cluster Class:
+ICluster::ICluster(const Vector2& _centroid)
+:
+Cluster(), _centroid(_centroid)
+{
 }
