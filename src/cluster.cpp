@@ -1,66 +1,61 @@
 
 #include "cluster.hpp"
 #include "vector2.hpp"
+#include "student.hpp"
 #include "heap.hpp"
-#include <unordered_set>
 #include <vector>
-#include <cstdlib>
-#include <unordered_map>
+#include <algorithm>
 
-Cluster::Cluster()
+Cluster::Cluster(const Student& student)
 :
-centroid(0.0, 0.0)
-{
-}
-
-Cluster::Cluster(const Vector2& centroid)
-:
-centroid(centroid)
+centroid(student.position)
 {
 }
 
 Cluster::~Cluster()
 {
-    for (auto& subcluster : children)
-        if (subcluster)
-            delete subcluster;
+    for (auto& child : children)
+        if (child)
+            delete child;
 }
 
 const Cluster * Cluster::hierarchical
 (
-    const std::vector<Vector2>& points,
+    const std::list<Student>& students,
     unsigned bfactor,
     const std::function<bool(const Cluster*, const Cluster*)>& evaluation
 )
 {
    std::vector<Cluster *> clusters;
-   for (auto& point : points)
-       clusters.push_back(new Cluster(point));
+   for (auto& student : students)
+       clusters.push_back(new Cluster(student));
 
     while (clusters.size() > 1)
     {
-        size_t csize = clusters.size();
-        for (size_t i = 0U; i < csize; i++)
+        size_t lvlsize = clusters.size();
+        for (size_t current = 0U; current < lvlsize; current++)
         {
-            heap<Cluster *> candidates(csize - i, evaluation);
-            for (size_t j = i + 1U; j < csize; j++)
-                candidates.push(clusters[j]);
+            heap<Cluster *> candidates(lvlsize - current, evaluation);
+            for (size_t other = current + 1U; other < lvlsize; other++)
+                candidates.push(clusters[other]);
 
-            Cluster * parent = new Cluster;
-            for (size_t k = 0; k < bfactor; k++)
+            Cluster * parent = new Cluster({ { 0.0, 0.0 } });
+            for (size_t candidate = 0; candidate < bfactor; candidate++)
             {
                 Cluster * child; candidates.pop(child);
                 
                 parent->children.push_back(child);
                 parent->centroid += child->centroid;
+
+                std::vector<Cluster *>::iterator end = clusters.begin() + lvlsize;
+                clusters.erase(std::remove(clusters.begin(), end, child), end);
+                lvlsize--;
             }
 
-            parent->centroid *= 1.0 / (double) (double)parent->children.size();
+            parent->centroid *= 1.0 / (double) parent->children.size();
             
             clusters.push_back(parent);
         }
-
-        clusters.erase(clusters.begin(), clusters.begin() + csize);
     }
 
     return clusters.front();

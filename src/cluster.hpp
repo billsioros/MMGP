@@ -3,29 +3,24 @@
 #define __CLUSTER__
 
 #include "vector2.hpp"
-#include <vector>
+#include "student.hpp"
+#include <list>
 #include <functional>
-
-struct Student
-{
-    Vector2 position;
-};
 
 class Cluster
 {
     Vector2 centroid;
 
-    std::vector<Cluster *> children;
+    std::list<Cluster *> children;
 
 public:
 
-    Cluster();
-    Cluster(const Vector2&);
+    Cluster(const Student&);
     ~Cluster();
 
     static const Cluster * hierarchical
     (
-        const std::vector<Vector2>&,
+        const std::list<Student>&,
         unsigned,
         const std::function<bool(const Cluster*, const Cluster*)>&
     );
