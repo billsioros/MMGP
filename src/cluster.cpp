@@ -1,8 +1,10 @@
 
 #include "cluster.hpp"
 #include "vector2.hpp"
+#include "student.hpp"
 #include "heap.hpp"
 #include <vector>
+#include <algorithm>
 
 Cluster::Cluster(const Student& student)
 :
@@ -26,7 +28,7 @@ const Cluster * Cluster::hierarchical
 {
    std::vector<Cluster *> clusters;
    for (auto& student : students)
-       clusters.emplace_back(student);
+       clusters.push_back(new Cluster(student));
 
     while (clusters.size() > 1)
     {

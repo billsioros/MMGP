@@ -5,22 +5,17 @@
 #include <fstream>
 
 Vector2::Vector2()
-:
-coordinates({ 0.0, 0.0 })
 {
+    coordinates[0] = coordinates[1] = 0.0;
 }
 
 Vector2::Vector2(double x, double y)
-:
-coordinates({ 0.0, 0.0 })
 {
     coordinates[0] = x;
     coordinates[1] = y;
 }
 
 Vector2::Vector2(const Vector2& other)
-:
-coordinates({ 0.0, 0.0 })
 {
     coordinates[0] = other.coordinates[0];
     coordinates[1] = other.coordinates[1];
