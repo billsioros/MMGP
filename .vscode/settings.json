@@ -33,5 +33,6 @@
         "utility": "cpp",
         "numeric": "cpp",
         "functional": "cpp"
-    }
+    },
+    "python.pythonPath": "C:\\Python27\\python.exe"
 }
