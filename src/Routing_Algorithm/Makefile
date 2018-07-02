@@ -1,6 +1,6 @@
 
 CC = g++
-CCFLAGS = -W -g3 -std=c++11
+CCFLAGS = -W -g3 -std=c++14
 
 PATH_BIN = ./../../bin/Routing_Algorithm_Binaries
 

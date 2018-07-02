@@ -1,8 +1,7 @@
 // A C++ Linear Algebra Library created by Vasileios Sioros
 
 #include "vector2.hpp"
-#include <cmath>
-#include <fstream>
+#include <fstream>      // Definition of istream & ostream
 
 Vector2::Vector2()
 {
@@ -28,12 +27,12 @@ inline double Vector2::operator[](std::size_t i) const
 }
 
 // IO:
-inline std::ostream& operator<<(std::ostream& out, const Vector2& vec2)
+std::ostream& operator<<(std::ostream& out, const Vector2& vec2)
 {
     out << "[ " << vec2.coordinates[0] << ' ' << vec2.coordinates[1] << " ]";
 }
 
-inline std::istream& operator>>(std::istream& in, Vector2& vec2)
+std::istream& operator>>(std::istream& in, Vector2& vec2)
 {
     in >> vec2.coordinates[0] >> vec2.coordinates[1];
 }

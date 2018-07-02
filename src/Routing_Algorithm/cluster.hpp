@@ -4,57 +4,48 @@
 
 #include "vector2.hpp"
 #include "student.hpp"
-#include <list>
-#include <functional>
+#include <list>         // std::list<Student>
+#include <functional>   // std::function<double(const Cluster&, const Cluster&)>
+#include <iosfwd>       // Declaration of istream & ostream
 
 class Cluster
 {
 protected:
 
-    const Cluster * _left, * _right;
+    Student _centroid;
 
-    Cluster();
-    
+    Cluster(const Student& _centroid)  : _centroid(_centroid) {}
+
 public:
 
-    virtual ~Cluster();
+    virtual ~Cluster() {};
 
-    virtual const Vector2 * centroid() const = 0;
-    virtual const Student * student()  const = 0;
+    const Student& centroid() const { return _centroid; }
 
     static const Cluster * hierarchical
     (
         const std::list<Student>&,
         const std::function<double(const Cluster&, const Cluster&)>&
     );
-};
 
-class OCluster : public Cluster
-{
-    friend class Cluster;
-
-    Student _student;
-
-    OCluster(const Student&);
-
-public:
-
-    virtual const Vector2 * centroid() const { return &_student.position; }
-    virtual const Student * student()  const { return &_student; }
+    virtual void traverse() const;
 };
 
 class ICluster : public Cluster
 {
     friend class Cluster;
 
-    Vector2 _centroid;
+    const Cluster * _left, * _right;
 
-    ICluster(const Vector2&);
+    ICluster(const Student& _centroid) : Cluster(_centroid), _left(nullptr), _right(nullptr) {}
 
-public:
+    ~ICluster()
+    {
+        if (_left)  delete _left;
+        if (_right) delete _right;
+    }
 
-    virtual const Vector2 * centroid() const { return &_centroid; }
-    virtual const Student * student()  const { return nullptr; }
+    void traverse() const;
 };
 
 #endif
