@@ -3,7 +3,7 @@
 #ifndef __HEAP__
 #define __HEAP__
 
-#include <functional>
+#include <functional>       // const std::function<bool(const T&, const T&)>
 
 template <typename T>
 class heap

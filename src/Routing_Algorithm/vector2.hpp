@@ -2,9 +2,9 @@
 #ifndef __VECTOR2__
 #define __VECTOR2__
 
-#include <iosfwd>
+#include <iosfwd>       // Declaration of istream & ostream
 
-class Vector2
+/* class */struct Vector2
 {
     double coordinates[2];
 

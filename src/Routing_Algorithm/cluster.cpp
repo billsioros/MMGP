@@ -3,44 +3,55 @@
 #include "vector2.hpp"
 #include "student.hpp"
 #include "heap.hpp"
-#include <vector>
-#include <algorithm>
-#include <utility>
+#include <list>         // std::list<Cluster *>
+#include <functional>   // const std::function<double(const Cluster&, const Cluster&)>
+#include <algorithm>    // std::remove
+#include <fstream>      // Definition of istream & ostream
 
-// Cluster Base Class:
-Cluster::Cluster()
-:
-_left(nullptr), _right(nullptr)
-{
-}
-
-Cluster::~Cluster()
-{
-    if (_left)
-        delete _left;
-    
-    if (_right)
-        delete _right;
-}
-
+// Cluster Base class:
 const Cluster * Cluster::hierarchical
 (
     const std::list<Student>& students,
     const std::function<double(const Cluster&, const Cluster&)>& evaluation
 )
 {
-   std::vector<Cluster *> clusters;
-   for (const auto& student : students)
-       clusters.push_back(new OCluster(student));
+    // Pseudocode@: http://www.saedsayad.com/clustering_hierarchical.htm
+
+    // Create the initial "trivial" (one student per cluster) clusters
+    std::list<Cluster *> clusters;
+    for (const auto& student : students)
+        clusters.push_back(new OCluster(student));
+
+    // Definition of "isBestMatch":
+    // A lambda function used in order to delete the child clusters
+    // of the most recently added cluster from the list of clusters
+    // so that they are not available for pairing in the next iteration
+    ICluster * bestMatch = nullptr;
+    auto isBestMatch = [&](const auto& cluster)
+    {
+        return cluster == bestMatch->_left || cluster == bestMatch->_right;
+    };
 
     while (clusters.size() > 1)
     {
-        std::pair<Cluster *, Cluster *> nearest;
+        bestMatch = new ICluster({ 0.0, 0.0 });
+        bestMatch->_left = nullptr; bestMatch->_right = nullptr;
+
+        // Step 1:
+        // In each iteration, determine the "best-matching" cluster
+        // to the current cluster, while at the same time checking
+        // if it rocks the highest score so far and thus making it
+        // the new "best-match"
+        double bestScore = 0.0, currentScore = 0.0;
         for (const auto& current : clusters)
         {
+            // Definition of "priority":
+            // A lambda function used during the insertion of an element
+            // to the heap, so that at the end of the insertion step
+            // the "best-match" to the current cluster is on the top
             auto priority = [&](const Cluster * A, const Cluster * B)
             {
-                return evaluation(*A, *current) < evaluation(*B, *current);
+                return evaluation(*A, *current) > evaluation(*B, *current);
             };
 
             heap<Cluster *> candidates(clusters.size() - 1UL, priority);
@@ -48,35 +59,51 @@ const Cluster * Cluster::hierarchical
                 if (other != current)
                     candidates.push(other);
 
-            Cluster * top; candidates.pop(top);
-            if (!nearest.first || !nearest.second
-            || (evaluation(*nearest.first, *nearest.second) < evaluation(*current, *top)))
+            Cluster * other; candidates.pop(other);
+
+            if (!bestMatch->_left || !bestMatch->_right
+            || (currentScore = evaluation(*current, *other)) > bestScore)
             {
-                nearest.first = current; nearest.second = top;
+                bestMatch->_left = current; bestMatch->_right = other;
+                
+                bestScore = currentScore;
             }
         }
         
-        Cluster * parent;
-        parent = new ICluster((*nearest.first->centroid() + *nearest.second->centroid()) / 2.0);
-        parent->_left  = nearest.first;
-        parent->_right = nearest.second;
-        
-        clusters.push_back(parent);
+        const Vector2& c1 = bestMatch->_left->centroid();
+        const Vector2& c2 = bestMatch->_right->centroid();
+        bestMatch->_centroid += (c1 + c2) / 2.0;
+
+        // Step 2:
+        // Delete the child clusters of the newly created cluster from the list
+        clusters.erase(std::remove_if(clusters.begin(), clusters.end(), isBestMatch), clusters.end());
+
+        // Step 3:
+        // Add the newly created cluster to the list
+        clusters.push_back(bestMatch);
     }
 
     return clusters.front();
 }
 
-// Outer Cluster Class:
-OCluster::OCluster(const Student& _student)
-:
-Cluster(), _student(_student)
+std::ostream& operator<<(std::ostream& os, const Cluster& cluster)
 {
+
 }
 
-// Inner Cluster Class:
-ICluster::ICluster(const Vector2& _centroid)
-:
-Cluster(), _centroid(_centroid)
+std::istream& operator>>(std::istream& is, Cluster& cluster)
 {
+
+}
+
+// ICluster Derived class:
+void ICluster::traverse() const
+{
+
+}
+
+// OCluster Derived class:
+void ICluster::traverse() const
+{
+    
 }

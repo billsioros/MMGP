@@ -4,43 +4,28 @@
 
 #include "vector2.hpp"
 #include "student.hpp"
-#include <list>
-#include <functional>
+#include <list>         // std::list<Student>
+#include <functional>   // std::function<double(const Cluster&, const Cluster&)>
+#include <iosfwd>       // Declaration of istream & ostream
 
 class Cluster
 {
-protected:
+    virtual const Vector2& centroid() const = 0;
 
-    const Cluster * _left, * _right;
+    virtual void traverse() const = 0;
 
-    Cluster();
-    
 public:
 
-    virtual ~Cluster();
-
-    virtual const Vector2 * centroid() const = 0;
-    virtual const Student * student()  const = 0;
+    virtual ~Cluster() = 0;
 
     static const Cluster * hierarchical
     (
         const std::list<Student>&,
         const std::function<double(const Cluster&, const Cluster&)>&
     );
-};
 
-class OCluster : public Cluster
-{
-    friend class Cluster;
-
-    Student _student;
-
-    OCluster(const Student&);
-
-public:
-
-    virtual const Vector2 * centroid() const { return &_student.position; }
-    virtual const Student * student()  const { return &_student; }
+    friend std::ostream& operator<<(std::ostream&, const Cluster&);
+    friend std::istream& operator>>(std::istream&, Cluster&);
 };
 
 class ICluster : public Cluster
@@ -49,12 +34,32 @@ class ICluster : public Cluster
 
     Vector2 _centroid;
 
-    ICluster(const Vector2&);
+    const Cluster * _left, * _right;
 
-public:
+    ICluster(const Vector2& _centroid) : _centroid(_centroid), _left(nullptr), _right(nullptr) {}
 
-    virtual const Vector2 * centroid() const { return &_centroid; }
-    virtual const Student * student()  const { return nullptr; }
+    ~ICluster()
+    {
+        if (_left)  delete _left;
+        if (_right) delete _right;
+    }
+
+    const Vector2& centroid() const { return _centroid; }
+
+    void traverse() const;
+};
+
+class OCluster : public Cluster
+{
+    friend class Cluster;
+
+    Student _student;
+
+    OCluster(const Student& _student)  : _student(_student) {}
+
+    const Vector2& centroid() const { return _student.position; }
+
+    void traverse() const;
 };
 
 #endif

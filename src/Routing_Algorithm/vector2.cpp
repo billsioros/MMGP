@@ -1,8 +1,7 @@
 // A C++ Linear Algebra Library created by Vasileios Sioros
 
 #include "vector2.hpp"
-#include <cmath>
-#include <fstream>
+#include <fstream>      // Definition of istream & ostream
 
 Vector2::Vector2()
 {
