@@ -1,9 +1,9 @@
-### Multiagent Multitarget Geospatial Pathfinding
+Multiagent Multitarget Geospatial Pathfinding
 
-Currently under development
+#Currently under development
 
 ##TODO:
-#1 Replace push_back with emplace_back
+1. Replace push_back with emplace_back
 
-##TAGS:
-#1 Clustering 0.8
+###TAGS:
+1. Clustering 0.8
