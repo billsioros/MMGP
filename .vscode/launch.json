@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/routing",
+            "program": "${workspaceFolder}/bin/Routing_Algorithm_Binaries/Routing",
             "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",

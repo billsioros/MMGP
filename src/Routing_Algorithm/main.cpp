@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
+#include <ctime>
 
 #define FRAND(min, max) ((max - min) * (std::rand() / RAND_MAX) + min)
 
@@ -15,19 +16,23 @@
 
 int main()
 {
+    std::srand((unsigned)std::time(nullptr));
+
     std::list<Student> students;
     for (unsigned i = 0; i < SIZE; i++)
-        students.emplace_back(FRAND(MIN, MAX), FRAND(MIN, MAX));
+        students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
 
     auto evaluation = [](const Cluster& A, const Cluster& B)
     {
-        const double xdiff = A.position.coordinates[0] - B.position.coordinates[0];
-        const double ydiff = A.position.coordinates[1] - B.position.coordinates[1];
+        const double xdiff = A.centroid().position.coordinates[0] - B.centroid().position.coordinates[0];
+        const double ydiff = A.centroid().position.coordinates[1] - B.centroid().position.coordinates[1];
 
         return std::sqrt(xdiff * xdiff + ydiff * ydiff);
     };
 
-    const Cluster * clusterTree = Cluster::hierarchical(students, evaluation);
+    const Cluster * cluster = Cluster::hierarchical(students, evaluation);
+
+    cluster->traverse();
 
     return 0;
 }

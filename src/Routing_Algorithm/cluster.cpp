@@ -5,8 +5,7 @@
 #include "heap.hpp"
 #include <list>         // std::list<Cluster *>
 #include <functional>   // const std::function<double(const Cluster&, const Cluster&)>
-#include <algorithm>    // std::remove
-#include <fstream>      // Definition of istream & ostream
+#include <algorithm>    // std::remove_if
 
 // Cluster Base class:
 const Cluster * Cluster::hierarchical
@@ -20,7 +19,7 @@ const Cluster * Cluster::hierarchical
     // Create the initial "trivial" (one student per cluster) clusters
     std::list<Cluster *> clusters;
     for (const auto& student : students)
-        clusters.push_back(new OCluster(student));
+        clusters.push_back(new Cluster(student));
 
     // Definition of "isBestMatch":
     // A lambda function used in order to delete the child clusters
@@ -34,7 +33,7 @@ const Cluster * Cluster::hierarchical
 
     while (clusters.size() > 1)
     {
-        bestMatch = new ICluster({ 0.0, 0.0 });
+        bestMatch = new ICluster({ { 0.0, 0.0 } });
         bestMatch->_left = nullptr; bestMatch->_right = nullptr;
 
         // Step 1:
@@ -70,9 +69,9 @@ const Cluster * Cluster::hierarchical
             }
         }
         
-        const Vector2& c1 = bestMatch->_left->centroid();
-        const Vector2& c2 = bestMatch->_right->centroid();
-        bestMatch->_centroid += (c1 + c2) / 2.0;
+        const Vector2& c1 = bestMatch->_left->_centroid.position;
+        const Vector2& c2 = bestMatch->_right->_centroid.position;
+        bestMatch->_centroid.position += (c1 + c2) / 2.0;
 
         // Step 2:
         // Delete the child clusters of the newly created cluster from the list
@@ -86,24 +85,19 @@ const Cluster * Cluster::hierarchical
     return clusters.front();
 }
 
-std::ostream& operator<<(std::ostream& os, const Cluster& cluster)
+#include <iostream>
+
+void Cluster::traverse() const
 {
-
-}
-
-std::istream& operator>>(std::istream& is, Cluster& cluster)
-{
-
+    std::cout << this->_centroid.position << std::endl;
 }
 
 // ICluster Derived class:
 void ICluster::traverse() const
 {
+    if (_left)
+        _left->traverse();
 
-}
-
-// OCluster Derived class:
-void ICluster::traverse() const
-{
-    
+    if (_right)
+        _right->traverse();
 }

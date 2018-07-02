@@ -4,6 +4,7 @@
 
 #include <iosfwd>       // Declaration of istream & ostream
 
+// FIX:
 /* class */struct Vector2
 {
     double coordinates[2];
