@@ -1,6 +1,6 @@
 import pyodbc
 import sqlite3
-import DBmanagement
+from DBManagement import DBManager as DBM
 from geopy import geocoders
 import os
 
@@ -11,14 +11,6 @@ con = pyodbc.connect(DRIVER='{SQL Server Native Client 11.0}',
 
 con.setdecoding(pyodbc.SQL_CHAR, encoding='greek')
 con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
-
-
-# geolocator = geocoders.Bing(api_key="AnqIobiOKJjxYO1bwmdC4z04lX2kTfFEgKcKyj_9y-bTzjE1d6hoa_A2XNi-dd0R", format_string="%s, Attiki Greece")
-
-# address, (lat, lon) = geolocator.geocode("Erechtheiou 6 Alimos, 17455")
-# print (lat, lon)
-# print address
-
 
 # Select All Morning Students
 sql = "SELECT                       \
@@ -177,105 +169,24 @@ con.close()
 
 
 # Create a new Database
-DBmanagement.CreateDatabase("MMGP_Data.db")
-Connection = DBmanagement.Connect("MMGP_Data.db")
-Connection.row_factory = sqlite3.Row
-Cursor = Connection.cursor()
+DBManager = DBM("MMGP_Data.db", "AnqIobiOKJjxYO1bwmdC4z04lX2kTfFEgKcKyj_9y-bTzjE1d6hoa_A2XNi-dd0R")
+DBManager.Insert(OldYearMorning, "Morning")
+DBManager.Insert(NewYearMorning, "Morning")
+DBManager.Insert(OldYearNoon, "Noon")
+DBManager.Insert(NewYearNoon, "Noon")
+DBManager.Insert(OldYearStudy, "Study")
+DBManager.Insert(NewYearStudy, "Study")
 
+DBManager.Commit()
 
-for row in OldYearMorning:
-    iterable = list()
-    for i in range(len(row)):
-        iterable.append(row[i])
-    iterable.append(1.2)
-    iterable.append(1.3)
-    iterable.append('Morning')
-    cursor.execute("INSERT INTO Student     \
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", iterable)
+sql = "Select FullAddress From Address"
+DBManager.Cursor.execute(sql)
 
-for row in OldYearNoon:
-    iterable = list()
-    for i in range(len(row)):
-        iterable.append(row[i])
-    iterable.append(1.2)
-    iterable.append(1.3)
-    iterable.append('Noon')
-    cursor.execute("INSERT INTO Student     \
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", iterable)
+Rows = DBManager.Cursor.fetchall()
 
-for row in NewYearMorning:
-    iterable = list()
-    for i in range(len(row)):
-        iterable.append(row[i])
-    iterable.append(1.2)
-    iterable.append(1.3)
-    iterable.append('Morning')
-    cursor.execute("INSERT INTO Student     \
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", iterable)
-
-for row in NewYearNoon:
-    iterable = list()
-    for i in range(len(row)):
-        iterable.append(row[i])
-    iterable.append(1.2)
-    iterable.append(1.3)
-    iterable.append('Noon')
-    cursor.execute("INSERT INTO Student     \
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", iterable)
-
-for row in OldYearStudy:
-    iterable = list()
-    for i in range(len(row)):
-        iterable.append(row[i])
-    iterable.append(1.2)
-    iterable.append(1.3)
-    iterable.append('Study')
-    cursor.execute("INSERT INTO Student     \
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", iterable)
-
-for row in NewYearStudy:
-    iterable = list()
-    for i in range(len(row)):
-        iterable.append(row[i])
-    iterable.append(1.2)
-    iterable.append(1.3)
-    iterable.append('Study')
-    cursor.execute("INSERT INTO Student     \
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", iterable)
-
-
-con.commit()
-
-sql = "Select Address, AddressNum, ZipCode, Municipal, Area From Student"
-cursor.execute(sql)
-
-Rows = cursor.fetchall()
-
-i = 0
-for Address, Num, ZipCode, Municipal, Area in Rows:
+i = 1
+for row in Rows:
     print i
-    FullAddress = list()
-
-    if not Address:
-        continue
-    else:
-        FullAddress.append(Address)
-        FullAddress.append(Num)
-    if ZipCode:
-        FullAddress.append(str(ZipCode))
-    if Municipal and not Area:
-        FullAddress.append(Municipal)
-    if Area:
-        FullAddress.append(Area)
-    
-    AddressString = ""
-    for string in FullAddress:
-        if string:
-            AddressString += string + " " 
-
-    print AddressString
+    print row[0]
     i += 1
-
-con.close()
-
         
