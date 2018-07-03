@@ -6,6 +6,7 @@
 #include <list>         // std::list<Cluster *>
 #include <functional>   // const std::function<double(const Cluster&, const Cluster&)>
 #include <algorithm>    // std::remove_if
+#include <fstream>      // Definition of istream & ostream
 
 // Cluster Base class:
 const Cluster * Cluster::hierarchical
@@ -59,9 +60,10 @@ const Cluster * Cluster::hierarchical
                     candidates.push(other);
 
             Cluster * other; candidates.pop(other);
+            
+            currentScore = evaluation(*current, *other);
 
-            if (!bestMatch->_left || !bestMatch->_right
-            || (currentScore = evaluation(*current, *other)) > bestScore)
+            if (!bestMatch->_left || !bestMatch->_right || currentScore > bestScore)
             {
                 bestMatch->_left = current; bestMatch->_right = other;
                 
@@ -85,19 +87,19 @@ const Cluster * Cluster::hierarchical
     return clusters.front();
 }
 
-#include <iostream>
-
-void Cluster::traverse() const
+void Cluster::traverse(std::ostream& os) const
 {
-    std::cout << this->_centroid.position << std::endl;
+    os << _centroid << std::endl;
 }
 
 // ICluster Derived class:
-void ICluster::traverse() const
+void ICluster::traverse(std::ostream& os) const
 {
     if (_left)
-        _left->traverse();
+        _left->traverse(os);
+
+    Cluster::traverse(os);
 
     if (_right)
-        _right->traverse();
+        _right->traverse(os);
 }

@@ -42,7 +42,7 @@ bool heap<T>::greater(const T& a, const T& b)
 template <typename T>
 heap<T>::heap(size_t max, const std::function<bool(const T&, const T&)>& priority)
 :
-priority(priority), max(max + 1U), size(0U), items(new T[this->max])
+priority(priority), max(max), size(0U), items(new T[this->max + 1U])
 {
 }
 

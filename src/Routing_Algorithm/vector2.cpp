@@ -2,6 +2,7 @@
 
 #include "vector2.hpp"
 #include <fstream>      // Definition of istream & ostream
+#include <iomanip>      // Vector2 IO Operations
 
 Vector2::Vector2()
 {
@@ -29,7 +30,11 @@ inline double Vector2::operator[](std::size_t i) const
 // IO:
 std::ostream& operator<<(std::ostream& out, const Vector2& vec2)
 {
-    out << "[ " << vec2.coordinates[0] << ' ' << vec2.coordinates[1] << " ]";
+    out << "[ ";
+    out << std::left << std::setfill('0') << std::setw(10) << vec2.coordinates[0];
+    out << ' ';
+    out << std::left << std::setfill('0') << std::setw(10) << vec2.coordinates[1];
+    out << " ]";
 }
 
 std::istream& operator>>(std::istream& in, Vector2& vec2)
