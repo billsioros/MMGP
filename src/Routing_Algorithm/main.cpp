@@ -7,44 +7,54 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
-#include <fstream>
 
-#define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
+// #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
 
-#define MIN (-1.0)
-#define MAX (+1.0)
-#define SIZE (10)
+// #define MIN (-1.0)
+// #define MAX (+1.0)
+#define SIZE (5)
+
+static double dist(const Vector2& A, const Vector2& B)
+{
+    const double xdiff = A.coordinates[0] - B.coordinates[0];
+    const double ydiff = A.coordinates[1] - B.coordinates[1];
+
+    return std::sqrt(xdiff * xdiff + ydiff * ydiff);
+}
 
 int main()
 {
     std::srand((unsigned)std::time(nullptr));
 
-    std::ofstream output("output.txt", std::ios_base::trunc);
-    if (!output.is_open())
-    {
-        std::cerr << "<ERR>: Unable to open the specified file for writing" << std::endl;
-    }
-
     std::list<Student> students;
-    for (unsigned i = 0; i < SIZE; i++)
-    {
-        students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
+    // for (unsigned i = 0; i < SIZE; i++)
+    // {
+    //     students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
+    // }
 
-        output << students.back() << std::endl;
-    }
+    students.push_back(Vector2(0.0, 0.0));
+    students.push_back(Vector2(1.0, 2.0));
+    students.push_back(Vector2(2.0, 1.0));
+    students.push_back(Vector2(4.0, 1.0));
+    students.push_back(Vector2(5.0, 0.0));
+    students.push_back(Vector2(5.0, 3.0));
+    std::cout << std::endl;
+
+    for (const auto& current : students)
+        for (const auto& other : students)
+            if (current.id != other.id)
+                std::cout << current << ' ' << other << " | " << dist(current.position, other.position) << std::endl;
 
     auto evaluation = [](const Cluster& A, const Cluster& B)
     {
-        const double xdiff = A.centroid().position.coordinates[0] - B.centroid().position.coordinates[0];
-        const double ydiff = A.centroid().position.coordinates[1] - B.centroid().position.coordinates[1];
-
-        return 1.0 / std::sqrt(xdiff * xdiff + ydiff * ydiff);
+        return 1.0 / dist(A.centroid().position, B.centroid().position);
     };
 
     const Cluster * cluster = Cluster::hierarchical(students, evaluation);
 
-    output << std::endl;
-    cluster->traverse(output);
+    std::cout << std::endl;
+
+    cluster->traverse(std::cout);
 
     return 0;
 }

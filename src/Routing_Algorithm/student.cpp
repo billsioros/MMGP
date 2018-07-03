@@ -12,5 +12,5 @@ position(position), id(++currentId)
 
 std::ostream& operator<<(std::ostream& os, const Student& student)
 {
-    os << student.position << ' ' << student.id;
+    os << student.position << " " << student.id;
 }
