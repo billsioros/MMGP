@@ -5,15 +5,22 @@
 #include "vector2.hpp"
 #include <iosfwd>
 
-struct Student
+class Student
 {
-    static unsigned currentId;
+    friend class Cluster;
+
+    static unsigned _count;
+
+    const unsigned _id;
+    Vector2 _position;
+
+public:
 
     Student(const Vector2&);
-
-    Vector2 position;
-    unsigned id;
     
+    unsigned id() const { return _id; }
+    const Vector2& position() const { return _position; }
+
     friend std::ostream& operator<<(std::ostream&, const Student&);
 };
 

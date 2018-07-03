@@ -21,12 +21,6 @@ Vector2::Vector2(const Vector2& other)
     coordinates[1] = other.coordinates[1];
 }
 
-// Access:
-inline double Vector2::operator[](std::size_t i) const
-{
-    return coordinates[i];
-}
-
 // IO:
 std::ostream& operator<<(std::ostream& out, const Vector2& vec2)
 {

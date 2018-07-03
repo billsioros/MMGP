@@ -16,8 +16,8 @@
 
 static double dist(const Vector2& A, const Vector2& B)
 {
-    const double xdiff = A.coordinates[0] - B.coordinates[0];
-    const double ydiff = A.coordinates[1] - B.coordinates[1];
+    const double xdiff = A.x() - B.x();
+    const double ydiff = A.y() - B.y();
 
     return std::sqrt(xdiff * xdiff + ydiff * ydiff);
 }
@@ -42,12 +42,12 @@ int main()
 
     for (const auto& current : students)
         for (const auto& other : students)
-            if (current.id != other.id)
-                std::cout << current << ' ' << other << " | " << dist(current.position, other.position) << std::endl;
+            if (current.id() != other.id())
+                std::cout << current << ' ' << other << " | " << dist(current.position(), other.position()) << std::endl;
 
     auto evaluation = [](const Cluster& A, const Cluster& B)
     {
-        return 1.0 / dist(A.centroid().position, B.centroid().position);
+        return 1.0 / dist(A.centroid().position(), B.centroid().position());
     };
 
     const Cluster * cluster = Cluster::hierarchical(students, evaluation);
