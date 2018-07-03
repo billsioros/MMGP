@@ -2,15 +2,15 @@
 #include "student.hpp"
 #include <fstream>
 
-unsigned Student::currentId = 0U;
+unsigned Student::_count = 0U;
 
-Student::Student(const Vector2& position)
+Student::Student(const Vector2& _position)
 :
-position(position), id(++currentId)
+_id(++_count), _position(_position)
 {
 }
 
 std::ostream& operator<<(std::ostream& os, const Student& student)
 {
-    os << student.position << " " << student.id;
+    os << student._position << " " << student._id;
 }

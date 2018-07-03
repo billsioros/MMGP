@@ -71,9 +71,9 @@ const Cluster * Cluster::hierarchical
             }
         }
         
-        const Vector2& c1 = bestMatch->_left->_centroid.position;
-        const Vector2& c2 = bestMatch->_right->_centroid.position;
-        bestMatch->_centroid.position += (c1 + c2) / 2.0;
+        const Vector2& c1 = bestMatch->_left->_centroid._position;
+        const Vector2& c2 = bestMatch->_right->_centroid._position;
+        bestMatch->_centroid._position += (c1 + c2) / 2.0;
 
         // Step 2:
         // Delete the child clusters of the newly created cluster from the list

@@ -4,8 +4,7 @@
 
 #include <iosfwd>       // Declaration of istream & ostream
 
-// FIX:
-/* class */struct Vector2
+class Vector2
 {
     double coordinates[2];
 
@@ -16,7 +15,8 @@ public:
     Vector2(const Vector2&);
 
     // Access:
-    double operator[](std::size_t) const;
+    double x() const { return coordinates[0]; }
+    double y() const { return coordinates[1]; }
 
     // IO:
     friend std::ostream& operator<<(std::ostream&, const Vector2&);
