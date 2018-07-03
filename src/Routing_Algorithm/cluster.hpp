@@ -28,7 +28,7 @@ public:
         const std::function<double(const Cluster&, const Cluster&)>&
     );
 
-    virtual void traverse() const;
+    virtual void traverse(std::ostream&) const;
 };
 
 class ICluster : public Cluster
@@ -45,7 +45,7 @@ class ICluster : public Cluster
         if (_right) delete _right;
     }
 
-    void traverse() const;
+    void traverse(std::ostream&) const;
 };
 
 #endif
