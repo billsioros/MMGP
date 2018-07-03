@@ -89,17 +89,19 @@ const Cluster * Cluster::hierarchical
 
 void Cluster::traverse(std::ostream& os) const
 {
-    os << _centroid << std::endl;
+    os << " ** " << _centroid << std::endl;
 }
 
 // ICluster Derived class:
 void ICluster::traverse(std::ostream& os) const
 {
+    os << " <- " << std::endl;
     if (_left)
         _left->traverse(os);
 
     Cluster::traverse(os);
 
+    os << " -> " << std::endl;
     if (_right)
         _right->traverse(os);
 }

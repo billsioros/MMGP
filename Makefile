@@ -12,5 +12,6 @@ Routing:
 
 .PHONY: clean
 clean:
-	@echo "***>! Purging !<***"
+	@echo "***>! Purging binaries !<***"
 	rm -rvI $(PATH_BIN)
+	
