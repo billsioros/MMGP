@@ -1,8 +1,8 @@
 
 #include "cluster.hpp"
-#include "../General/vector2.hpp"
-#include "../General/student.hpp"
-#include "../General/heap.hpp"
+#include "vector2.hpp"
+#include "student.hpp"
+#include "heap.hpp"
 #include <list>         // std::list<Cluster *>
 #include <functional>   // const std::function<double(const Cluster&, const Cluster&)>
 #include <algorithm>    // std::remove_if

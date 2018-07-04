@@ -2,8 +2,8 @@
 #ifndef __CLUSTER__
 #define __CLUSTER__
 
-#include "../General/vector2.hpp"
-#include "../General/student.hpp"
+#include "vector2.hpp"
+#include "student.hpp"
 #include <list>         // std::list<Student>
 #include <functional>   // std::function<double(const Cluster&, const Cluster&)>
 #include <iosfwd>       // Declaration of istream & ostream

@@ -1,7 +1,7 @@
 
 #include "cluster.hpp"
-#include "../General/student.hpp"
-#include "../General/vector2.hpp"
+#include "student.hpp"
+#include "vector2.hpp"
 #include <list>
 #include <iostream>
 #include <cstdlib>
