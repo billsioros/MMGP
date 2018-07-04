@@ -14,6 +14,7 @@ protected:
 
     Student _centroid;
 
+    Cluster() {}
     Cluster(const Student& _centroid)  : _centroid(_centroid) {}
 
 public:
@@ -28,6 +29,8 @@ public:
         const std::function<double(const Cluster&, const Cluster&)>&
     );
 
+    static double evaluation(const Cluster&, const Cluster&);
+
     virtual void traverse(std::ostream&) const;
 };
 
@@ -37,6 +40,7 @@ class ICluster : public Cluster
 
     const Cluster * _left, * _right;
 
+    ICluster() : _left(nullptr), _right(nullptr) {}
     ICluster(const Student& _centroid) : Cluster(_centroid), _left(nullptr), _right(nullptr) {}
 
     ~ICluster()

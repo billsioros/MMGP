@@ -6,17 +6,17 @@
 
 class Vector2
 {
-    double coordinates[2];
+    double _x, _y;
 
 public:
 
-    Vector2();
-    Vector2(double, double);
-    Vector2(const Vector2&);
+    Vector2() : _x(0.0), _y(0.0) {}
+    Vector2(double _x, double _y) : _x(_x), _y(_y) {}
+    Vector2(const Vector2& other) : _x(other._x), _y(other._y) {}
 
     // Access:
-    double x() const { return coordinates[0]; }
-    double y() const { return coordinates[1]; }
+    double x() const { return _x; }
+    double y() const { return _y; }
 
     // IO:
     friend std::ostream& operator<<(std::ostream&, const Vector2&);

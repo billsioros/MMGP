@@ -34,8 +34,7 @@ const Cluster * Cluster::hierarchical
 
     while (clusters.size() > 1)
     {
-        bestMatch = new ICluster({ { 0.0, 0.0 } });
-        bestMatch->_left = nullptr; bestMatch->_right = nullptr;
+        bestMatch = new ICluster();
 
         // Step 1:
         // In each iteration, determine the "best-matching" cluster
@@ -71,9 +70,9 @@ const Cluster * Cluster::hierarchical
             }
         }
         
-        const Vector2& c1 = bestMatch->_left->_centroid._position;
-        const Vector2& c2 = bestMatch->_right->_centroid._position;
-        bestMatch->_centroid._position += (c1 + c2) / 2.0;
+        const Student& c1 = bestMatch->_left->_centroid;
+        const Student& c2 = bestMatch->_right->_centroid;
+        bestMatch->_centroid = (c1 + c2) / 2.0;
 
         // Step 2:
         // Delete the child clusters of the newly created cluster from the list
@@ -85,6 +84,51 @@ const Cluster * Cluster::hierarchical
     }
 
     return clusters.front();
+}
+
+#define __TESTING_EVALUATION__
+#ifdef  __TESTING_EVALUATION__
+
+#include <cmath>
+
+inline static double haversine(const Vector2& A, const Vector2& B)
+{
+    static const double r = 6.371;
+
+    auto rads = [](double degrees) { return degrees * M_PI / 180.0; };
+
+    const double f1 = rads(A.x()), f2 = rads(B.x());
+    const double l1 = rads(A.y()), l2 = rads(B.y());
+
+    const double u1 = std::sin((f2 - f1) / 2.0), u2 = std::sin((l2 - l1) / 2.0);
+
+    return 2.0 * r * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
+}
+
+inline static double dt(const Vector2& A, const Vector2& B)
+{
+    const double Ax = A.x(), Ay = A.y();
+    const double Bx = B.x(), By = B.y();
+
+    const double maxX = Ax > Bx ? Ax : Bx;
+    const double minY = Ay < By ? Ay : By;
+
+    const Vector2& minTimespan = (A.y() - A.x()) < (B.y() - B.x()) ? A : B;
+
+    return (minY - maxX) / (minTimespan.y() - minTimespan.x()); 
+}
+
+#endif
+
+double Cluster::evaluation(const Cluster& A, const Cluster& B)
+{
+    const double biases[] = { 0.2, 0.4, 0.2 };
+
+    const Vector2& p1 = A.centroid().position(), p2 = B.centroid().position();
+    const Vector2& t1 = A.centroid().timespan(), t2 = B.centroid().timespan();
+
+    return (1.0 / haversine(p1, p2)) * dt(t1, t2);
+
 }
 
 void Cluster::traverse(std::ostream& os) const

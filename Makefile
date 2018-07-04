@@ -40,5 +40,7 @@ $(PATH_BIN)/$(CCNAME): $(NAME_DEP)
 .PHONY: clean
 clean:
 	@echo "\n*** Purging "$(PATH_BIN)" ***"
+	@echo "***"
 	rm -rvI $(PATH_BIN)
+	@echo "***\n"
 	
