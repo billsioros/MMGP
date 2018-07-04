@@ -6,7 +6,7 @@
         {
             "label": "Compile executable",
             "type": "shell",
-            "command": "make clean; make"
+            "command": "make"
         }
     ]
 }
