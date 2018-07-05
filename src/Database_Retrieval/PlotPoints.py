@@ -4,18 +4,16 @@ from DBManagement import DBManager as DBM
 
 
 DBManager = DBM("MMGP_Data.db", "AIzaSyBRGHJf69r2tYhvmpJxdayyXfZorTfHu5g")
-sql = "Select GPS_X, GPS_Y From Address"
+sql = "Select GPS_X, GPS_Y, FullAddress, FormattedAddress From Address"
 DBManager.Cursor.execute(sql)
 Rows = DBManager.Cursor.fetchall()
 
+csvfile = open("CoordsToPlot.tsv", "w+")
+csvfile.write("lng\tlat\tFAddress\tAddress\n")
 
-Lats = list()
-Lons = list()
-for Lat, Lon in Rows:
-    Lats.append(Lat)
-    Lons.append(Lons)
 
-gmap = gmplot.GoogleMapPlotter(mean(Lats), mean(Lons), 13)
-name = "Plot.html"
-gmap.plot(Lats, Lons, 'red', edge_width=5)
-gmap.draw(name)
+for Lat, Lon, Address, FAdress in Rows:
+        csvfile.write(str(Lat) + "\t" + str(Lon) + "\t" + str(FAdress) + "\t" + str(Address) + "\n")
+
+
+csvfile.close

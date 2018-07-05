@@ -1,12 +1,35 @@
 import pyodbc
 import sqlite3
 from DBManagement import DBManager as DBM
-from harvesine import harvesine
+from util import harvesine
 import os
+import sys
+import csv
 
-con = pyodbc.connect(DRIVER='{SQL Server Native Client 11.0}', 
-                 SERVER='DESKTOP-GIANNIS\SQLEXPRESS', 
-                 DATABASE='maliaras',
+fileName = sys.argv[1]
+rowIndex = sys.argv[2]
+print rowIndex
+
+API_key = None
+ServerType = None
+ServerName = None
+DatabaseName = None
+
+with open(fileName) as credentials:
+      readCSV = csv.DictReader(credentials, delimiter=',')
+      i = 0
+      for row in readCSV:
+            if int(rowIndex) == i:
+                  API_key = row["API_key"]
+                  ServerType = row["ServerType"]
+                  ServerName = row["ServerName"]
+                  DatabaseName = row["DatabaseName"]
+                  break
+            i += 1
+
+con = pyodbc.connect(DRIVER=ServerType, 
+                 SERVER=ServerName, 
+                 DATABASE=DatabaseName,
                  Trusted_Connection='yes', autocommit=True)
 
 con.setdecoding(pyodbc.SQL_CHAR, encoding='greek')
@@ -181,30 +204,27 @@ Buses = cursor.fetchall()
 con.close()
 
 # Create a new Database
-DBManager = DBM("MMGP_Data.db", "AIzaSyBRGHJf69r2tYhvmpJxdayyXfZorTfHu5g")
+DBManager = DBM("MMGP_Data.db", API_key)
 
 DBManager.InsertBus(Buses)
 DBManager.Commit()
 
-DBManager.InsertStudent(OldYearMorning, "Morning")
-DBManager.InsertStudent(NewYearMorning, "Morning")
-DBManager.InsertStudent(OldYearNoon, "Noon")
-DBManager.InsertStudent(NewYearNoon, "Noon")
-DBManager.InsertStudent(OldYearStudy, "Study")
-DBManager.InsertStudent(NewYearStudy, "Study")
+GeoFailsFile = open("FormatFails.tsv", "w+")
+GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
+
+Tables = list()
+Tables.append((OldYearMorning, "Morning"))
+Tables.append((NewYearMorning, "Morning"))
+Tables.append((OldYearNoon, "Noon"))
+Tables.append((NewYearNoon, "Noon"))
+Tables.append((OldYearStudy, "Study"))
+Tables.append((NewYearStudy, "Study"))
+
+
+DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
 
 DBManager.InsertDistances(harvesine)
 DBManager.Commit()
 
-# sql = "Select FullAddress From Address"
-# DBManager.Cursor.execute(sql)
-
-# Rows = DBManager.Cursor.fetchall()
-
-# i = 1
-# for row in Rows:
-#     print i
-#     print row[0]
-#     i += 1
-        
+GeoFailsFile.close()

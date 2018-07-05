@@ -1,8 +1,8 @@
 import sqlite3
 import os
-import hashlib
-from geopy import geocoders
-from GRtoEN import GreekDecoder
+from time import sleep
+from hashlib import sha1 as sha1
+import util
 from googlemaps import geocoding, Client
 
 class DBManager:
@@ -138,76 +138,125 @@ class DBManager:
     SchGPS_Y    
     """
 
-    def InsertStudent(self, RowList, DayPart):
+    """ Note To Self:
+        Be sure to make Tables a double iterable of type (RowList, DayPart)"""
+    def InsertStudent(self, Tables, GeoFailsFile=None):
         # Pull Addresses from Database
         Addresses = self.GetAddresses()
-        NoGPS = list()
-        # Insert All Records that already have GPS coordinates
-        for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
-        Mon, Tue, Wen, Thu, Fri, GPSX, GPSY in RowList:
-            # If there are not coordinates add them to standby list
-            if not GPSX or not GPSY:
-                NoGPS.append([ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area,\
-                Notes, Level, Class, Mon, Tue, Wen, Thu, Fri])
-                continue
 
-            # Concatenate the Address to a single string and hash it
-            FullAddress = ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
-            FullAddress = TranslateAddress(FullAddress)
-            HashAddress = Hash(FullAddress)
-            
-            # If address has not been added to the database add it
-            if not Addresses.has_key(HashAddress):
-                # Decimals must be turned to strings
-                GPSX = str(GPSX)
-                GPSY = str(GPSY)
+        # Delete the whole students table but not the addresses table                                       - [Update]
+        # Check all the new students for previously found addresses                                         - [New, Update]
+        # Insert those students with previously found address ID                                            - [New, Update]
+        # Insert all students with new addresses (whether they have GPS coords or not)                      - [New, Update]
+        # Delete any address that is not connected to a student after the new entries finish being inserted - [Update]
+
+        self.Cursor.execute("Delete From Student")
+
+        # Tables is list of lists of Rows of Data
+        for RowList, DayPart in Tables:
+            NoGPS = list()
+
+            # Insert All Records that already have GPS coordinates
+            for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
+            Mon, Tue, Wen, Thu, Fri, GPSX, GPSY in RowList:
+                # If there are not coordinates add them to standby list
+                if not GPSX or not GPSY:
+                    NoGPS.append([ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area,\
+                    Notes, Level, Class, Mon, Tue, Wen, Thu, Fri])
+
+                    continue
+
+                # Concatenate the Address to a single string and hash it
+                FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
                 
-                Addresses[HashAddress] = (GPSX, GPSY)
-                AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, FullAddress, None]
-                self.Cursor.execute("Insert Into Address    \
-                                    Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                HashAddress = self.Hash(FullAddress)
+                
+                # If address has not been added to the database add it
+                if not Addresses.has_key(HashAddress):
+                    # Decimals must be turned to strings
+                    GPSX = str(GPSX)
+                    GPSY = str(GPSY)
+                    
+                    Addresses[HashAddress] = (GPSX, GPSY)
+                    AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, FullAddress, None]
+
+                    self.Cursor.execute("Insert Into Address    \
+                                        Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                
+                # Add student to the database
+                StudentList = [ID, LastName, FirstName, HashAddress, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart]
+
+                self.Cursor.execute("Insert Into Student     \
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+
+
+            # Insert All Records that do not have GPS coordinates
+            i = 0 # Geocoding per sec
+
             
-            # Add student to the database
-            StudentList = [ID, LastName, FirstName, HashAddress, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart]
-            self.Cursor.execute("Insert Into Student     \
-                            Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+            for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes,\
+            Level, Class, Mon, Tue, Wen, Thu, Fri in NoGPS:
 
+                # Concatenate the Address to a single string and hash it
+                FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
+                if not FullAddress:
+                    continue
 
-        # Insert All Records that do not have GPS coordinates
-        for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri in NoGPS:
-            # Concatenate the Address to a single string and hash it
-            FullAddress = ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
-            if not FullAddress:
-                continue
-            FullAddress = TranslateAddress(FullAddress)
-            HashAddress = Hash(FullAddress)
+                HashAddress = self.Hash(FullAddress)
 
-            # If address has not been added to the database, geocode it and add it
-            if not Addresses.has_key(HashAddress):
+                # If address has not been added to the database, geocode it and add it
+                if not Addresses.has_key(HashAddress):
 
-                self.InitGeolocator()
-                FormattedAddress, (GPSX, GPSY) = self.Geocode(FullAddress)
+                    self.InitGeolocator()
+                    # Only 100 requests per sec
+                    if i == 99:
+                        sleep(4) # Sleep 4 seconds for safety
+                        i = 0
+                    FormattedAddress, GPSX, GPSY = self.Geocode(FullAddress)
+                    i += 1
 
-                Addresses[HashAddress] = (GPSX, GPSY)
-                AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, FullAddress, FormattedAddress]
-                self.Cursor.execute("Insert Into Address    \
-                                    Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                    valid = True
+                    if FormattedAddress:
+                        Addresses[HashAddress] = (GPSX, GPSY)
+                    
+                        # Find Error and Log it into a csv of your choosing
+                        valid = self.LogError(ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile)
+                    
+                    if valid:
+                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
+                        FullAddress, FormattedAddress]
 
-            # Add student to the database
-            StudentList = [ID, LastName, FirstName, HashAddress, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart]
-            self.Cursor.execute("Insert Into Student     \
-                            Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                        self.Cursor.execute("Insert Into Address    \
+                                            Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+
+                # Add student to the database
+                StudentList = [ID, LastName, FirstName, HashAddress, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart]
+
+                self.Cursor.execute("Insert Into Student     \
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+
+        self.DiscardAddresses()
 
 
     def InsertBus(self, RowList):
+        Buses = self.GetBuses()
         for Code, Num, Capacity in RowList:
-            Num = int(Num)
-            ToAdd = [Code, Num, Capacity]
-            self.Cursor.execute("Insert Into Bus    \
-                                    Values (?,?,?)", ToAdd)
+            
+            Num = int(Num)                   
+            if Code not in Buses:
+                ToAdd = [Code, Num, Capacity]   
+                self.Cursor.execute("Insert Into Bus    \
+                                        Values (?,?,?)", ToAdd)
+            else:
+                ToAdd = [Num, Capacity, Code]
+                self.Cursor.execute("Update Bus     \
+                                        Set Number = ?, Capacity = ?    \
+                                        Where BusID = ?", ToAdd)
 
 
     def InsertDistances(self, distanceFunction):
+        OldDistances = self.GetDistances()
+
         sql = "Select AddressID, GPS_X, GPS_Y From Address Where GPS_X Is Not Null and GPS_Y Is Not Null"
 
         self.Cursor.execute(sql)
@@ -215,7 +264,20 @@ class DBManager:
         Distances = list()
         for id1, x1, y1 in Addresses:
             for id2, x2, y2 in Addresses:
+                # If we have calculated the address before dont calculate it again
+                if OldDistances.has_key(id1):
+                    flag = False
+                    for OldID2, _D in OldDistances[id1]:                   
+                        if OldID2 == id2:
+                            # either update or keep old distance. For now continue
+                            flag = True
+                            break
+                    if flag:
+                        continue
+
                 if id1 == id2:
+                    distance = 0
+                    Distances.append([id1, id2, distance])
                     continue
                 distance = distanceFunction((x1, y1), (x2, y2))
                 Distances.append([id1, id2, distance])
@@ -237,14 +299,32 @@ class DBManager:
 
     def InitGeolocator(self):       
         if not self.GoogleClient:
-            self.GoogleClient = Client(key="AIzaSyBRGHJf69r2tYhvmpJxdayyXfZorTfHu5g")
+            self.GoogleClient = Client(key=self.APIKey)
 
 
     def Geocode(self, Address):
         results = geocoding.geocode(self.GoogleClient, address=Address, region="GR")
-        locationData = results[0]["geometry"]["location"]
+
+        # If Weird Results Let Me Know and return
+        try:
+            if results[0]["geometry"]["location"]:
+                locationData = results[0]["geometry"]["location"]
+        except IndexError:
+            try:
+                print "First Error"
+                print results[0]["geometry"]
+            except IndexError:
+                try:
+                    print "Second Error"
+                    print results[0]
+                except IndexError:
+                    print "Third Error"
+                    print Address
+                    print results
+                    return
+
         address = results[0]["formatted_address"]
-        return (address, (locationData["lat"], locationData["lng"]))
+        return (address, locationData["lng"], locationData["lat"])
 
 
     def GetAddresses(self):
@@ -261,47 +341,73 @@ class DBManager:
         return Addresses
 
 
+    def GetBuses(self):
+        self.Connect(self.FileName)
+        sql = " Select * From Bus"
+        self.Cursor.execute(sql)
+        Rows = self.Cursor.fetchall()
+        Buses = dict()
+        for ID, Num, Capacity in Rows:
+            Buses[ID] = (Num, Capacity)
 
-def ConcatenateAddress(Road, Num, ZipCode, Municipal, Area, Prefecture, Country):
+        return Buses
 
-    ResultAddress = ""
-    if not Road:
-        return ResultAddress
+
+    def GetStudents(self):
+        self.Connect(self.FileName)
+        sql = "Select * From Student"
+        self.Cursor.execute(sql)
+        Rows = self.Cursor.fetchall()
+        Students = list()
+        for row in Rows:
+            Students.append(row)
+
+        return Students
+
+
+    def GetDistances(self):
+        self.Connect(self.FileName)
+        sql = "Select * From Distance"
+        self.Cursor.execute(sql)
+        Rows = self.Cursor.fetchall()
+
+        sql = "Select AddressID From Address"
+        self.Cursor.execute(sql)
+        Addresses = self.Cursor.fetchall()
+
+        Distances = dict()
+        for ad in Addresses:
+            Distances[ad[0]] = list()
+        
+        for ID1, ID2, Distance in Rows:
+            Distances[ID1].append((ID2, Distance))
+        
+        return Distances
+
     
-    ResultAddress += Road + " "
-    if Num:
-        NewNum = ""
-        for char in Num:
-            if not char == ' ':
-                NewNum += char
-        ResultAddress += NewNum + " "
-    ResultAddress += ", "
-    if Area:
-        ResultAddress += Area + " "
-    if Municipal:
-        ResultAddress += Municipal + " "
-    ResultAddress += ", "
-    if Prefecture:
-        Prefecture = TranslateAddress(Prefecture)
-        if Prefecture == "ATTIKIS":
-            Prefecture = "ATTIKI"
-        elif Prefecture == "PEIRAIOS":
-            Prefecture = "PEIRAIAS"
-        ResultAddress += Prefecture + " "
-    if ZipCode:
-        ResultAddress += ZipCode + " "
-    ResultAddress += ", "
-    if Country:
-        ResultAddress += Country
-    
-    return ResultAddress
+    def DiscardAddresses(self):
+        self.Connect(self.FileName)
+        self.Cursor.execute("Select Address.AddressID   \
+                            From Address                \
+                            Where Not Exists            \
+                                (Select * From Student  \
+                                Where Student.AddressID = Address.AddressID)")
+        
+        Addresses = self.Cursor.fetchall()
+        for ID in Addresses:
+            self.Cursor.execute("Delete From Address Where AddressID = ?", ID)
 
 
-def TranslateAddress(Address):
-    Decoder = GreekDecoder()
-    ResultAddress = Decoder.Decode(Address)
-    return ResultAddress
-    
+    def Hash(self, Address):
+        return sha1(Address).hexdigest()
 
-def Hash(Address):
-    return hashlib.sha1(Address).hexdigest()
+
+    def LogError(self, ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile):
+        valid = True 
+        if util.CountNumbers(FormattedAddress) <= 5:
+            if "&" not in FormattedAddress and " KAI " not in FormattedAddress:
+                valid = False
+                if GeoFailsFile:
+                    GeoFailsFile.write(str(ID) + "\t" + FormattedAddress + "\t"\
+                    + FullAddress + "\t" + DayPart + "\n")
+        return valid
