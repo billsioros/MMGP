@@ -24,29 +24,34 @@ int main()
     //     students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
     // }
 
-    students.emplace_back(Vector2(0.0, 0.0), Vector2(0.0, 0.0));
-    students.emplace_back(Vector2(1.0, 2.0), Vector2(0.0, 0.0));
-    students.emplace_back(Vector2(2.0, 1.0), Vector2(0.0, 0.0));
-    students.emplace_back(Vector2(4.0, 1.0), Vector2(0.0, 0.0));
-    students.emplace_back(Vector2(5.0, 0.0), Vector2(0.0, 0.0));
-    students.emplace_back(Vector2(5.0, 3.0), Vector2(0.0, 0.0));
+    students.emplace_back(Vector2(0.0, 0.0), Vector2(7.30, 8.30));
+    students.emplace_back(Vector2(1.0, 2.0), Vector2(7.15, 7.20));
+    students.emplace_back(Vector2(2.0, 1.0), Vector2(8.05, 8.10));
+    students.emplace_back(Vector2(4.0, 1.0), Vector2(7.45, 8.15));
+    students.emplace_back(Vector2(5.0, 0.0), Vector2(7.25, 7.55));
+    students.emplace_back(Vector2(5.0, 3.0), Vector2(7.35, 8.00));
     
     std::cout << std::endl;
     
-    std::cout << "+----+-------------------+-------------------+" << std::endl;
-    std::cout << "|ID  |TIMESPAN           |POSITION           |" << std::endl;
-    std::cout << "+----+-------------------+-------------------+" << std::endl;
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
+    std::cout << "|ID  |POSITION             |TIMESPAN             |" << std::endl;
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
     
     for (const auto& current : students)
         std::cout << current << std::endl;
 
-    std::cout << "+----+-------------------+-------------------+" << std::endl;
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
 
     const Cluster * cluster = Cluster::hierarchical(students, Cluster::evaluation);
 
     std::cout << std::endl;
 
-    cluster->traverse(std::cout);
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
+    std::cout << "|ID  |POSITION             |TIMESPAN             |" << std::endl;
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
 
+    cluster->traverse([](const Cluster& cluster) { std::cout <<  cluster.centroid() << std::endl; });
+
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
     return 0;
 }

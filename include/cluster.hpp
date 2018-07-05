@@ -31,7 +31,7 @@ public:
 
     static double evaluation(const Cluster&, const Cluster&);
 
-    virtual void traverse(std::ostream&) const;
+    virtual void traverse(const std::function<void(const Cluster&)>& f) const;
 };
 
 class ICluster : public Cluster
@@ -49,7 +49,7 @@ class ICluster : public Cluster
         if (_right) delete _right;
     }
 
-    void traverse(std::ostream&) const;
+    void traverse(const std::function<void(const Cluster&)>& f) const;
 };
 
 #endif

@@ -1,12 +1,14 @@
 
 #include "cluster.hpp"
 #include "vector2.hpp"
+#include "utility.hpp"
 #include "student.hpp"
 #include "heap.hpp"
 #include <list>         // std::list<Cluster *>
 #include <functional>   // const std::function<double(const Cluster&, const Cluster&)>
 #include <algorithm>    // std::remove_if
 #include <fstream>      // Definition of istream & ostream
+#include <limits>       // std::numeric_limits<double>()
 
 // Cluster Base class:
 const Cluster * Cluster::hierarchical
@@ -86,66 +88,75 @@ const Cluster * Cluster::hierarchical
     return clusters.front();
 }
 
-#define __TESTING_EVALUATION__
-#ifdef  __TESTING_EVALUATION__
-
-#include <cmath>
-
-inline static double haversine(const Vector2& A, const Vector2& B)
+double Cluster::evaluation(const Cluster& A, const Cluster& B)
 {
-    static const double r = 6.371;
+    const Vector2 * target = nullptr, * best = nullptr; double min = -1.0;
 
-    auto rads = [](double degrees) { return degrees * M_PI / 180.0; };
+    auto nearest = [&](const Cluster& cluster)
+    {
+        const Vector2 * p = &cluster.centroid().position();
+        
+        double distance = haversine(*target, *p);
+        if (distance < min)
+        {
+            best = p; min = distance;
+        }
+    };
 
-    const double f1 = rads(A.x()), f2 = rads(B.x());
-    const double l1 = rads(A.y()), l2 = rads(B.y());
+    const Vector2& pa = A.centroid().position(), &pb = B.centroid().position();
 
-    const double u1 = std::sin((f2 - f1) / 2.0), u2 = std::sin((l2 - l1) / 2.0);
+    const double p = 0.0, max = std::numeric_limits<double>().max();
+    double dx = 0.0, dt = 0.0;
 
-    return 2.0 * r * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
+    const Vector2 * best1, * best2;
+
+    target = &pa; min = max; A.traverse(nearest); best1 = best;
+    target = &pb; min = max; B.traverse(nearest); best2 = best;
+
+    dx += (1.0 - p) * haversine(*best1, *best2);
+
+    target = &pa; min = max; B.traverse(nearest); best1 = best;
+    target = &pb; min = max; A.traverse(nearest); best2 = best;
+
+    dx += p * haversine(*best1, *best2);
+
+    dt = intersection(A.centroid().timespan(), B.centroid().timespan());
+
+    return /*dt + */dx;
 }
 
-inline static double dt(const Vector2& A, const Vector2& B)
+void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
 {
-    const double Ax = A.x(), Ay = A.y();
-    const double Bx = B.x(), By = B.y();
-
-    const double maxX = Ax > Bx ? Ax : Bx;
-    const double minY = Ay < By ? Ay : By;
-
-    const Vector2& minTimespan = (A.y() - A.x()) < (B.y() - B.x()) ? A : B;
-
-    return (minY - maxX) / (minTimespan.y() - minTimespan.x()); 
+    f(*this);
 }
+
+#define __TESTING_TRAVERSING__
+#ifdef  __TESTING_TRAVERSING__
+
+#include <iostream>
 
 #endif
 
-double Cluster::evaluation(const Cluster& A, const Cluster& B)
-{
-    const double biases[] = { 0.2, 0.4, 0.2 };
-
-    const Vector2& p1 = A.centroid().position(), p2 = B.centroid().position();
-    const Vector2& t1 = A.centroid().timespan(), t2 = B.centroid().timespan();
-
-    return (1.0 / haversine(p1, p2)) * dt(t1, t2);
-
-}
-
-void Cluster::traverse(std::ostream& os) const
-{
-    os << " ** " << _centroid << std::endl;
-}
-
 // ICluster Derived class:
-void ICluster::traverse(std::ostream& os) const
+void ICluster::traverse(const std::function<void(const Cluster&)>& f) const
 {
-    os << " <- " << std::endl;
+    #ifdef __TESTING_TRAVERSING__
+
+    std::cout << " <- " << std::endl;
+
+    #endif
+
     if (_left)
-        _left->traverse(os);
+        _left->traverse(f);
 
-    Cluster::traverse(os);
+    Cluster::traverse(f);
 
-    os << " -> " << std::endl;
+    #ifdef __TESTING_TRAVERSING__
+
+    std::cout << " -> " << std::endl;
+    
+    #endif
+
     if (_right)
-        _right->traverse(os);
+        _right->traverse(f);
 }

@@ -8,11 +8,12 @@ PATH_INC = ./include
 PATH_BIN = ./bin
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
+UTIL_DEP = $(addprefix $(PATH_INC)/, vector2.hpp utility.hpp) $(PATH_SRC)/utility.cpp
 SDNT_DEP = $(addprefix $(PATH_INC)/, vector2.hpp student.hpp) $(PATH_SRC)/student.cpp
-CLST_DEP = $(addprefix $(PATH_INC)/, student.hpp heap.hpp vector2.hpp cluster.hpp) $(PATH_SRC)/cluster.cpp
+CLST_DEP = $(addprefix $(PATH_INC)/, student.hpp heap.hpp utility.hpp vector2.hpp cluster.hpp) $(PATH_SRC)/cluster.cpp
 MAIN_DEP = $(PATH_INC)/cluster.hpp $(PATH_SRC)/main.cpp
 
-NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o student.o cluster.o main.o)
+NAME_DEP = $(addprefix $(PATH_BIN)/, utility.o vector2.o student.o cluster.o main.o)
 
 .PHONY: all
 all:
@@ -24,6 +25,9 @@ all:
 
 $(PATH_BIN)/vector2.o: $(VEC2_DEP)
 	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/vector2.cpp -c -o $(PATH_BIN)/vector2.o
+
+$(PATH_BIN)/utility.o: $(UTIL_DEP)
+	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/utility.cpp -c -o $(PATH_BIN)/utility.o
 
 $(PATH_BIN)/student.o: $(SDNT_DEP)
 	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/student.cpp -c -o $(PATH_BIN)/student.o
