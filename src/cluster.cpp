@@ -88,24 +88,8 @@ const Cluster * Cluster::hierarchical
     return clusters.front();
 }
 
-#define __DEBUG__
-#ifdef  __DEBUG__
-
-#include <cmath>
-
-#endif
-
 double Cluster::evaluation(const Cluster& A, const Cluster& B)
 {
-    #ifdef __DEBUG__
-
-    const double xdiff = A.centroid().position().x() - B.centroid().position().x();
-    const double ydiff = A.centroid().position().y() - B.centroid().position().y();
-    
-    return std::sqrt(xdiff * xdiff + ydiff * ydiff);
-
-    #elif
-
     const Vector2 * target = nullptr, * best = nullptr; double min = -1.0;
 
     auto nearest = [&](const Cluster& cluster)
@@ -121,7 +105,7 @@ double Cluster::evaluation(const Cluster& A, const Cluster& B)
 
     const Vector2& pa = A.centroid().position(), &pb = B.centroid().position();
 
-    const double p = 0.25, max = std::numeric_limits<double>().max();
+    const double w[] = { 0.25, 0.25 }, max = std::numeric_limits<double>().max();
     double dx = 0.0, dt = 0.0;
 
     const Vector2 * best1, * best2;
@@ -129,18 +113,16 @@ double Cluster::evaluation(const Cluster& A, const Cluster& B)
     target = &pa; min = max; A.traverse(nearest); best1 = best;
     target = &pb; min = max; B.traverse(nearest); best2 = best;
 
-    dx += (1.0 - p) * haversine(*best1, *best2);
+    dx += (1.0 - w[0]) * haversine(*best1, *best2);
 
     target = &pa; min = max; B.traverse(nearest); best1 = best;
     target = &pb; min = max; A.traverse(nearest); best2 = best;
 
-    dx += p * haversine(*best1, *best2);
+    dx += w[0] * haversine(*best1, *best2);
 
     dt = intersection(A.centroid().timespan(), B.centroid().timespan());
 
-    return dt + dx;
-
-    #endif
+    return (1.0 - w[1]) * (1.0 / dx) + w[1] * dt;
 }
 
 void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
@@ -148,6 +130,7 @@ void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
     f(*this);
 }
 
+// #define __DEBUG__
 #ifdef  __DEBUG__
 
 #include <iostream>

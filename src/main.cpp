@@ -8,11 +8,11 @@
 #include <cmath>
 #include <ctime>
 
-// #define MIN (-1.0)
-// #define MAX (+1.0)
-// #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
+#define MIN (-1.0)
+#define MAX (+1.0)
+#define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
 
-#define SIZE (5)
+#define SIZE (1500)
 
 int main()
 {
@@ -21,7 +21,7 @@ int main()
     std::list<Student> students;
     // for (unsigned i = 0; i < SIZE; i++)
     // {
-    //     students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
+    //     students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX)), Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
     // }
 
     students.emplace_back(Vector2(0.0, 0.0), Vector2(7.30, 8.30));
@@ -42,7 +42,11 @@ int main()
 
     std::cout << "+----+---------------------+---------------------+" << std::endl;
 
+    std::clock_t beg = std::clock();
+
     const Cluster * cluster = Cluster::hierarchical(students, Cluster::evaluation);
+
+    std::cout << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
 
     std::cout << std::endl;
 
