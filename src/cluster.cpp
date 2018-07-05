@@ -88,8 +88,24 @@ const Cluster * Cluster::hierarchical
     return clusters.front();
 }
 
+#define __DEBUG__
+#ifdef  __DEBUG__
+
+#include <cmath>
+
+#endif
+
 double Cluster::evaluation(const Cluster& A, const Cluster& B)
 {
+    #ifdef __DEBUG__
+
+    const double xdiff = A.centroid().position().x() - B.centroid().position().x();
+    const double ydiff = A.centroid().position().y() - B.centroid().position().y();
+    
+    return std::sqrt(xdiff * xdiff + ydiff * ydiff);
+
+    #elif
+
     const Vector2 * target = nullptr, * best = nullptr; double min = -1.0;
 
     auto nearest = [&](const Cluster& cluster)
@@ -105,7 +121,7 @@ double Cluster::evaluation(const Cluster& A, const Cluster& B)
 
     const Vector2& pa = A.centroid().position(), &pb = B.centroid().position();
 
-    const double p = 0.0, max = std::numeric_limits<double>().max();
+    const double p = 0.25, max = std::numeric_limits<double>().max();
     double dx = 0.0, dt = 0.0;
 
     const Vector2 * best1, * best2;
@@ -122,7 +138,9 @@ double Cluster::evaluation(const Cluster& A, const Cluster& B)
 
     dt = intersection(A.centroid().timespan(), B.centroid().timespan());
 
-    return /*dt + */dx;
+    return dt + dx;
+
+    #endif
 }
 
 void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
@@ -130,8 +148,7 @@ void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
     f(*this);
 }
 
-#define __TESTING_TRAVERSING__
-#ifdef  __TESTING_TRAVERSING__
+#ifdef  __DEBUG__
 
 #include <iostream>
 
@@ -140,7 +157,7 @@ void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
 // ICluster Derived class:
 void ICluster::traverse(const std::function<void(const Cluster&)>& f) const
 {
-    #ifdef __TESTING_TRAVERSING__
+    #ifdef __DEBUG__
 
     std::cout << " <- " << std::endl;
 
@@ -151,7 +168,7 @@ void ICluster::traverse(const std::function<void(const Cluster&)>& f) const
 
     Cluster::traverse(f);
 
-    #ifdef __TESTING_TRAVERSING__
+    #ifdef __DEBUG__
 
     std::cout << " -> " << std::endl;
     
