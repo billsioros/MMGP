@@ -8,19 +8,11 @@
 #include <cmath>
 #include <ctime>
 
-// #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
-
 // #define MIN (-1.0)
 // #define MAX (+1.0)
+// #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
+
 #define SIZE (5)
-
-static double dist(const Vector2& A, const Vector2& B)
-{
-    const double xdiff = A.x() - B.x();
-    const double ydiff = A.y() - B.y();
-
-    return std::sqrt(xdiff * xdiff + ydiff * ydiff);
-}
 
 int main()
 {
@@ -32,29 +24,34 @@ int main()
     //     students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
     // }
 
-    students.push_back(Vector2(0.0, 0.0));
-    students.push_back(Vector2(1.0, 2.0));
-    students.push_back(Vector2(2.0, 1.0));
-    students.push_back(Vector2(4.0, 1.0));
-    students.push_back(Vector2(5.0, 0.0));
-    students.push_back(Vector2(5.0, 3.0));
+    students.emplace_back(Vector2(0.0, 0.0), Vector2(7.30, 8.30));
+    students.emplace_back(Vector2(1.0, 2.0), Vector2(7.15, 7.20));
+    students.emplace_back(Vector2(2.0, 1.0), Vector2(8.05, 8.10));
+    students.emplace_back(Vector2(4.0, 1.0), Vector2(7.45, 8.15));
+    students.emplace_back(Vector2(5.0, 0.0), Vector2(7.25, 7.55));
+    students.emplace_back(Vector2(5.0, 3.0), Vector2(7.35, 8.00));
+    
     std::cout << std::endl;
-
+    
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
+    std::cout << "|ID  |POSITION             |TIMESPAN             |" << std::endl;
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
+    
     for (const auto& current : students)
-        for (const auto& other : students)
-            if (current.id() != other.id())
-                std::cout << current << ' ' << other << " | " << dist(current.position(), other.position()) << std::endl;
+        std::cout << current << std::endl;
 
-    auto evaluation = [](const Cluster& A, const Cluster& B)
-    {
-        return 1.0 / dist(A.centroid().position(), B.centroid().position());
-    };
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
 
-    const Cluster * cluster = Cluster::hierarchical(students, evaluation);
+    const Cluster * cluster = Cluster::hierarchical(students, Cluster::evaluation);
 
     std::cout << std::endl;
 
-    cluster->traverse(std::cout);
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
+    std::cout << "|ID  |POSITION             |TIMESPAN             |" << std::endl;
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
 
+    cluster->traverse([](const Cluster& cluster) { std::cout <<  cluster.centroid() << std::endl; });
+
+    std::cout << "+----+---------------------+---------------------+" << std::endl;
     return 0;
 }
