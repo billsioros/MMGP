@@ -43,16 +43,24 @@ const Cluster * Cluster::hierarchical
         // to the current cluster, while at the same time checking
         // if it rocks the highest score so far and thus making it
         // the new "best-match"
-        double bestScore = 0.0, currentScore = 0.0;
+        double bestScore = std::numeric_limits<double>().min();
         for (const auto& current : clusters)
         {
             // Definition of "priority":
             // A lambda function used during the insertion of an element
             // to the heap, so that at the end of the insertion step
             // the "best-match" to the current cluster is on the top
+
+            double currentScore = std::numeric_limits<double>().min();
             auto priority = [&](const Cluster * A, const Cluster * B)
             {
-                return evaluation(*A, *current) > evaluation(*B, *current);
+                const double ea = evaluation(*A, *current);
+                const double eb = evaluation(*B, *current);
+
+                if (ea > currentScore) { currentScore = ea; }
+                if (eb > currentScore) { currentScore = eb; }
+
+                return ea > eb;
             };
 
             heap<Cluster *> candidates(clusters.size() - 1UL, priority);
@@ -61,8 +69,6 @@ const Cluster * Cluster::hierarchical
                     candidates.push(other);
 
             Cluster * other; candidates.pop(other);
-            
-            currentScore = evaluation(*current, *other);
 
             if (!bestMatch->_left || !bestMatch->_right || currentScore > bestScore)
             {
@@ -90,35 +96,42 @@ const Cluster * Cluster::hierarchical
 
 double Cluster::evaluation(const Cluster& A, const Cluster& B)
 {
-    const Vector2 * target = nullptr, * best = nullptr; double min = -1.0;
+    const Vector2 * target[] = { nullptr, nullptr };
+    const Vector2 * best[]   = { nullptr, nullptr };
+    double min[]             = { -1.0,       -1.0 };
 
     auto nearest = [&](const Cluster& cluster)
     {
         const Vector2 * p = &cluster.centroid().position();
         
-        double distance = haversine(*target, *p);
-        if (distance < min)
+        double distance;
+        if ((distance = haversine(*p, *target[0])) < min[0])
         {
-            best = p; min = distance;
+            best[0] = p; min[0] = distance;
+        }
+
+        if ((distance = haversine(*target[1], *p)) < min[1])
+        {
+            best[1] = p; min[1] = distance;
         }
     };
 
     const Vector2& pa = A.centroid().position(), &pb = B.centroid().position();
 
     const double w[] = { 0.25, 0.25 }, max = std::numeric_limits<double>().max();
+
+    std::pair<const Vector2 *, const Vector2 *> pair1, pair2;
+
+    target[0] = &pa; target[1] = &pb; min[0] = min[1] = max; A.traverse(nearest);
+    pair1.first = best[0]; pair2.first = best[1];
+
+    target[0] = &pb; target[1] = &pa; min[0] = min[1] = max; B.traverse(nearest);
+    pair1.second = best[0]; pair2.second = best[1];
+
     double dx = 0.0, dt = 0.0;
 
-    const Vector2 * best1, * best2;
-
-    target = &pa; min = max; A.traverse(nearest); best1 = best;
-    target = &pb; min = max; B.traverse(nearest); best2 = best;
-
-    dx += (1.0 - w[0]) * haversine(*best1, *best2);
-
-    target = &pa; min = max; B.traverse(nearest); best1 = best;
-    target = &pb; min = max; A.traverse(nearest); best2 = best;
-
-    dx += w[0] * haversine(*best1, *best2);
+    dx += (1.0 - w[0]) * haversine(*pair1.first, *pair1.second);
+    dx += w[0]         * haversine(*pair2.first, *pair2.second);
 
     dt = intersection(A.centroid().timespan(), B.centroid().timespan());
 
