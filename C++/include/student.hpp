@@ -30,10 +30,6 @@ public:
 
     friend std::ostream& operator<<(std::ostream&, const Student&);
 
-    Student& operator=(const Student&);
-    friend Student operator+(const Student&, const Student&);
-    friend Student operator/(const Student&, double);
-
     friend bool operator==(const Student&, const Student&);
     friend bool operator!=(const Student&, const Student&);
 };

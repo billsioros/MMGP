@@ -10,7 +10,7 @@ class heap
 {
     const std::function<bool(const T&, const T&)> priority;
 
-    const size_t max; size_t size;
+    const std::size_t max; std::size_t size;
 
     T * items;
 
@@ -19,7 +19,7 @@ public:
     static bool less(const T&, const T&);
     static bool greater(const T&, const T&);
 
-    heap(size_t, const std::function<bool(const T&, const T&)>& priority);
+    heap(std::size_t, const std::function<bool(const T&, const T&)>& priority);
     ~heap();
 
     bool push(const T&);
@@ -40,7 +40,7 @@ bool heap<T>::greater(const T& a, const T& b)
 }
 
 template <typename T>
-heap<T>::heap(size_t max, const std::function<bool(const T&, const T&)>& priority)
+heap<T>::heap(std::size_t max, const std::function<bool(const T&, const T&)>& priority)
 :
 priority(priority), max(max), size(0U), items(new T[this->max + 1U])
 {
@@ -58,7 +58,7 @@ bool heap<T>::push(const T& item)
     if(size == max)
         return false;
 
-    size_t child = ++size, parent = child / 2;
+    std::size_t child = ++size, parent = child / 2;
     items[child] = item;
 
     while (parent)
@@ -86,10 +86,10 @@ bool heap<T>::pop(T& item)
     item = items[1];
     items[1] = items[size--];
 
-    size_t current = 1, child = 2 * current;
+    std::size_t current = 1, child = 2 * current;
     while (child <= size)
     {
-        size_t next;
+        std::size_t next;
         if (child + 1 <= size && priority(items[child + 1], items[child]))
             next = child + 1;
         else

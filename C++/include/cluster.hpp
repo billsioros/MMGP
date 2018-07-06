@@ -12,10 +12,12 @@ class Cluster
 {
 protected:
 
+    std::size_t _size;
+
     Student _centroid;
 
-    Cluster() {}
-    Cluster(const Student& _centroid)  : _centroid(_centroid) {}
+    Cluster() : _size(0UL) {}
+    Cluster(const Student& _centroid)  : _size(0UL), _centroid(_centroid) {}
 
 public:
 
@@ -41,7 +43,6 @@ class ICluster : public Cluster
     const Cluster * _left, * _right;
 
     ICluster() : _left(nullptr), _right(nullptr) {}
-    ICluster(const Student& _centroid) : Cluster(_centroid), _left(nullptr), _right(nullptr) {}
 
     ~ICluster()
     {

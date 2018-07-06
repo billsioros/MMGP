@@ -4,13 +4,31 @@
 #include "utility.hpp"
 #include "student.hpp"
 #include "heap.hpp"
-#include <list>         // std::list<Cluster *>
-#include <functional>   // const std::function<double(const Cluster&, const Cluster&)>
-#include <algorithm>    // std::remove_if
-#include <fstream>      // Definition of istream & ostream
-#include <limits>       // std::numeric_limits<double>()
+#include <list>             // std::list<Cluster *>
+#include <functional>       // const std::function<double(const Cluster&, const Cluster&)>
+#include <algorithm>        // std::remove_if
+#include <fstream>          // Definition of istream & ostream
+#include <limits>           // std::numeric_limits<double>()
+#include <unordered_map>    // std::unordered_map
+#include <utility>          // std::pair
 
 // Cluster Base class:
+typedef std::pair<const Cluster *, const Cluster *> Mapping;
+
+namespace std
+{
+    template<> struct hash<Mapping>
+    {
+        std::size_t operator()(const Mapping& mapping) const noexcept
+        {
+            const std::size_t k1 = (std::size_t) mapping.first, k2 = (std::size_t) mapping.second;
+            return (k1 + k2) * (k1 + k2 + 1UL) / 2UL + k2;
+        }
+    };
+}
+
+static std::unordered_map<Mapping, double> evaluations;
+
 const Cluster * Cluster::hierarchical
 (
     const std::list<Student>& students,
@@ -22,7 +40,9 @@ const Cluster * Cluster::hierarchical
     // Create the initial "trivial" (one student per cluster) clusters
     std::list<Cluster *> clusters;
     for (const auto& student : students)
-        clusters.push_back(new Cluster(student));
+    {
+        clusters.push_back(new Cluster(student)); clusters.back()->_size = 1UL;
+    }
 
     // Definition of "isBestMatch":
     // A lambda function used in order to delete the child clusters
@@ -78,10 +98,16 @@ const Cluster * Cluster::hierarchical
             }
         }
         
-        const Student& c1 = bestMatch->_left->_centroid;
-        const Student& c2 = bestMatch->_right->_centroid;
-        bestMatch->_centroid = (c1 + c2) / 2.0;
+        const Student&    c1 = bestMatch->_left->_centroid, c2 = bestMatch->_right->_centroid;
+        const std::size_t s1 = bestMatch->_left->_size,     s2 = bestMatch->_right->_size;
 
+        bestMatch->_size = s1 + s2;
+
+        const double w = (double) s1 / (double) bestMatch->_size;
+
+        bestMatch->_centroid._position = (c1._position * w + c2._position * (1.0 - w)) / 2.0;
+        bestMatch->_centroid._timespan = (c1._timespan * w + c2._timespan * (1.0 - w)) / 2.0;
+        
         // Step 2:
         // Delete the child clusters of the newly created cluster from the list
         clusters.erase(std::remove_if(clusters.begin(), clusters.end(), isBestMatch), clusters.end());
@@ -91,11 +117,17 @@ const Cluster * Cluster::hierarchical
         clusters.push_back(bestMatch);
     }
 
+    evaluations.clear();
+
     return clusters.front();
 }
 
 double Cluster::evaluation(const Cluster& A, const Cluster& B)
 {
+    Mapping mapping(&A, &B);
+    if (evaluations.find(mapping) != evaluations.end())
+        return evaluations[mapping];
+
     const Vector2 * target[] = { nullptr, nullptr };
     const Vector2 * best[]   = { nullptr, nullptr };
     double min[]             = { -1.0,       -1.0 };
@@ -135,7 +167,7 @@ double Cluster::evaluation(const Cluster& A, const Cluster& B)
 
     dt = intersection(A.centroid().timespan(), B.centroid().timespan());
 
-    return (1.0 - w[1]) * (1.0 / dx) + w[1] * dt;
+    return (evaluations[mapping] = (1.0 - w[1]) * (1.0 / dx) + w[1] * dt);
 }
 
 void Cluster::traverse(const std::function<void(const Cluster&)>& f) const

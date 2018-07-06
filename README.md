@@ -3,9 +3,10 @@
 ### Currently under development
 
 #### TODO:
-1. Centroid weights
+1. Remove unused evaluations
 2. SLINK
-3. Evaluation hashing
+3. CLINK
+4. Threading
 
 #### TAGS:
-1. Clustering 1.4
+1. Clustering 1.5
