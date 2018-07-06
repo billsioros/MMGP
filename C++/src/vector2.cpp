@@ -8,9 +8,9 @@
 std::ostream& operator<<(std::ostream& out, const Vector2& vec2)
 {
     out << "[ ";
-    out << std::left << std::setfill('0') << std::setw(7) << std::setprecision(5) << vec2._x;
+    out << std::fixed << std::setprecision(5) << std::showpos << vec2._x;
     out << ' ';
-    out << std::left << std::setfill('0') << std::setw(7) << std::setprecision(5) << vec2._y;
+    out << std::fixed << std::setprecision(5) << std::showpos << vec2._y;
     out << " ]";
 }
 

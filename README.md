@@ -3,7 +3,9 @@
 ### Currently under development
 
 #### TODO:
-1. Replace push_back with emplace_back
+1. Centroid weights
+2. SLINK
+3. Evaluation hashing
 
 #### TAGS:
-1. Clustering 1.3
+1. Clustering 1.4
