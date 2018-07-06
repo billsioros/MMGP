@@ -81,10 +81,18 @@ Vector2& Vector2::operator-=(const Vector2& other)
     return *this;
 }
 
-Vector2& Vector2::operator*=(const double lambda)
+Vector2& Vector2::operator*=(double lambda)
 {
     _x *= lambda;
     _y *= lambda;
+    
+    return *this;
+}
+
+Vector2& Vector2::operator/=(double lambda)
+{
+    _x /= lambda;
+    _y /= lambda;
     
     return *this;
 }

@@ -57,5 +57,8 @@ int main()
     cluster->traverse([](const Cluster& cluster) { std::cout <<  cluster.centroid() << std::endl; });
 
     std::cout << "+----+-----------------------+-----------------------+" << std::endl;
+
+    delete cluster;
+    
     return 0;
 }
