@@ -1,31 +1,16 @@
 import pyodbc
 import sqlite3
 from DBManagement import DBManager as DBM
-from util import harvesine
+from util import GetCredentials
 import os
 import sys
 import csv
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
-print rowIndex
 
-API_key = None
-ServerType = None
-ServerName = None
-DatabaseName = None
+API_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
-with open(fileName) as credentials:
-      readCSV = csv.DictReader(credentials, delimiter=',')
-      i = 0
-      for row in readCSV:
-            if int(rowIndex) == i:
-                  API_key = row["API_key"]
-                  ServerType = row["ServerType"]
-                  ServerName = row["ServerName"]
-                  DatabaseName = row["DatabaseName"]
-                  break
-            i += 1
 
 con = pyodbc.connect(DRIVER=ServerType, 
                  SERVER=ServerName, 
@@ -224,7 +209,5 @@ Tables.append((NewYearStudy, "Study"))
 DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
 
-DBManager.InsertDistances(harvesine)
-DBManager.Commit()
 
 GeoFailsFile.close()

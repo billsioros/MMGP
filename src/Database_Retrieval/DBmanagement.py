@@ -3,7 +3,8 @@ import os
 from time import sleep
 from hashlib import sha1 as sha1
 import util
-from googlemaps import geocoding, Client
+import csv
+
 
 class DBManager:
 
@@ -19,13 +20,12 @@ class DBManager:
 
         self.FileName = fileName
         self.APIKey = APIKey
-        self.GeoLocator = None
-        self.GoogleClient = None
+        self.MapsHandler = None
 
         self.Connect(fileName)
         
 
-    def CreateDatabase(self, fileName):
+    def CreateDatabase(self, fileName):  
 
         self.Connect(fileName)
 
@@ -44,7 +44,6 @@ class DBManager:
                     Friday      bit,                \
                     DayPart     varchar(255),       \
                     Foreign Key (AddressID) References Address(AddressID)  )"
-
         self.Cursor.execute(sql)
 
         sql = "Create Table Address (               \
@@ -60,17 +59,36 @@ class DBManager:
                     FullAddress varchar(255),       \
                     FormattedAddress varchar(255),  \
                     Primary Key (AddressID)         )"
-
         self.Cursor.execute(sql)
 
-        sql = "Create Table Distance (              \
-                    AddressID_1 varchar(255),       \
-                    AddressID_2 varchar(255),       \
-                    Distance    varchar(255),       \
+        sql = "Create Table MorningDistance (               \
+                    AddressID_1 varchar(255),               \
+                    AddressID_2 varchar(255),               \
+                    Duration    int,                        \
+                    Distance    int,                        \
                     Primary Key (AddressID_1, AddressID_2),                  \
                     Foreign Key (AddressID_1) References Address(AddressID), \
                     Foreign Key (AddressID_2) References Address(AddressID)  )"
+        self.Cursor.execute(sql)
 
+        sql = "Create Table NoonDistance (                  \
+                    AddressID_1 varchar(255),               \
+                    AddressID_2 varchar(255),               \
+                    Duration    int,                        \
+                    Distance    int,                        \
+                    Primary Key (AddressID_1, AddressID_2),                  \
+                    Foreign Key (AddressID_1) References Address(AddressID), \
+                    Foreign Key (AddressID_2) References Address(AddressID)  )"
+        self.Cursor.execute(sql)
+
+        sql = "Create Table StudyDistance (                 \
+                    AddressID_1 varchar(255),               \
+                    AddressID_2 varchar(255),               \
+                    Duration    int,                        \
+                    Distance    int,                        \
+                    Primary Key (AddressID_1, AddressID_2),                  \
+                    Foreign Key (AddressID_1) References Address(AddressID), \
+                    Foreign Key (AddressID_2) References Address(AddressID)  )"            
         self.Cursor.execute(sql)
 
         sql = "Create Table Bus (               \
@@ -78,7 +96,6 @@ class DBManager:
                     Number      int,            \
                     Capacity    int,            \
                     Primary Key (BusID)         )"
-
         self.Cursor.execute(sql)   
 
 
@@ -207,12 +224,12 @@ class DBManager:
                 # If address has not been added to the database, geocode it and add it
                 if not Addresses.has_key(HashAddress):
 
-                    self.InitGeolocator()
+                    self.InitMapsHandler()
                     # Only 100 requests per sec
                     if i == 99:
                         sleep(4) # Sleep 4 seconds for safety
                         i = 0
-                    FormattedAddress, GPSX, GPSY = self.Geocode(FullAddress)
+                    FormattedAddress, GPSX, GPSY = self.MapsHandler.Geocode(FullAddress)
                     i += 1
 
                     valid = True
@@ -254,38 +271,82 @@ class DBManager:
                                         Where BusID = ?", ToAdd)
 
 
-    def InsertDistances(self, distanceFunction):
-        OldDistances = self.GetDistances()
+    def InsertDistancesToFile(self, DayPart, bulkDistanceFunction=None, params=None):
 
-        sql = "Select AddressID, GPS_X, GPS_Y From Address Where GPS_X Is Not Null and GPS_Y Is Not Null"
+        if DayPart == "Morning":
+            Table = "MorningDistance"
+        elif DayPart == "Noon":
+            Table = "NoonDistance"
+        elif DayPart == "Study":
+            Table = "StudyDistance"
+        else:
+            print "Error: Non valid DayPart. Returning..."
+            return
 
-        self.Cursor.execute(sql)
-        Addresses = self.Cursor.fetchall()
-        Distances = list()
-        for id1, x1, y1 in Addresses:
-            for id2, x2, y2 in Addresses:
-                # If we have calculated the address before dont calculate it again
-                if OldDistances.has_key(id1):
-                    flag = False
-                    for OldID2, _D in OldDistances[id1]:                   
-                        if OldID2 == id2:
-                            # either update or keep old distance. For now continue
-                            flag = True
-                            break
-                    if flag:
-                        continue
+        if bulkDistanceFunction == None:
+            self.InitMapsHandler()
+            bulkDistanceFunction = self.MapsHandler.DistanceMatrix
 
-                if id1 == id2:
-                    distance = 0
-                    Distances.append([id1, id2, distance])
-                    continue
-                distance = distanceFunction((x1, y1), (x2, y2))
-                Distances.append([id1, id2, distance])
         
-        for ToAdd in Distances:
-            self.Cursor.execute("Insert into Distance     \
-                                    Values(?,?,?)", ToAdd)
+        self.Cursor.execute(\
+                " Select Address.AddressID, Address.GPS_X, Address.GPS_Y    \
+                From Address                                                \
+                Where exists (  Select *                                    \
+                                From Student                                \
+                                Where Student.AddressID = Address.AddressID \
+                                and Student.DayPart = ?)", [DayPart])
 
+        Addresses = self.Cursor.fetchall()
+
+
+        Origins = list()
+        for id1, x1, y1 in Addresses:
+            Origins.append((id1, (y1, x1)))
+
+        Matrix = bulkDistanceFunction(Origins, Origins)
+        
+        logcsv = open(Table + ".tsv", "w+")
+        logcsv.write("ID1\tID2\tDuration\tDistance\n")
+        for Row in Matrix:
+            for id1, id2, duration, distance in Row:
+                logcsv.write(str(id1) + "\t" + str(id2) + "\t" + str(duration) + "\t" + str(distance) + "\n")
+        logcsv.close()
+
+
+    def InsertDistancesFromFile(self, DayPart):
+        if DayPart == "Morning":
+            Table = "MorningDistance"
+            fileName = "MorningDistance.tsv"
+        elif DayPart == "Noon":
+            Table = "NoonDistance"
+            fileName = "NoonDistance.tsv"
+        elif DayPart == "Study":
+            Table = "StudyDistance"
+            fileName = "StudyDistance.tsv"
+        else:
+            print "Error: Non valid DayPart. Returning..."
+            return
+
+        if not os.path.isfile(fileName):
+            print "Error: File does not exist. Returning..."
+            return
+
+
+        with open(fileName) as distances:
+            readCSV = csv.DictReader(distances, delimiter='\t')
+            Rows = list()
+            for row in readCSV:           
+                ID1 = row["ID1"]
+                ID2 = row["ID2"]
+                Duration = row["Duration"]
+                Distance = row["Distance"]
+                Rows.append([ID1, ID2, Duration, Distance])
+
+        
+        for id1, id2, duration, distance in Rows:
+            #Values = [Table, id1, id2, duration, distance]
+            sql = "Insert into " + Table + " Values('" + id1 + "', '" + id2 + "', "  + duration + ", " + distance + ")"
+            self.Cursor.execute(sql)
 
     def Commit(self):
         if self.Connection:
@@ -297,34 +358,8 @@ class DBManager:
             self.Connection.rollback()
 
 
-    def InitGeolocator(self):       
-        if not self.GoogleClient:
-            self.GoogleClient = Client(key=self.APIKey)
-
-
-    def Geocode(self, Address):
-        results = geocoding.geocode(self.GoogleClient, address=Address, region="GR")
-
-        # If Weird Results Let Me Know and return
-        try:
-            if results[0]["geometry"]["location"]:
-                locationData = results[0]["geometry"]["location"]
-        except IndexError:
-            try:
-                print "First Error"
-                print results[0]["geometry"]
-            except IndexError:
-                try:
-                    print "Second Error"
-                    print results[0]
-                except IndexError:
-                    print "Third Error"
-                    print Address
-                    print results
-                    return
-
-        address = results[0]["formatted_address"]
-        return (address, locationData["lng"], locationData["lat"])
+    def InitMapsHandler(self):       
+        self.MapsHandler = util.MapsHandler(APIKey=self.APIKey)
 
 
     def GetAddresses(self):
@@ -365,9 +400,14 @@ class DBManager:
         return Students
 
 
-    def GetDistances(self):
+    def GetDistances(self, DayPart):
         self.Connect(self.FileName)
-        sql = "Select * From Distance"
+        if DayPart == "Morning":
+            sql = "Select * From MorningDistance"
+        elif DayPart == "Noon":
+            sql = "Select * From NoonDistance"
+        elif DayPart == "Study":
+            sql = "Select * From StudyDistance"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
 
