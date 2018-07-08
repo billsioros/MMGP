@@ -9,18 +9,16 @@ class Student
 {
     friend class Cluster;
 
-    static unsigned _count;
-
-    const unsigned _id;
-    Vector2 _position;
-    Vector2 _timespan;
+    std::size_t _id;
+    Vector2     _position;
+    Vector2     _timespan;
 
 public:
 
-    Student() : _id(++_count) {}
-    Student(const Vector2& _position, const Vector2& _timespan)
+    Student() : _id(0UL) {}
+    Student(std::size_t _id, const Vector2& _position, const Vector2& _timespan)
     :
-    _id(++_count), _position(_position), _timespan(_timespan)
+    _id(_id), _position(_position), _timespan(_timespan)
     {
     }
     
