@@ -1,4 +1,3 @@
-// A C++ Linear Algebra Library created by Vasileios Sioros
 
 #include "vector2.hpp"
 #include <fstream>      // Definition of istream & ostream

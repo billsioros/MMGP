@@ -22,7 +22,7 @@ namespace std
     {
         std::size_t operator()(const Mapping& mappings) const noexcept
         {
-            return (std::size_t)&mappings;
+            return reinterpret_cast<std::size_t>(&mappings);
         }
     };
 }
@@ -154,7 +154,7 @@ const Cluster * Cluster::hierarchical
 
         bestMatch->_size = s1 + s2;
 
-        const double w = (double) s1 / (double) bestMatch->_size;
+        const double w = static_cast<double>(s1) / static_cast<double>(bestMatch->_size);
 
         bestMatch->_centroid._position = (c1._position * w + c2._position * (1.0 - w)) / 2.0;
         bestMatch->_centroid._timespan = (c1._timespan * w + c2._timespan * (1.0 - w)) / 2.0;
