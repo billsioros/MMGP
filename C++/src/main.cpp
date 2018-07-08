@@ -12,7 +12,7 @@
 #define MAX (+1.0)
 #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
 
-#define SIZE (500)
+#define SIZE (1000)
 
 int main()
 {

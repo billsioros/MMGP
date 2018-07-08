@@ -39,6 +39,10 @@
         "iostream": "cpp",
         "algorithm": "cpp",
         "ctime": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp",
+        "queue": "cpp"
     }
 }

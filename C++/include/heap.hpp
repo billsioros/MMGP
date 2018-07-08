@@ -1,4 +1,3 @@
-/* C++ Heap implementation by Vasileios Sioros */
 
 #ifndef __HEAP__
 #define __HEAP__
