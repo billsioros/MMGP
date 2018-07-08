@@ -25,13 +25,13 @@ public:
 
     const Student& centroid() const { return _centroid; }
 
+    static double evaluation(const Cluster&, const Cluster&);
+
     static const Cluster * hierarchical
     (
         const std::list<Student>&,
         const std::function<double(const Cluster&, const Cluster&)>&
     );
-
-    static double evaluation(const Cluster&, const Cluster&);
 
     virtual void traverse(const std::function<void(const Cluster&)>& f) const;
 };

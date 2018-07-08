@@ -12,7 +12,7 @@
 #define MAX (+1.0)
 #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
 
-#define SIZE (1000)
+#define SIZE (500)
 
 int main()
 {
@@ -21,7 +21,7 @@ int main()
     std::list<Student> students;
     for (unsigned i = 0; i < SIZE; i++)
     {
-        students.push_back(Student(Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX)), Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
+        students.push_back(Student(i + 1UL, Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX)), Vector2(FRAND(MIN, MAX), FRAND(MIN, MAX))));
     }
 
     // students.emplace_back(Vector2(0.0, 0.0), Vector2(7.30, 8.30));

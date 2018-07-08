@@ -13,21 +13,71 @@
 #include <utility>          // std::pair
 
 // Cluster Base class:
-typedef std::pair<const Cluster *, const Cluster *> Mapping;
+typedef std::unordered_map<const Cluster *, double>  Mapping;
+typedef std::unordered_map<const Cluster *, Mapping> Map;
 
 namespace std
 {
     template<> struct hash<Mapping>
     {
-        std::size_t operator()(const Mapping& mapping) const noexcept
+        std::size_t operator()(const Mapping& mappings) const noexcept
         {
-            const std::size_t k1 = (std::size_t) mapping.first, k2 = (std::size_t) mapping.second;
-            return (k1 + k2) * (k1 + k2 + 1UL) / 2UL + k2;
+            return (std::size_t)&mappings;
         }
     };
 }
 
-static std::unordered_map<Mapping, double> evaluations;
+static Map evalmap;
+
+double Cluster::evaluation(const Cluster& A, const Cluster& B)
+{
+    Map::const_iterator mapit; Mapping::const_iterator mappingit;
+    
+    if ((mapit = evalmap.find(&A)) != evalmap.end())
+        if ((mappingit = mapit->second.find(&B)) != mapit->second.end())
+            return mappingit->second;
+
+    const Vector2 * target[] = { nullptr, nullptr };
+    const Vector2 * best[]   = { nullptr, nullptr };
+    double min[]             = { -1.0,       -1.0 };
+
+    auto nearest = [&](const Cluster& cluster)
+    {
+        const Vector2 * p = &cluster.centroid().position();
+        
+        double distance;
+        if ((distance = euclidean2(*p, *target[0])) < min[0])
+        {
+            best[0] = p; min[0] = distance;
+        }
+
+        if ((distance = euclidean2(*target[1], *p)) < min[1])
+        {
+            best[1] = p; min[1] = distance;
+        }
+    };
+
+    const Vector2& pa = A.centroid().position(), &pb = B.centroid().position();
+
+    const double w[] = { 0.25, 0.25 }, max = std::numeric_limits<double>().max();
+
+    std::pair<const Vector2 *, const Vector2 *> pair1, pair2;
+
+    target[0] = &pa; target[1] = &pb; min[0] = min[1] = max; A.traverse(nearest);
+    pair1.first = best[0]; pair2.first = best[1];
+
+    target[0] = &pb; target[1] = &pa; min[0] = min[1] = max; B.traverse(nearest);
+    pair1.second = best[0]; pair2.second = best[1];
+
+    double dx = 0.0, dt = 0.0;
+
+    dx += (1.0 - w[0]) * euclidean2(*pair1.first, *pair1.second);
+    dx += w[0]         * euclidean2(*pair2.first, *pair2.second);
+
+    dt = intersection(A.centroid().timespan(), B.centroid().timespan());
+
+    return (evalmap[&A][&B] = (1.0 - w[1]) * (1.0 / dx) + w[1] * dt);
+}
 
 const Cluster * Cluster::hierarchical
 (
@@ -54,14 +104,15 @@ const Cluster * Cluster::hierarchical
         return cluster == bestMatch->_left || cluster == bestMatch->_right;
     };
 
+    std::size_t total = clusters.size();
     while (clusters.size() > 1)
     {
-        bestMatch = new ICluster();
+        bestMatch = new ICluster(); bestMatch->_centroid._id = ++total; 
 
         // Step 1:
         // In each iteration, determine the "best-matching" cluster
         // to the current cluster, while at the same time checking
-        // if it rocks the highest score so far and thus making it
+        // if mapit rocks the highest score so far and thus making mapit
         // the new "best-match"
         double bestScore = std::numeric_limits<double>().min();
         for (const auto& current : clusters)
@@ -108,6 +159,8 @@ const Cluster * Cluster::hierarchical
         bestMatch->_centroid._position = (c1._position * w + c2._position * (1.0 - w)) / 2.0;
         bestMatch->_centroid._timespan = (c1._timespan * w + c2._timespan * (1.0 - w)) / 2.0;
         
+        evalmap.erase(bestMatch->_left); evalmap.erase(bestMatch->_right);
+
         // Step 2:
         // Delete the child clusters of the newly created cluster from the list
         clusters.erase(std::remove_if(clusters.begin(), clusters.end(), isBestMatch), clusters.end());
@@ -117,57 +170,7 @@ const Cluster * Cluster::hierarchical
         clusters.push_back(bestMatch);
     }
 
-    evaluations.clear();
-
     return clusters.front();
-}
-
-double Cluster::evaluation(const Cluster& A, const Cluster& B)
-{
-    Mapping mapping(&A, &B);
-    if (evaluations.find(mapping) != evaluations.end())
-        return evaluations[mapping];
-
-    const Vector2 * target[] = { nullptr, nullptr };
-    const Vector2 * best[]   = { nullptr, nullptr };
-    double min[]             = { -1.0,       -1.0 };
-
-    auto nearest = [&](const Cluster& cluster)
-    {
-        const Vector2 * p = &cluster.centroid().position();
-        
-        double distance;
-        if ((distance = haversine(*p, *target[0])) < min[0])
-        {
-            best[0] = p; min[0] = distance;
-        }
-
-        if ((distance = haversine(*target[1], *p)) < min[1])
-        {
-            best[1] = p; min[1] = distance;
-        }
-    };
-
-    const Vector2& pa = A.centroid().position(), &pb = B.centroid().position();
-
-    const double w[] = { 0.25, 0.25 }, max = std::numeric_limits<double>().max();
-
-    std::pair<const Vector2 *, const Vector2 *> pair1, pair2;
-
-    target[0] = &pa; target[1] = &pb; min[0] = min[1] = max; A.traverse(nearest);
-    pair1.first = best[0]; pair2.first = best[1];
-
-    target[0] = &pb; target[1] = &pa; min[0] = min[1] = max; B.traverse(nearest);
-    pair1.second = best[0]; pair2.second = best[1];
-
-    double dx = 0.0, dt = 0.0;
-
-    dx += (1.0 - w[0]) * haversine(*pair1.first, *pair1.second);
-    dx += w[0]         * haversine(*pair2.first, *pair2.second);
-
-    dt = intersection(A.centroid().timespan(), B.centroid().timespan());
-
-    return (evaluations[mapping] = (1.0 - w[1]) * (1.0 / dx) + w[1] * dt);
 }
 
 void Cluster::traverse(const std::function<void(const Cluster&)>& f) const
