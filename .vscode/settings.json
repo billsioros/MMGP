@@ -43,6 +43,11 @@
         "condition_variable": "cpp",
         "mutex": "cpp",
         "thread": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "atomic": "cpp",
+        "chrono": "cpp",
+        "future": "cpp",
+        "memory": "cpp",
+        "ratio": "cpp"
     }
 }
