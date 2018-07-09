@@ -12,7 +12,7 @@
 #define MAX (+1.0)
 #define FRAND(min, max) ((max - min) * ((double) std::rand() / (double) RAND_MAX) + min)
 
-#define SIZE (1000)
+#define SIZE (780)
 
 int main()
 {
@@ -46,7 +46,7 @@ int main()
 
     const Cluster * cluster = Cluster::hierarchical(students, Cluster::evaluation);
 
-    std::cout << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
+    std::cerr << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
 
     std::cout << std::endl;
 
