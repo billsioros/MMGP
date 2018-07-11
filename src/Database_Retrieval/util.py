@@ -1,5 +1,6 @@
 from itertools import izip
-from googlemaps import geocoding, distance_matrix, directions, Client
+from googlemaps import geocoding as ggeo, distance_matrix as gd, directions, Client as gclient
+from openrouteservice import distance_matrix as od, geocoding as ogeo, client as orclient
 import time
 import sys
 import csv
@@ -78,12 +79,23 @@ class GreekMunicipalConverter:
 
 class MapsHandler:
 
-    def __init__(self, APIKey=None):
-        self.APIKey = APIKey       
-        self.GoogleClient = Client(key=self.APIKey)
+    def __init__(self, GoogleAPIKey=None, OpenAPIKey=None, prefferedDistanceMatrix="Open"):
+        self.GoogleAPIKey = GoogleAPIKey       
+        self.OpenAPIKey = OpenAPIKey
+        self.GoogleClient = gclient(key=self.GoogleAPIKey)
+        self.OpenRouteClient = orclient.Client(key=self.OpenAPIKey)
+
+        if prefferedDistanceMatrix != "Open" and prefferedDistanceMatrix != "Google":
+            raise ValueError("prefferedDistanceMatrix should be \"Open\" or \"Google\"")
+        elif prefferedDistanceMatrix == "Open":
+            self.DistanceMatrix = self.__OpenDistanceMatrix
+        elif prefferedDistanceMatrix == "Google":
+            self.DistanceMatrix = self.__GoogleDistanceMatrix
+
 
     def Geocode(self, Address):
-        results = geocoding.geocode(self.GoogleClient, address=Address, region="GR")
+        results = ggeo.geocode(self.GoogleClient, address=Address, region="GR")
+
 
         # If Weird Results Let Me Know and return
         try:
@@ -106,17 +118,17 @@ class MapsHandler:
         address = results[0]["formatted_address"]
         return (address, locationData["lng"], locationData["lat"])
 
-    """origins : (Hash, (lat, lng)/AddressString ) """
+    """locations : (Hash, (lat, lng)/AddressString ) """
     """Returns Distance Matrix of origins->destinations. Google has a limit on how many origins or destinations
        one can ask through a request, so: with n origins we have ceil(n/25)*n requests.
        We also wait 0.5s after every 100 requests. Google limits usage to 100 requests per second."""
-    def DistanceMatrix(self, origins, destinations):
+    def __GoogleDistanceMatrix(self, locations):
         
         Destinations = dict()
         Destinations["Points"] = list()
         Destinations["IDs"] = list()
 
-        for ID, Point in destinations:
+        for ID, Point in locations:
             Destinations["Points"].append(Point)
             Destinations["IDs"].append(ID)
 
@@ -126,15 +138,17 @@ class MapsHandler:
         
         requests = 0
         originCount = 1
-        print "Origins:" , len(origins)
+        print "Origins:" , len(locations)
 
         StartTime = time.time()
         OriginTimes = 0
         RequestTimes = 0
-        for orID, orPoint in origins:
+
+        for orID, orPoint in locations:
+
             OriginStartTime = time.time()
             print "Current Origin: ", originCount
-            MatrixRow = list()
+
             RestDestinationPoints = Destinations["Points"]
             RestDestinationIDs = Destinations["IDs"]
 
@@ -149,9 +163,11 @@ class MapsHandler:
                 if (requests % 100) == 0:
                     time.sleep(0.5)
                 RequestStartTime = time.time()
-                results = distance_matrix.distance_matrix(self.GoogleClient, orPoint, DestinationPoints) 
+
+                results = gd.distance_matrix(self.GoogleClient, orPoint, DestinationPoints) 
                                                         #mode="driving",\
                                                         #avoid="tolls", units="metric", region="GR")
+
                 RequestEndTime = time.time()
                 RequestDuration = RequestEndTime - RequestStartTime
                 RequestTimes += RequestDuration
@@ -162,9 +178,8 @@ class MapsHandler:
                 row = results["rows"]
 
                 for elem, deID in izip(row[0]["elements"], DestinationIDS):
-                    MatrixRow.append([orID, deID, elem["duration"]["value"], elem["distance"]["value"]])
+                    Matrix.append([orID, deID, elem["duration"]["value"], elem["distance"]["value"]])
 
-            Matrix.append(MatrixRow)
             OriginEndTime = time.time()   
             OriginDuration = OriginEndTime - OriginStartTime
             OriginTimes += OriginDuration         
@@ -178,11 +193,10 @@ class MapsHandler:
         try:
             TimeLog = open("TimeLogs.txt", "a+")
             TimeLog.write("\n")
-            full =  "Time elapsed for " + str(requests) + "requests (" + str(len(origins)) + "x" + str(len(origins)) + "):"\
+            full =  "Time elapsed for " + str(requests) + "requests (" + str(len(locations)) + "x" + str(len(locations)) + "):"\
             + str(Mins) + "min, " + str(Secs) + "sec"
-            ori =  "Time per origin: " + str(OriginTimes / len(origins)) + " sec"
+            ori =  "Time per origin: " + str(OriginTimes / len(locations)) + " sec"
             req =  "Time per request: " + str(RequestTimes / requests) + " sec"
-
             print full
             print ori
             print req
@@ -196,8 +210,96 @@ class MapsHandler:
         return Matrix
 
 
+    def __OpenDistanceMatrix(self, locations):
+
+        Locations = dict()
+        Locations["IDs"] = list()
+        Locations["Points"] = list()
+
+        for ID, (y, x) in locations:
+            Locations["IDs"].append(ID)
+            Locations["Points"].append((x, y))
+
+
+        locationsPerRequest = 2500
+
+        originsPerRequest = int(locationsPerRequest / len(locations))
+
+        currentOriginStart = 0
+
+        RestOriginsIDs = Locations["IDs"]
+
+        Matrix = list()
+
+        requests = 0
+        StartTime = time.time()
+        RequestTimes = 0
+
+        while RestOriginsIDs:
+
+            OriginIDs = RestOriginsIDs[0:originsPerRequest]
+            RestOriginsIDs = RestOriginsIDs[originsPerRequest:]
+
+            sources = list()
+            for j in range(currentOriginStart, currentOriginStart + originsPerRequest):
+                if j <= len(Locations["Points"]) - 1:
+                    sources.append(j)
+
+            RestLocationIDs = Locations["IDs"]
+            RestLocationPoints = Locations["Points"]
+            
+            while RestLocationPoints:
+                Points = RestLocationPoints[0:locationsPerRequest]
+                IDs = RestLocationIDs[0:locationsPerRequest]
+                RestLocationPoints = RestLocationPoints[locationsPerRequest:]
+                RestLocationIDs = RestLocationIDs[locationsPerRequest:]
+                print sources
+
+                RequestStartTime = time.time()
+
+                results = od.distance_matrix(self.OpenRouteClient, Points, sources=sources, profile="driving-hgv",\
+                 metrics=["duration","distance"])
+
+                RequestEndTime = time.time()
+                RequestDuration = RequestEndTime - RequestStartTime
+                RequestTimes += RequestDuration
+
+                requests += 1
+
+                # durations is a double list
+                for id1, originRowDuration, originRowDistance, in izip(OriginIDs, results["durations"], results["distances"]):
+                    for id2, duration, distance in izip(IDs, originRowDuration, originRowDistance):
+                        Matrix.append([id1, id2, duration, distance])
+
+            
+            currentOriginStart += originsPerRequest
+
+        print "Requests: ", requests
+        EndTime = time.time()
+        WholeDuration = EndTime - StartTime
+        (Mins, Secs) = SecondsToMinutes(WholeDuration)
+
+        try:
+            TimeLog = open("TimeLogs.txt", "a+")
+            TimeLog.write("\n")
+            full =  "Time elapsed for " + str(requests) + " requests (" + str(len(locations))\
+             + "x" + str(len(locations)) + "): " + str(Mins) + "min, " + str(Secs) + "sec"
+
+            req =  "Time per request: " + str(RequestTimes / requests) + " sec"
+            print full
+            print req
+
+            TimeLog.write(full + "\n")
+            TimeLog.write(req + "\n")
+        except:
+            print "Syntax error in TimeLogging"
+
+        return Matrix
+        
+
     def Directions(self, origin, destination, waypoints):
-        results = directions.directions(self.GoogleClient, origin, destination, waypoints=waypoints, mode="driving", optimize_waypoints=True)
+        results = directions.directions(self.GoogleClient, origin, destination, waypoints=waypoints,\
+         mode="driving", optimize_waypoints=True)
         return results
         
 
@@ -307,10 +409,11 @@ def GetCredentials(fileName, rowIndex):
         i = 0
         for row in readCSV:
             if int(rowIndex) == i:
-                API_key = row["API_key"]
+                GoogleAPI_key = row["GoogleAPI_key"]
+                OpenAPI_key = row["OpenAPI_key"]
                 ServerType = row["ServerType"]
                 ServerName = row["ServerName"]
                 DatabaseName = row["DatabaseName"]
                 break
             i += 1
-    return [API_key, ServerType, ServerName, DatabaseName]
+    return [GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName]

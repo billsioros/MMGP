@@ -10,7 +10,7 @@ class DBManager:
 
     """ Connects to an sqlite3 database if it exists in current directory, or creates a new one
         Connection = current connection """
-    def __init__(self, fileName, APIKey=None):
+    def __init__(self, fileName, GoogleAPIKey=None, OpenAPIKey=None):
         self.Connection = None
         self.Cursor = None
 
@@ -19,7 +19,8 @@ class DBManager:
             self.CreateDatabase(fileName)
 
         self.FileName = fileName
-        self.APIKey = APIKey
+        self.GoogleAPIKey = GoogleAPIKey
+        self.OpenAPIKey = OpenAPIKey
         self.MapsHandler = None
 
         self.Connect(fileName)
@@ -132,6 +133,10 @@ class DBManager:
         self.Connection.close()
         self.Connection = None
         self.Cursor = None
+        self.MapsHandler = None
+        self.FileName = None
+        self.GoogleAPIKey = None
+        self.OpenAPIKey = None
 
     """ RowList Components:
     StCode
@@ -186,7 +191,7 @@ class DBManager:
                 # Concatenate the Address to a single string and hash it
                 FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
                 
-                HashAddress = self.Hash(FullAddress)
+                HashAddress = self.__Hash(FullAddress)
                 
                 # If address has not been added to the database add it
                 if not Addresses.has_key(HashAddress):
@@ -219,12 +224,12 @@ class DBManager:
                 if not FullAddress:
                     continue
 
-                HashAddress = self.Hash(FullAddress)
+                HashAddress = self.__Hash(FullAddress)
 
                 # If address has not been added to the database, geocode it and add it
                 if not Addresses.has_key(HashAddress):
 
-                    self.InitMapsHandler()
+                    self.__InitMapsHandler()
                     # Only 100 requests per sec
                     if i == 99:
                         sleep(4) # Sleep 4 seconds for safety
@@ -237,7 +242,7 @@ class DBManager:
                         Addresses[HashAddress] = (GPSX, GPSY)
                     
                         # Find Error and Log it into a csv of your choosing
-                        valid = self.LogError(ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile)
+                        valid = self.__LogGeocodingError(ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile)
                     
                     if valid:
                         AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
@@ -252,7 +257,7 @@ class DBManager:
                 self.Cursor.execute("Insert Into Student     \
                                 Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
-        self.DiscardAddresses()
+        self.__DiscardAddresses()
 
 
     def InsertBus(self, RowList):
@@ -271,23 +276,14 @@ class DBManager:
                                         Where BusID = ?", ToAdd)
 
 
-    def InsertDistancesToFile(self, DayPart, bulkDistanceFunction=None, params=None):
+    def InsertDistances(self, DayPart, direct=False, fileName=None):
 
-        if DayPart == "Morning":
-            Table = "MorningDistance"
-        elif DayPart == "Noon":
-            Table = "NoonDistance"
-        elif DayPart == "Study":
-            Table = "StudyDistance"
-        else:
-            print "Error: Non valid DayPart. Returning..."
-            return
 
-        if bulkDistanceFunction == None:
-            self.InitMapsHandler()
-            bulkDistanceFunction = self.MapsHandler.DistanceMatrix
+        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Morning":
+            raise ValueError("Error: Non valid DayPart.")
 
-        
+        Table = DayPart + "Distance"
+      
         self.Cursor.execute(\
                 " Select Address.AddressID, Address.GPS_X, Address.GPS_Y    \
                 From Address                                                \
@@ -303,33 +299,38 @@ class DBManager:
         for id1, x1, y1 in Addresses:
             Origins.append((id1, (y1, x1)))
 
-        Matrix = bulkDistanceFunction(Origins, Origins)
+        self.__InitMapsHandler()
+        Matrix = self.MapsHandler.DistanceMatrix(Origins)
         
-        logcsv = open(Table + ".tsv", "w+")
-        logcsv.write("ID1\tID2\tDuration\tDistance\n")
-        for Row in Matrix:
-            for id1, id2, duration, distance in Row:
+        if not direct:
+            if not fileName:
+                "Error: No file was given, writing on \"tempDistances.tsv\""
+                fileName = "temp.tsv"
+
+            logcsv = open(fileName, "w+")
+            logcsv.write("ID1\tID2\tDuration\tDistance\n")
+            for id1, id2, duration, distance in Matrix:
                 logcsv.write(str(id1) + "\t" + str(id2) + "\t" + str(duration) + "\t" + str(distance) + "\n")
-        logcsv.close()
+            logcsv.close()
 
-
-    def InsertDistancesFromFile(self, DayPart):
-        if DayPart == "Morning":
-            Table = "MorningDistance"
-            fileName = "MorningDistance.tsv"
-        elif DayPart == "Noon":
-            Table = "NoonDistance"
-            fileName = "NoonDistance.tsv"
-        elif DayPart == "Study":
-            Table = "StudyDistance"
-            fileName = "StudyDistance.tsv"
         else:
-            print "Error: Non valid DayPart. Returning..."
-            return
+            for id1, id2, duration, distance in Matrix:
+                # All previous distances will be overwritten
+                self.Cursor.execute("Delete From ?", [Table])
+                sql = "Insert into " + Table + " Values('" + id1 + "', '" + id2 + "', "  + duration + ", " + distance + ")"
+                self.Cursor.execute(sql)
+
+
+    def InsertDistancesFromFile(self, DayPart, fileName):
+
+        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Morning":
+            raise ValueError("Error: Non valid DayPart.")
 
         if not os.path.isfile(fileName):
             print "Error: File does not exist. Returning..."
             return
+
+        Table = DayPart + "Distance"
 
 
         with open(fileName) as distances:
@@ -339,14 +340,19 @@ class DBManager:
                 ID1 = row["ID1"]
                 ID2 = row["ID2"]
                 Duration = row["Duration"]
-                Distance = row["Distance"]
+                if row["Distance"]:
+                    Distance = row["Distance"]
+                else:
+                    Distance = None
                 Rows.append([ID1, ID2, Duration, Distance])
 
         
         for id1, id2, duration, distance in Rows:
-            #Values = [Table, id1, id2, duration, distance]
+            # All previous distances will be overwritten
+            self.Cursor.execute("Delete From ?", [Table])
             sql = "Insert into " + Table + " Values('" + id1 + "', '" + id2 + "', "  + duration + ", " + distance + ")"
             self.Cursor.execute(sql)
+
 
     def Commit(self):
         if self.Connection:
@@ -356,10 +362,6 @@ class DBManager:
     def RollBack(self):
         if self.Connection:
             self.Connection.rollback()
-
-
-    def InitMapsHandler(self):       
-        self.MapsHandler = util.MapsHandler(APIKey=self.APIKey)
 
 
     def GetAddresses(self):
@@ -402,12 +404,11 @@ class DBManager:
 
     def GetDistances(self, DayPart):
         self.Connect(self.FileName)
-        if DayPart == "Morning":
-            sql = "Select * From MorningDistance"
-        elif DayPart == "Noon":
-            sql = "Select * From NoonDistance"
-        elif DayPart == "Study":
-            sql = "Select * From StudyDistance"
+
+        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Morning":
+            raise ValueError("Error: Non valid DayPart.")
+
+        sql = "Select * From " + DayPart + "Distance"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
 
@@ -424,8 +425,12 @@ class DBManager:
         
         return Distances
 
+
+    def __InitMapsHandler(self):       
+        self.MapsHandler = util.MapsHandler(GoogleAPIKey=self.GoogleAPIKey, OpenAPIKey=self.OpenAPIKey)
+
     
-    def DiscardAddresses(self):
+    def __DiscardAddresses(self):
         self.Connect(self.FileName)
         self.Cursor.execute("Select Address.AddressID   \
                             From Address                \
@@ -438,11 +443,11 @@ class DBManager:
             self.Cursor.execute("Delete From Address Where AddressID = ?", ID)
 
 
-    def Hash(self, Address):
+    def __Hash(self, Address):
         return sha1(Address).hexdigest()
 
 
-    def LogError(self, ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile):
+    def __LogGeocodingError(self, ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile):
         valid = True 
         if util.CountNumbers(FormattedAddress) <= 5:
             if "&" not in FormattedAddress and " KAI " not in FormattedAddress:

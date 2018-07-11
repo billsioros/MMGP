@@ -8,16 +8,16 @@ fileName = sys.argv[1]
 rowIndex = sys.argv[2]
 dayPart = sys.argv[3]
 
-API_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
 if dayPart != "Morning" and dayPart != "Noon" and dayPart != "Study":
     print "Not Valid DayPart"
     exit()
 
 
-DBManager = DBM("MMGP_data.db", APIKey=API_key)
-#DBManager.InsertDistancesToFile(dayPart)
-DBManager.InsertDistancesFromFile(dayPart)
+DBManager = DBM("MMGP_data.db", GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
+DBManager.InsertDistances(dayPart, direct=False, fileName=dayPart + "Distance.tsv")
+#DBManager.InsertDistancesFromFile(dayPart)
 DBManager.Commit()
 
 

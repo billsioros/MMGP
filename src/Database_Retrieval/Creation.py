@@ -9,7 +9,8 @@ import csv
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
 
-API_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
+
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
 
 con = pyodbc.connect(DRIVER=ServerType, 
@@ -189,7 +190,7 @@ Buses = cursor.fetchall()
 con.close()
 
 # Create a new Database
-DBManager = DBM("MMGP_Data.db", API_key)
+DBManager = DBM("MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
 
 DBManager.InsertBus(Buses)
 DBManager.Commit()
@@ -208,6 +209,11 @@ Tables.append((NewYearStudy, "Study"))
 
 DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
+
+DBManager.Disconnect()
+
+for DayPart in ["Morning", "Noon", "Study"]:
+    DBManager.InsertDistances(DayPart, direct=True)
 
 
 GeoFailsFile.close()
