@@ -48,6 +48,11 @@
         "chrono": "cpp",
         "future": "cpp",
         "memory": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "climits": "cpp",
+        "bitset": "cpp",
+        "cstdarg": "cpp",
+        "cstddef": "cpp",
+        "cinttypes": "cpp"
     }
 }
