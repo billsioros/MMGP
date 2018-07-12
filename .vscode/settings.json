@@ -53,6 +53,7 @@
         "bitset": "cpp",
         "cstdarg": "cpp",
         "cstddef": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "*.ipp": "cpp"
     }
 }

@@ -8,10 +8,8 @@ PATH_INC = ./include
 PATH_BIN = ./bin
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
-UTIL_DEP = $(addprefix $(PATH_INC)/, vector2.hpp utility.hpp) $(PATH_SRC)/utility.cpp
 SDNT_DEP = $(addprefix $(PATH_INC)/, vector2.hpp student.hpp) $(PATH_SRC)/student.cpp
-CLST_DEP = $(addprefix $(PATH_INC)/, student.hpp heap.hpp cluster.hpp) $(PATH_SRC)/cluster.cpp
-MAIN_DEP = $(addprefix $(PATH_INC)/, Database.h Statement.h cluster.hpp student.hpp utility.hpp) $(PATH_SRC)/main.cpp
+MAIN_DEP = $(addprefix $(PATH_INC)/, Database.h Statement.h cluster.hpp student.hpp) $(PATH_SRC)/main.cpp
 BACK_DEP = $(addprefix $(PATH_INC)/, Backup.h Exception.h) $(PATH_SRC)/Backup.cpp
 CLMN_DEP = $(PATH_INC)/Column.h $(PATH_SRC)/Column.cpp
 DATA_DEP = $(addprefix $(PATH_INC)/, Statement.h Assertion.h Exception.h) $(PATH_SRC)/Database.cpp
@@ -19,7 +17,7 @@ EXCP_DEP = $(PATH_INC)/Exception.h $(PATH_SRC)/Exception.cpp
 STMT_DEP = $(addprefix $(PATH_INC)/, Statement.h Database.h Column.h Assertion.h Exception.h) $(PATH_SRC)/Statement.cpp
 TRNS_DEP = $(addprefix $(PATH_INC)/, Transaction.h Database.h Assertion.h) $(PATH_SRC)/Transaction.cpp
 
-NAME_DEP = $(addprefix $(PATH_BIN)/, utility.o vector2.o student.o cluster.o main.o Backup.o Column.o Database.o Exception.o Statement.o Transaction.o)
+NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o student.o main.o Backup.o Column.o Database.o Exception.o Statement.o Transaction.o)
 
 .PHONY: all
 all:
@@ -44,14 +42,8 @@ $(PATH_BIN)/$(CCNAME): $(NAME_DEP)
 $(PATH_BIN)/vector2.o: $(VEC2_DEP)
 	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/vector2.cpp -c -o $(PATH_BIN)/vector2.o
 
-$(PATH_BIN)/utility.o: $(UTIL_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/utility.cpp -c -o $(PATH_BIN)/utility.o
-
 $(PATH_BIN)/student.o: $(SDNT_DEP)
 	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/student.cpp -c -o $(PATH_BIN)/student.o
-
-$(PATH_BIN)/cluster.o: $(CLST_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/cluster.cpp -c -o $(PATH_BIN)/cluster.o
 
 $(PATH_BIN)/main.o: $(MAIN_DEP)
 	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o

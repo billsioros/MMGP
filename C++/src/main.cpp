@@ -3,35 +3,61 @@
 #include "Statement.h"
 #include "cluster.hpp"
 #include "student.hpp"
-#include "utility.hpp"
 #include <list>
 #include <iostream>
 #include <ctime>
 #include <memory>
 #include <limits>
 #include <stdexcept>
+#include <cmath>
 
-double _evaluation(const Cluster&, const Cluster&);
+static std::unique_ptr<SQLite::Database> database; static std::string daypart;
 
-static std::unique_ptr<SQLite::Database> db;
-static const char * dayPart = "Morning";
+double _evaluation(const Cluster<Student>&, const Cluster<Student>&);
 
 int main(int argc, char * argv[])
 {
+    if (argc < 3)
+    {
+        std::cerr << "<ERR>: Not enough arguements" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    daypart = argv[2];
+    try
+    {
+        database.reset(new SQLite::Database(argv[1]));
+
+        SQLite::Statement stmt(*database, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?");
+
+        stmt.bind(1, daypart + "Distance");
+
+        if (!stmt.executeStep())
+            daypart.clear();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
+    if (daypart.empty())
+    {
+        std::cerr << "<ERR>: No such table" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
     std::list<Student> students;
 
     try
     {
-        db.reset(new SQLite::Database(argv[1]));
-
-        SQLite::Statement stmt(*db,
+        SQLite::Statement stmt(*database,
             "SELECT Student.StudentID, Student.AddressID, "\
             "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
             "Address.GPS_X, Address.GPS_Y "\
             "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID and Student.DayPart = ? ");
+            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 50");
 
-        stmt.bind(1, dayPart);
+        stmt.bind(1, daypart);
 
         while (stmt.executeStep())
         {
@@ -40,7 +66,7 @@ int main(int argc, char * argv[])
             const char * _studentId = stmt.getColumn(current++).getText();
             const char * _addressId = stmt.getColumn(current++).getText();
 
-            bool _days[5];
+            bool _days[5] = { false };
             for (; current < 7; current++)
                 _days[current] = stmt.getColumn(current).getText()[0] == '1';
 
@@ -52,13 +78,9 @@ int main(int argc, char * argv[])
 
             double _t[] =
             {
-                0.0,
-                0.0
+                0.0, // stmt.getColumn(current++).getDouble(),
+                0.0  // stmt.getColumn(current++).getDouble()
             };
-            // {
-            //     stmt.getColumn(current++).getDouble(),
-            //     stmt.getColumn(current++).getDouble()
-            // };
 
             students.emplace_back(_studentId, _addressId, _days, _p, _t);
         }
@@ -83,7 +105,7 @@ int main(int argc, char * argv[])
 
     std::clock_t beg = std::clock();
 
-    const Cluster * cluster = Cluster::hierarchical(students, _evaluation);
+    const Cluster<Student> * cluster = Cluster<Student>::hierarchical(students, _evaluation);
 
     std::cerr << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
 
@@ -93,7 +115,7 @@ int main(int argc, char * argv[])
     std::cout << "|POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
     std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
 
-    cluster->traverse([](const Cluster& cluster) { std::cout <<  cluster.centroid() << std::endl; });
+    cluster->traverse([](const Cluster<Student>& cluster) { std::cout <<  cluster.centroid() << std::endl; });
 
     std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
 
@@ -102,33 +124,59 @@ int main(int argc, char * argv[])
     return 0;
 }
 
-double _evaluation(const Cluster& A, const Cluster& B)
+static double haversine(const Vector2& A, const Vector2& B)
 {
-    auto DB_Distance = [&](const Student& A, const Student& B)
+    auto rads = [](double degrees) { return degrees * M_PI / 180.0; };
+
+    const double f1 = rads(A.x()), f2 = rads(B.x());
+    const double l1 = rads(A.y()), l2 = rads(B.y());
+
+    const double u1 = std::sin((f2 - f1) / 2.0), u2 = std::sin((l2 - l1) / 2.0);
+
+    return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
+}
+
+static double intersection(const Vector2& A, const Vector2& B)
+{
+    const double Ax = A.x(), Ay = A.y();
+    const double Bx = B.x(), By = B.y();
+
+    const double maxX = Ax > Bx ? Ax : Bx;
+    const double minY = Ay < By ? Ay : By;
+
+    return (minY - maxX);
+}
+
+static double DB_Distance(const Student& A, const Student& B)
+{
+    try
     {
-        try
+        SQLite::Statement stmt(*database, "SELECT Duration FROM " + daypart + "Distance WHERE AddressID_1 = ? AND AddressID_2 = ?");
+
+        stmt.bind(1, A._addressId);
+        stmt.bind(2, B._addressId);
+
+        if (!stmt.executeStep())
         {
-            SQLite::Statement stmt(*db, "SELECT Duration FROM " + std::string(dayPart) + "Distance" + " WHERE AddressID_1 = ? and AddressID_2 = ?");
-
-            stmt.bind(1, A._addressId);
-            stmt.bind(2, B._addressId);
-
-            if (!stmt.executeStep())
-                throw std::out_of_range("<ERR>: Existing students don' t have a recorded distance");
-
-            return stmt.getColumn(0).getDouble();
+            std::cerr << "<ERR>: Existing students don' t have a recorded distance" << std::endl;
+            std::exit(EXIT_FAILURE);
         }
-        catch (std::exception& e)
-        {
-            std::cerr << e.what() << std::endl;
-        }
-    };
 
+        return stmt.getColumn(0).getDouble();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+};
+
+double _evaluation(const Cluster<Student>& A, const Cluster<Student>& B)
+{
     const Student * target[] = { nullptr, nullptr };
     const Student * best[]   = { nullptr, nullptr };
     double min[]             = { -1.0,       -1.0 };
 
-    auto nearest = [&](const Cluster& cluster)
+    auto nearest = [&](const Cluster<Student>& cluster)
     {
         const Student * cen = &cluster.centroid();
         

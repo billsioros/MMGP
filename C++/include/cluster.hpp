@@ -1,42 +1,42 @@
 
-#ifndef __CLUSTER__
-#define __CLUSTER__
+#pragma once
 
-#include "student.hpp"
-#include <list>         // std::list<Student>
-#include <functional>   // std::function<double(const Cluster&, const Cluster&)>
+#include <list>         // std::list
+#include <functional>   // std::function
 
+template <typename T>
 class Cluster
 {
 protected:
 
     std::size_t _size;
 
-    Student _centroid;
+    T _centroid;
 
     Cluster() : _size(0UL) {}
-    Cluster(const Student& _centroid)  : _size(0UL), _centroid(_centroid) {}
+    Cluster(const T& _centroid)  : _size(0UL), _centroid(_centroid) {}
 
 public:
 
     virtual ~Cluster() {};
 
-    const Student& centroid() const { return _centroid; }
+    const T& centroid() const { return _centroid; }
 
     static const Cluster * hierarchical
     (
-        const std::list<Student>&,
+        const std::list<T>&,
         const std::function<double(const Cluster&, const Cluster&)>&
     );
 
-    virtual void traverse(const std::function<void(const Cluster&)>& f) const;
+    virtual void traverse(const std::function<void(const Cluster<T>&)>& f) const;
 };
 
-class ICluster : public Cluster
+template <typename T>
+class ICluster : public Cluster<T>
 {
-    friend class Cluster;
+    friend class Cluster<T>;
 
-    const Cluster * _left, * _right;
+    const Cluster<T> * _left, * _right;
 
     ICluster() : _left(nullptr), _right(nullptr) {}
 
@@ -46,7 +46,7 @@ class ICluster : public Cluster
         if (_right) delete _right;
     }
 
-    void traverse(const std::function<void(const Cluster&)>& f) const;
+    void traverse(const std::function<void(const Cluster<T>&)>& f) const;
 };
 
-#endif
+#include "cluster.ipp"
