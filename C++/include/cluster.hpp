@@ -2,11 +2,9 @@
 #ifndef __CLUSTER__
 #define __CLUSTER__
 
-#include "vector2.hpp"
 #include "student.hpp"
 #include <list>         // std::list<Student>
 #include <functional>   // std::function<double(const Cluster&, const Cluster&)>
-#include <iosfwd>       // Declaration of istream & ostream
 
 class Cluster
 {
@@ -24,8 +22,6 @@ public:
     virtual ~Cluster() {};
 
     const Student& centroid() const { return _centroid; }
-
-    static double evaluation(const Cluster&, const Cluster&);
 
     static const Cluster * hierarchical
     (

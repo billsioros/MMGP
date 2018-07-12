@@ -4,9 +4,14 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compile executable",
+            "label": "Build",
             "type": "shell",
             "command": "cd C++; make; cd ..;"
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "cd C++; make clean; cd ..;"
         }
     ]
 }

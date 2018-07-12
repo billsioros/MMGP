@@ -3,33 +3,28 @@
 #define __STUDENT__
 
 #include "vector2.hpp"
+#include <bitset>
+#include <string>
 #include <iosfwd>
 
-class Student
+struct Student
 {
-    friend class Cluster;
+    std::string    _studentId;
+    std::string    _addressId;
+    std::bitset<5> _days;
+    Vector2        _position;
+    Vector2        _timespan;
 
-    std::size_t _id;
-    Vector2     _position;
-    Vector2     _timespan;
-
-public:
-
-    Student() : _id(0UL) {}
-    Student(std::size_t _id, const Vector2& _position, const Vector2& _timespan)
+    Student() {}
+    Student(const char * _studentId, const char * _addressId, const bool _days[], const double _p[], const double _t[])
     :
-    _id(_id), _position(_position), _timespan(_timespan)
+    _studentId(_studentId), _addressId(_addressId), _position(_p[0], _p[1]), _timespan(_t[0], _t[1])
     {
+        for (std::size_t i = 0UL; i < 5UL; i++)
+            this->_days.set(i, _days[i]);
     }
-    
-    unsigned id() const { return _id; }
-    const Vector2& position() const { return _position; }
-    const Vector2& timespan() const { return _timespan; }
 
     friend std::ostream& operator<<(std::ostream&, const Student&);
-
-    friend bool operator==(const Student&, const Student&);
-    friend bool operator!=(const Student&, const Student&);
 };
 
 #endif
