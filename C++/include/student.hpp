@@ -4,6 +4,7 @@
 #include "vector2.hpp"
 #include <bitset>
 #include <string>
+#include <list>
 #include <iosfwd>
 
 struct Student
@@ -24,4 +25,20 @@ struct Student
     }
 
     friend std::ostream& operator<<(std::ostream&, const Student&);
+};
+
+struct Bus
+{
+    std::string        _busId;
+    unsigned           _number;
+    unsigned           _capacity;
+    std::list<Student> _students;
+
+    Bus(const char * _busId, unsigned _number, unsigned _capacity)
+    :
+    _busId(_busId), _number(_number), _capacity(_capacity)
+    {
+    }
+
+    friend std::ostream& operator<<(std::ostream&, const Bus&);
 };

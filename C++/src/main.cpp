@@ -4,6 +4,7 @@
 #include "cluster.hpp"
 #include "student.hpp"
 #include <list>
+#include <vector>
 #include <iostream>
 #include <ctime>
 #include <memory>
@@ -92,14 +93,14 @@ int main(int argc, char * argv[])
     
     std::cout << std::endl;
     
-    std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
-    std::cout << "|POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
-    std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
+    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
+    std::cout << "|ID                                    |POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
+    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
     
-    for (const auto& current : students)
-        std::cout << current << std::endl;
+    for (const auto& student : students)
+        std::cout << student << std::endl;
 
-    std::cout << "+-----------------------+--------------------------+------+" << std::endl;
+    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
 
     // CLUSTERING
 
@@ -111,16 +112,48 @@ int main(int argc, char * argv[])
 
     std::cout << std::endl;
 
-    std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
-    std::cout << "|POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
-    std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
+    // std::vector<Bus> buses;
+    // try
+    // {
+    //     SQLite::Statement stmt(*database, "SELECT * FROM BUS");
 
-    cluster->traverse([](const Cluster<Student>& cluster) { std::cout <<  cluster.centroid() << std::endl; });
+    //     while (stmt.executeStep())
+    //     {
+    //         const char * _busId    = stmt.getColumn(0).getText();
+    //         unsigned     _number   = stmt.getColumn(1).getUInt();
+    //         unsigned     _capacity = stmt.getColumn(2).getUInt();
 
-    std::cout << "+-----------------------+-------------------------+-------+" << std::endl;
+    //         buses.emplace_back(_busId, _number, _capacity);
+    //     }
+    // }
+    // catch (std::exception& e)
+    // {
+    //     std::cerr << e.what() << std::endl;
+    // }
+
+    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
+    std::cout << "|ID                                    |POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
+    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
+    
+    // std::size_t index = 0UL;
+    cluster->traverse(
+        [&](const Cluster<Student>& cluster)
+        {
+            std::cout << cluster.centroid() << std::endl;
+
+            // if (buses[index]._students.size() < buses[index]._capacity)
+            //     buses[index]._students.push_back(cluster.centroid());
+            // else
+            //     index++;
+        });
+
+    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
 
     delete cluster;
     
+    // for (const auto& bus : buses)
+    //     std::cout << bus << std::endl;
+
     return 0;
 }
 
