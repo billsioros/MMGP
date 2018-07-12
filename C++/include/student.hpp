@@ -1,6 +1,5 @@
 
-#ifndef __STUDENT__
-#define __STUDENT__
+#pragma once
 
 #include "vector2.hpp"
 #include <bitset>
@@ -26,5 +25,3 @@ struct Student
 
     friend std::ostream& operator<<(std::ostream&, const Student&);
 };
-
-#endif

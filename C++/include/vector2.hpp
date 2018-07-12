@@ -1,6 +1,5 @@
 
-#ifndef __VECTOR2__
-#define __VECTOR2__
+#pragma once
 
 #include <iosfwd>       // Declaration of istream & ostream
 
@@ -40,5 +39,3 @@ public:
     friend bool operator==(const Vector2&, const Vector2&);
     friend bool operator!=(const Vector2&, const Vector2&);
 };
-
-#endif
