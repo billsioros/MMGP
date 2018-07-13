@@ -4,8 +4,6 @@
 1. Threading
 
 #### TAGS:
-1. Clustering 1.11
-
-## LOGGING: (./bin/MMGP >> out.txt) 2>&1 | tee -a log.txt
+1. Clustering 1.12
 
 ## SQLite3 Wrapper: https://github.com/SRombauts/SQLiteCpp

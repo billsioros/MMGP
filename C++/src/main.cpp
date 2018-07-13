@@ -2,7 +2,7 @@
 #include "Database.h"
 #include "Statement.h"
 #include "cluster.hpp"
-#include "student.hpp"
+#include "manager.hpp"
 #include <list>
 #include <vector>
 #include <iostream>
@@ -12,9 +12,7 @@
 #include <stdexcept>
 #include <cmath>
 
-static std::unique_ptr<SQLite::Database> database; static std::string daypart;
-
-double _evaluation(const Cluster<Student>&, const Cluster<Student>&);
+double _evaluation(SQLite::Database& database, const Cluster<Manager::Student>&, const Cluster<Manager::Student>&, const std::string&);
 
 int main(int argc, char * argv[])
 {
@@ -24,135 +22,60 @@ int main(int argc, char * argv[])
         std::exit(EXIT_FAILURE);
     }
 
-    daypart = argv[2];
+    std::unique_ptr<SQLite::Database> database;
     try
     {
-        database.reset(new SQLite::Database(argv[1]));
-
-        SQLite::Statement stmt(*database, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?");
-
-        stmt.bind(1, daypart + "Distance");
-
-        if (!stmt.executeStep())
-            daypart.clear();
+        database = std::make_unique<SQLite::Database>(argv[1]);
     }
     catch (std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }
-
-    if (daypart.empty())
-    {
-        std::cerr << "<ERR>: No such table" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    std::list<Student> students;
-
-    try
-    {
-        SQLite::Statement stmt(*database,
-            "SELECT Student.StudentID, Student.AddressID, "\
-            "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
-            "Address.GPS_X, Address.GPS_Y "\
-            "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 50");
-
-        stmt.bind(1, daypart);
-
-        while (stmt.executeStep())
-        {
-            int current = 0;
-
-            const char * _studentId = stmt.getColumn(current++).getText();
-            const char * _addressId = stmt.getColumn(current++).getText();
-
-            bool _days[5] = { false };
-            for (; current < 7; current++)
-                _days[current] = stmt.getColumn(current).getText()[0] == '1';
-
-            double _p[] =
-            {
-                stmt.getColumn(current++).getDouble(),
-                stmt.getColumn(current++).getDouble()
-            };
-
-            double _t[] =
-            {
-                0.0, // stmt.getColumn(current++).getDouble(),
-                0.0  // stmt.getColumn(current++).getDouble()
-            };
-
-            students.emplace_back(_studentId, _addressId, _days, _p, _t);
-        }
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "<ERR>: " << e.what() << std::endl;
-    }
     
-    std::cout << std::endl;
-    
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-    std::cout << "|ID                                    |POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-    
-    for (const auto& student : students)
-        std::cout << student << std::endl;
-
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-
-    // CLUSTERING
+    std::list<Manager::Student> students;
+    Manager::load(*database, students, argv[2]); // Manager::print(students);
 
     std::clock_t beg = std::clock();
 
-    const Cluster<Student> * cluster = Cluster<Student>::hierarchical(students, _evaluation);
+    const Cluster<Manager::Student> * cluster =
+        Cluster<Manager::Student>::hierarchical(students,
+            [&](const Cluster<Manager::Student>& A, const Cluster<Manager::Student>& B)
+            {
+                return _evaluation(*database, A, B, argv[2]);
+            });
 
-    std::cerr << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
+    std::cout << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
 
-    std::cout << std::endl;
+    students.clear();
 
-    // std::vector<Bus> buses;
-    // try
-    // {
-    //     SQLite::Statement stmt(*database, "SELECT * FROM BUS");
+    std::vector<Manager::Bus> buses;
+    Manager::load(*database, buses); // Manager::print(buses);
 
-    //     while (stmt.executeStep())
-    //     {
-    //         const char * _busId    = stmt.getColumn(0).getText();
-    //         unsigned     _number   = stmt.getColumn(1).getUInt();
-    //         unsigned     _capacity = stmt.getColumn(2).getUInt();
-
-    //         buses.emplace_back(_busId, _number, _capacity);
-    //     }
-    // }
-    // catch (std::exception& e)
-    // {
-    //     std::cerr << e.what() << std::endl;
-    // }
-
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-    std::cout << "|ID                                    |POSITION               |TIMESPAN                 |DAYS   +" << std::endl;
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
+    std::list<std::vector<Manager::Bus>> schedules; schedules.push_back(buses);
     
-    // std::size_t index = 0UL;
+    std::size_t busId = 0UL;
     cluster->traverse(
-        [&](const Cluster<Student>& cluster)
+        [&](const Cluster<Manager::Student>& cluster)
         {
-            std::cout << cluster.centroid() << std::endl;
+            if (busId >= buses.size())
+            {
+                schedules.push_back(buses); busId = 0UL;
+            }
 
-            // if (buses[index]._students.size() < buses[index]._capacity)
-            //     buses[index]._students.push_back(cluster.centroid());
-            // else
-            //     index++;
+            if (schedules.back()[busId]._students.size() < schedules.back()[busId]._capacity)
+                schedules.back()[busId]._students.push_back(cluster.centroid());
+            else
+                busId++;
         });
 
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-
     delete cluster;
-    
-    // for (const auto& bus : buses)
-    //     std::cout << bus << std::endl;
+
+    for (const auto& schedule : schedules)
+    {
+        std::cout << "***" << std::endl;
+        Manager::print(schedule);
+        std::cout << "***" << std::endl;
+    }
 
     return 0;
 }
@@ -180,38 +103,15 @@ static double intersection(const Vector2& A, const Vector2& B)
     return (minY - maxX);
 }
 
-static double DB_Distance(const Student& A, const Student& B)
+double _evaluation(SQLite::Database& database, const Cluster<Manager::Student>& A, const Cluster<Manager::Student>& B, const std::string& daypart)
 {
-    try
+    const Manager::Student * target[] = { nullptr, nullptr };
+    const Manager::Student * best[]   = { nullptr, nullptr };
+    double min[]                      = { -1.0,       -1.0 };
+
+    auto nearest = [&](const Cluster<Manager::Student>& cluster)
     {
-        SQLite::Statement stmt(*database, "SELECT Duration FROM " + daypart + "Distance WHERE AddressID_1 = ? AND AddressID_2 = ?");
-
-        stmt.bind(1, A._addressId);
-        stmt.bind(2, B._addressId);
-
-        if (!stmt.executeStep())
-        {
-            std::cerr << "<ERR>: Existing students don' t have a recorded distance" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        return stmt.getColumn(0).getDouble();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
-};
-
-double _evaluation(const Cluster<Student>& A, const Cluster<Student>& B)
-{
-    const Student * target[] = { nullptr, nullptr };
-    const Student * best[]   = { nullptr, nullptr };
-    double min[]             = { -1.0,       -1.0 };
-
-    auto nearest = [&](const Cluster<Student>& cluster)
-    {
-        const Student * cen = &cluster.centroid();
+        const Manager::Student * cen = &cluster.centroid();
         
         double distance;
         if ((distance = haversine(cen->_position, target[0]->_position)) < min[0])
@@ -225,11 +125,11 @@ double _evaluation(const Cluster<Student>& A, const Cluster<Student>& B)
         }
     };
 
-    const Student& pa = A.centroid(), &pb = B.centroid();
+    const Manager::Student& pa = A.centroid(), &pb = B.centroid();
 
     const double w[] = { 0.25, 0.25 }, max = std::numeric_limits<double>().max();
 
-    std::pair<const Student *, const Student *> pair1, pair2;
+    std::pair<const Manager::Student *, const Manager::Student *> pair1, pair2;
 
     target[0] = &pa; target[1] = &pb; min[0] = min[1] = max; A.traverse(nearest);
     pair1.first = best[0]; pair2.first = best[1];
@@ -239,8 +139,8 @@ double _evaluation(const Cluster<Student>& A, const Cluster<Student>& B)
 
     double dx = 0.0, dt = 0.0;
 
-    dx += (1.0 - w[0]) * DB_Distance(*pair1.first, *pair1.second);
-    dx += w[0]         * DB_Distance(*pair2.first, *pair2.second);
+    dx += (1.0 - w[0]) * Manager::distance(database, *pair1.first, *pair1.second, daypart);
+    dx += w[0]         * Manager::distance(database, *pair2.first, *pair2.second, daypart);
 
     dt = intersection(A.centroid()._timespan, B.centroid()._timespan);
 
