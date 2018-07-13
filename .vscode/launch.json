@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/C++/bin/MMGP",
-            "args": ["../../MMGP_Data.db"],
+            "args": ["../../MMGP_Data.db", "Morning"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}/C++/bin",
             "environment": [],
@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Compile executable"
+            "preLaunchTask": "Build"
         }
     ]
 }

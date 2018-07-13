@@ -54,6 +54,7 @@
         "cstdarg": "cpp",
         "cstddef": "cpp",
         "cinttypes": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "string": "cpp"
     }
 }
