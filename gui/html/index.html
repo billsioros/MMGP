@@ -3,33 +3,62 @@
     <head>
         <meta charset="UTF-8">
         <meta name="author" content="Vasilis Sioros and John Maliaras">
-        <meta name="description" content="Multi-agent Multi-targeted Geospacial Pathfinding">
-        <link rel="stylesheet" href="../css/stylesheet.css">
+        <meta name="description" content="Multiagent Multitarget Geospatial Pathfinding">
         <title>MMGP | Home</title>
+        <link rel="stylesheet" href="../css/stylesheet.css">
     </head>
 
     <body>
         <header>
             <div class="container">
-                <h1>Multi-agent Multi-targeted Geospacial Pathfinding</h1>
-                <nav>
+                <h1 id="branding">MMGP</h1>
+
+                <div id=search>
+                    <input type="text" placeholder="Search by...">
                     <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
+                        <li><input type="radio" name="property" value="name" checked>Name<br></li>
+                        <li><input type="radio" name="property" value="address">Address<br></li>
+                        <li><input type="radio" name="property" value="bus">Bus<br></li>
                     </ul>
-                </nav>
+                </div>
             </div>
         </header>
-        
 
-        <div class="container">
-            <h1>Multi-agent Multi-targeted Geospacial Pathfinding</h1>
-            <p>Database retrieval, data clustering and routing for all cases of agents and targets</p>
-        </div>
+        <main>
+            <div class="container">
+                <h2 id="about">Multiagent Multitarget Geospatial Pathfinding</h2>
+                <ul>
+                    <li>
+                        <p>
+                            Firstly, information, crucial in determining the best route for every bus,
+                            is being retrieved from the school's database.
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            For each of the students, given that the information retrieved from the database was valid,
+                            we use a Geospatial API in order to determine where we should pick them up from and
+                            how time consuming is going to be.
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            The students are being clustered into groups based on how close they are to each other
+                            as well as to the school and if they fall into the same time-window.
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            Lastly, the best path for the bus to follow is determined among each group of students
+                        </p>
+                    </li>
+                </ul>
+            </div>
+        </main>
 
         <footer>
             <div class="container">
-                Copyright &copy; 2018
+                <h4>Copyright &copy; 2018</h4>
             </div>
         </footer>
     </body>
