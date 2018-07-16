@@ -61,7 +61,7 @@ void Manager::load(SQLite::Database& database, std::list<Student>& students, con
             "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
             "Address.GPS_X, Address.GPS_Y "\
             "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 50");
+            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? -- LIMIT 50");
 
         stmt.bind(1, daypart);
 
