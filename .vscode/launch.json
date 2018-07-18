@@ -8,10 +8,10 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/C++/bin/MMGP",
+            "program": "${workspaceFolder}/c++/bin/MMGP",
             "args": ["../../MMGP_Data.db", "Morning"],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}/C++/bin",
+            "cwd": "${workspaceFolder}/c++/bin",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
@@ -21,8 +21,8 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ],
-            "preLaunchTask": "Build"
+            ]
+            // "preLaunchTask": "Build"
         }
     ]
 }
