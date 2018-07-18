@@ -5,6 +5,7 @@
 
 #### TAGS:
 1. Clustering 1.12
-2. TSP 0.2
+2. TSP 0.3
 
 ## SQLite3 Wrapper: https://github.com/SRombauts/SQLiteCpp
+(MIT License)
