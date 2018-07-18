@@ -19,9 +19,11 @@ class DBManager:
             self.CreateDatabase(fileName)
 
         self.FileName = fileName
-        self.GoogleAPIKey = GoogleAPIKey
-        self.OpenAPIKey = OpenAPIKey
-        self.MapsHandler = None
+        self._GoogleAPIKey = GoogleAPIKey
+        self._OpenAPIKey = OpenAPIKey
+        self._MapsHandler = None
+        
+        self._Parser = None
 
         self.Connect(fileName)
         
@@ -35,7 +37,6 @@ class DBManager:
                     LastName    varchar(255),       \
                     FirstName   varchar(255),       \
                     AddressID   varchar(255),       \
-                    Notes       text,               \
                     Level       varchar(255),       \
                     Class       varchar(255),       \
                     Monday      bit,                \
@@ -44,6 +45,13 @@ class DBManager:
                     Thursday    bit,                \
                     Friday      bit,                \
                     DayPart     varchar(255),       \
+                    EarlyPickup varchar(255),       \
+                    LatePickup  varchar(255),       \
+                    EarlyDrop   varchar(255),       \
+                    LateDrop    varchar(255),       \
+                    Around      varchar(255),       \
+                    AltAddress  varchar(255),       \
+                    Comment     text,               \
                     Foreign Key (AddressID) References Address(AddressID)  )"
         self.Cursor.execute(sql)
 
@@ -99,6 +107,20 @@ class DBManager:
                     Primary Key (BusID)         )"
         self.Cursor.execute(sql)   
 
+        sql = "Create Table Depot (             \
+                AddressID   varchar(255),       \
+                Road        varchar(255),       \
+                Number      varchar(255),       \
+                ZipCode     int,                \
+                Prefecture  varchar(255),       \
+                Municipal   varchar(255),       \
+                Area        varchar(255),       \
+                GPS_X       decimal(20, 14),    \
+                GPS_Y       decimal(20, 14),    \
+                FullAddress varchar(255),       \
+                FormattedAddress varchar(255),  \
+                Primary Key (AddressID)         )"
+        self.Cursor.execute(sql)
 
         self.Commit()
         self.Disconnect()
@@ -206,10 +228,30 @@ class DBManager:
                                         Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
                 
                 # Add student to the database
-                StudentList = [ID, LastName, FirstName, HashAddress, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart]
+                if Notes:
+                    self.__InitParser()
+                    NotesDict = self._Parser.Parse(Notes)
+                    EarlyPickup = NotesDict["Early Pickup"]
+                    LatePickup = NotesDict["Late Pickup"]
+                    EarlyDrop = NotesDict["Early Drop"]
+                    LateDrop = NotesDict["Late Drop"]
+                    AltAddress = NotesDict["Address"]
+                    Comment = NotesDict["Comments"]
+                    Around = NotesDict["Around"]
+                else:
+                    EarlyPickup = None
+                    LatePickup = None
+                    EarlyDrop = None
+                    LateDrop = None
+                    AltAddress = None
+                    Comment = None
+                    Around = None
 
+                StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,\
+                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment]
+                
                 self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
 
             # Insert All Records that do not have GPS coordinates
@@ -234,7 +276,7 @@ class DBManager:
                     if i == 99:
                         sleep(4) # Sleep 4 seconds for safety
                         i = 0
-                    FormattedAddress, GPSX, GPSY = self.MapsHandler.Geocode(FullAddress)
+                    FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
                     i += 1
 
                     valid = True
@@ -252,10 +294,30 @@ class DBManager:
                                             Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
 
                 # Add student to the database
-                StudentList = [ID, LastName, FirstName, HashAddress, Notes, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart]
+                if Notes:
+                    self.__InitParser()
+                    NotesDict = self._Parser.Parse(Notes)
+                    EarlyPickup = NotesDict["Early Pickup"]
+                    LatePickup = NotesDict["Late Pickup"]
+                    EarlyDrop = NotesDict["Early Drop"]
+                    LateDrop = NotesDict["Late Drop"]
+                    AltAddress = NotesDict["Address"]
+                    Comment = NotesDict["Comments"]
+                    Around = NotesDict["Around"]
+                else:
+                    EarlyPickup = None
+                    LatePickup = None
+                    EarlyDrop = None
+                    LateDrop = None
+                    AltAddress = None
+                    Comment = None
+                    Around = None
 
+                StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,\
+                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment]
+                
                 self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
         self.__DiscardAddresses()
 
@@ -276,10 +338,26 @@ class DBManager:
                                         Where BusID = ?", ToAdd)
 
 
+    def InsertDepot(self, RowList):
+
+        for Road, Number, ZipCode, Prefecture, Municipal, Area in RowList:
+
+            FullAddress = util.ConcatenateAddress(Road, Number, ZipCode, Municipal, Area, Prefecture, "GREECE")
+            HashAddress = self.__Hash(FullAddress)
+            self.__InitMapsHandler()
+            FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
+
+            AddressList = [HashAddress, Road, Number, ZipCode, Prefecture, Municipal, Area, GPSX, GPSY,\
+            FullAddress, FormattedAddress]
+
+            self.Cursor.execute("Insert Into Depot    \
+                                Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+
+
     def InsertDistances(self, DayPart, direct=False, fileName=None):
 
 
-        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Morning":
+        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Study":
             raise ValueError("Error: Non valid DayPart.")
 
         Table = DayPart + "Distance"
@@ -294,13 +372,17 @@ class DBManager:
 
         Addresses = self.Cursor.fetchall()
 
+        Depot = self.GetDepot()
+        Depot = (Depot[0], Depot[1], Depot[2])
+        Addresses.append(Depot)
 
         Origins = list()
         for id1, x1, y1 in Addresses:
             Origins.append((id1, (y1, x1)))
 
         self.__InitMapsHandler()
-        Matrix = self.MapsHandler.DistanceMatrix(Origins)
+        Matrix = self._MapsHandler.DistanceMatrix(Origins)
+        print Table
         
         if not direct:
             if not fileName:
@@ -316,8 +398,12 @@ class DBManager:
         else:
             for id1, id2, duration, distance in Matrix:
                 # All previous distances will be overwritten
-                self.Cursor.execute("Delete From ?", [Table])
-                sql = "Insert into " + Table + " Values('" + id1 + "', '" + id2 + "', "  + duration + ", " + distance + ")"
+                self.Cursor.execute("Delete From " + Table)
+                if not duration:
+                    duration = 0
+                if not distance:
+                    distance = 0
+                sql = "Insert into " + Table + " Values(\"" + str(id1) + "\", \"" + str(id2) + "\", "  + str(duration) + ", " + str(distance) + ")"
                 self.Cursor.execute(sql)
 
 
@@ -366,14 +452,14 @@ class DBManager:
 
     def GetAddresses(self):
         self.Connect(self.FileName)
-        sql = " Select AddressID, GPS_X, GPS_Y  \
+        sql = " Select AddressID, GPS_X, GPS_Y, FullAddress \
                 From Address"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
 
         Addresses = dict()
-        for ID, X, Y in Rows:
-            Addresses[ID] = (X, Y)
+        for ID, X, Y, FullAddress in Rows:
+            Addresses[ID] = (X, Y, FullAddress)
         
         return Addresses
 
@@ -405,29 +491,44 @@ class DBManager:
     def GetDistances(self, DayPart):
         self.Connect(self.FileName)
 
-        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Morning":
+        if DayPart != "Morning" and DayPart != "Noon" and DayPart != "Study":
             raise ValueError("Error: Non valid DayPart.")
 
         sql = "Select * From " + DayPart + "Distance"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
-
-        sql = "Select AddressID From Address"
-        self.Cursor.execute(sql)
-        Addresses = self.Cursor.fetchall()
-
-        Distances = dict()
-        for ad in Addresses:
-            Distances[ad[0]] = list()
         
-        for ID1, ID2, Distance in Rows:
-            Distances[ID1].append((ID2, Distance))
+        Distances = {}
+        for ID1, ID2, Duration, Distance in Rows:
+            Distances[ID1] = {}
         
+        for ID1, ID2, Duration, Distance in Rows:
+            Distances[ID1][ID2] = (Duration, Distance)
+
         return Distances
 
 
-    def __InitMapsHandler(self):       
-        self.MapsHandler = util.MapsHandler(GoogleAPIKey=self.GoogleAPIKey, OpenAPIKey=self.OpenAPIKey)
+    def GetDepot(self, AddressID=None):
+
+        self.Connect(self.FileName)
+        if AddressID:
+            sql = "Select AddressID, GPS_X, GPS_Y, FullAddress From Depot Where AddressID = \"" + AddressID +"\""
+            self.Cursor.execute(sql)
+        else:
+            self.Cursor.execute("Select AddressID, GPS_X, GPS_Y, FullAddress From Depot")
+
+        Depot = self.Cursor.fetchone()
+        return Depot
+
+
+    def __InitParser(self):
+        if not self._Parser:
+            self._Parser = util.Parser()
+    
+
+    def __InitMapsHandler(self):
+        if not self._MapsHandler:
+            self._MapsHandler = util.MapsHandler(GoogleAPIKey=self._GoogleAPIKey, OpenAPIKey=self._OpenAPIKey)
 
     
     def __DiscardAddresses(self):

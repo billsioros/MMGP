@@ -13,7 +13,7 @@ csvfile.write("lng\tlat\tFAddress\tAddress\n")
 
 
 for Lat, Lon, Address, FAdress in Rows:
-        csvfile.write(str(Lat) + "\t" + str(Lon) + "\t" + str(FAdress) + "\t" + str(Address) + "\n")
+    csvfile.write(str(Lat) + "\t" + str(Lon) + "\t" + str(FAdress) + "\t" + str(Address) + "\n")
 
 
 csvfile.close

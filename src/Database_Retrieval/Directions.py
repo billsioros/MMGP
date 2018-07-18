@@ -10,9 +10,9 @@ fileName = sys.argv[1]
 rowIndex = sys.argv[2]
 DayPart = sys.argv[3]
 
-API_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
-dbmanager = dbm("MMGP_data.db", API_key)
+dbmanager = dbm("MMGP_data.db", GoogleAPI_key, OpenAPI_key)
 
 dbmanager.Cursor.execute(\
                 " Select Address.AddressID, Address.GPS_Y, Address.GPS_X    \
@@ -26,7 +26,7 @@ rows = dbmanager.Cursor.fetchall()
 
 rows = rows[0:len(rows)/2]
 
-mh = MapsHandler(APIKey=API_key)
+mh = MapsHandler(GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
 
 waypoints = list()
 for id, y, x in rows:

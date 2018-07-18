@@ -192,6 +192,7 @@ con.close()
 # Create a new Database
 DBManager = DBM("MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
 
+
 DBManager.InsertBus(Buses)
 DBManager.Commit()
 
@@ -206,14 +207,17 @@ Tables.append((NewYearNoon, "Noon"))
 Tables.append((OldYearStudy, "Study"))
 Tables.append((NewYearStudy, "Study"))
 
-
 DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
 
-DBManager.Disconnect()
+DBManager.InsertDepot([["ERECHTHIOU", "6", "17455", "ATTIKIS", "ALIMOY", None]])
+DBManager.Commit()
 
 for DayPart in ["Morning", "Noon", "Study"]:
     DBManager.InsertDistances(DayPart, direct=True)
 
 
+DBManager.Commit()
+
+DBManager.Disconnect()
 GeoFailsFile.close()

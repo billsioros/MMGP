@@ -303,6 +303,82 @@ class MapsHandler:
         return results
         
 
+class Parser:
+
+    def __init__(self):
+        PossibleKeyWords = [\
+        ["NORIT EPIV", "NORIT. EPIV.", "NORIT EPIV.", "NORIT. EPIV", "NORIT.EPIV", "NORIT.EPIV.", "NORITEPIV", "NORITERI EPIVIVASI"],\
+        ["ARGOT EPIV", "ARGOT. EPIV.", "ARGOT EPIV.", "ARGOT. EPIV", "ARGOT.EPIV", "ARGOT.EPIV.", "ARGOTEPIV", "ARGOTERI EPIVIVASI"],\
+        ["NORIT APOV", "NORIT. APOV.", "NORIT APOV.", "NORIT. APOV", "NORIT.APOV", "NORIT.APOV.", "NORITAPOV", "NORITERI APOVIVASI"],\
+        ["ARGOT APOV", "ARGOT. APOV.", "ARGOT APOV.", "ARGOT. APOV", "ARGOT.APOV", "ARGOT.APOV.", "ARGOTAPOV", "ARGOTERI APOVIVASI"],\
+        ["DIEYTHINSI", "DIEYTHINSI.", "DIEYTH", "DIEYTH."],\
+        ["LOIPA", "LOIPA."],\
+        ["PERIPOY", "PERIPOY."]
+        ]
+
+        ActualKeyWords = ["Early Pickup", "Late Pickup", "Early Drop", "Late Drop", "Address", "Comments", "Around"]
+
+        self.KeyWords = dict()
+        for actual, possible in izip(ActualKeyWords, PossibleKeyWords):
+            self.KeyWords[actual] = possible
+
+
+    def Parse(self, Note):
+        Decoder = GreekDecoder()
+
+        Note = Decoder.Decode(Note)
+
+        Indices = dict()
+        Keys = dict()
+        Words = dict()
+        for key in self.KeyWords.keys():
+            for word in self.KeyWords[key]:
+                index = Note.find(word)
+                if index != -1:
+                    Indices[key] = index
+                    Keys[index] = key
+                    Words[key] = word
+                    break
+
+        indiceList = list()
+        for key in Indices.keys():
+            indiceList.append(Indices[key])
+
+        indiceList = sorted(indiceList)
+
+        Data = dict()
+        for i in range(0, len(indiceList)):
+            if i == len(indiceList) - 1:
+                Data[Keys[indiceList[i]]] = Note[indiceList[i] :]
+            else:
+                Data[Keys[indiceList[i]]] = Note[indiceList[i] : indiceList[i + 1]]
+
+        for key in Data.keys():
+            Data[key] = Data[key].replace(Words[key], "")
+            Data[key] = Data[key].strip(" ")
+            Data[key] = Data[key].strip(",")
+            Data[key] = Data[key].strip(":")
+            Data[key] = Data[key].strip(" ")
+            if key != 'Comments' and key != 'Address':
+                
+                Data[key] = self.__FixHour(Data[key])
+
+        for key in self.KeyWords:
+            if key not in Data.keys():
+                Data[key] = None
+
+        return Data
+
+    def __FixHour(self, hour):
+
+        if ":" in hour:
+            hour = hour.replace(":", ".")
+        if "," in hour:
+            hour = hour.replace(",", ".")
+        
+        return hour
+
+
 def ConvertGenitive(Genitive):
     Converter = GreekMunicipalConverter()
     ResultNominative = Converter.Convert(Genitive)
@@ -417,3 +493,7 @@ def GetCredentials(fileName, rowIndex):
                 break
             i += 1
     return [GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName]
+
+
+
+

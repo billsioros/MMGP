@@ -2,6 +2,7 @@ from DBManagement import DBManager as DBM
 import sys
 import csv
 from util import GetCredentials
+from itertools import izip
 
 
 fileName = sys.argv[1]
@@ -16,8 +17,11 @@ if dayPart != "Morning" and dayPart != "Noon" and dayPart != "Study":
 
 
 DBManager = DBM("MMGP_data.db", GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
-DBManager.InsertDistances(dayPart, direct=False, fileName=dayPart + "Distance.tsv")
+#distances = DBManager.GetDistances(dayPart)
+
+
+#DBManager.InsertDistances(dayPart, direct=False, fileName=dayPart + "Distance.tsv")
 #DBManager.InsertDistancesFromFile(dayPart)
-DBManager.Commit()
+#DBManager.Commit()
 
 
