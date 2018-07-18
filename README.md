@@ -1,11 +1,8 @@
 # Multiagent Multitarget Geospatial Pathfinding
 
-#### TODO:
-1. Threading
+#### Version Control
+* Clustering 1.12
+* TSP 0.3
 
-#### TAGS:
-1. Clustering 1.12
-2. TSP 0.3
-
-## SQLite3 Wrapper: https://github.com/SRombauts/SQLiteCpp
-(MIT License)
+#### Third Party Code
+* [SQLite3 Wrapper](https://github.com/SRombauts/SQLiteCpp) (MIT License)
