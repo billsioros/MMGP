@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <iosfwd>       // Declaration of istream & ostream
+#include <iosfwd>       // std::istream & std::ostream
 
 class Vector2
 {

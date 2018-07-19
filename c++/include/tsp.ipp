@@ -2,12 +2,11 @@
 #pragma once
 
 #include "heap.hpp"
-#include <functional>
-#include <vector>
-#include <utility>
-#include <fstream>
-#include <algorithm>
-#include <unordered_set>
+#include <functional>       // std::function
+#include <vector>           // std::vector
+#include <utility>          // std::pair
+#include <fstream>          // std::ostream
+#include <unordered_map>    // std::unordered_map
 
 template <typename T>
 TSP::path<T> TSP::nearestNeighbor(
@@ -82,11 +81,11 @@ TSP::path<T> TSP::multiFragment(
             return false;
 
         const T * current = e._snd;
-        for (unsigned len = 2UL; !out[current].empty(); len++)
+        for (unsigned len = 1UL; !out[current].empty(); len++)
         {
-            const std::pair<const T *, double>& landing = *out[current].begin();
-            if ((current = landing.first) == e._fst)
-                return len == total;
+            const std::pair<const T *, double>& next = *out[current].begin();
+            if ((current = next.first) == e._fst)
+                return (len + 1UL) == total;
         }
 
         return true;
@@ -117,9 +116,9 @@ TSP::path<T> TSP::multiFragment(
     const T * current = &depot;
     do
     {
-        const std::pair<const T * const, double>& landing = (*out[current].begin());
+        const std::pair<const T * const, double>& next = (*out[current].begin());
 
-        path.second.push_back(*(current = landing.first)); path.first += landing.second;
+        path.second.push_back(*(current = next.first)); path.first += next.second;
     } while (current != &depot);
 
     return path;
@@ -144,18 +143,19 @@ TSP::path<T> TSP::opt2(
     auto opt2swap =
     [&totalCost](const path<T>& old, std::size_t i, std::size_t k)
     {
-        path<T> current;
+        path<T> current(0.0, std::vector<T>(old.second.size(), T()));
+
         // 1. take route[0] to route[i-1] and add them in order to new_route
         for (std::size_t j = 0UL; j < i; j++)
-            current.second.push_back(old.second[j]);
+            current.second[j] = old.second[j];
 
         // 2. take route[i] to route[k] and add them in reverse order to new_route
-        for (long long j = static_cast<long long>(k); j >= static_cast<long long>(i); j--)
-            current.second.push_back(old.second[j]);
+        for (std::size_t j = i; j <= k; j++)
+            current.second[j] = old.second[old.second.size() - 1UL - j];
 
         // 3. take route[k+1] to end and add them in order to new_route
         for (std::size_t j = k + 1UL; j < old.second.size(); j++)
-            current.second.push_back(old.second[j]);
+            current.second[j] = old.second[j];
 
         current.first = totalCost(current.second);
 
@@ -183,11 +183,7 @@ template <typename T>
 std::ostream& operator<<(std::ostream& os, const TSP::path<T>& path)
 {
     for (const auto& step : path.second)
-    {
-        os << "[ " << step.first << ", " << step.second << " ]";
-        if (&step != &path.second.back())
-            os << " -> ";
-    }
+        os << step << (&step != &path.second.back() ? " -> " : "");
 
     os << "\nTotal cost: " << path.first;
 

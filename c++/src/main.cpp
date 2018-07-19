@@ -12,14 +12,30 @@
 #include <stdexcept>
 #include <cmath>
 
-double _evaluation(SQLite::Database& database, const Cluster<Manager::Student>&, const Cluster<Manager::Student>&, const std::string&);
+double _evaluation(
+    SQLite::Database&,
+    const Cluster<Manager::Student>&,
+    const Cluster<Manager::Student>&,
+    const std::string&,
+    double w0, double w1);
 
 int main(int argc, char * argv[])
 {
-    if (argc < 3)
+    if (argc < 5)
     {
         std::cerr << "<ERR>: Not enough arguements" << std::endl;
         std::exit(EXIT_FAILURE);
+    }
+
+    double w0, w1;
+    try
+    {
+        w0 = std::stod(argv[3]);
+        w1 = std::stod(argv[4]);
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
     }
 
     std::unique_ptr<SQLite::Database> database;
@@ -41,7 +57,7 @@ int main(int argc, char * argv[])
         Cluster<Manager::Student>::hierarchical(students,
             [&](const Cluster<Manager::Student>& A, const Cluster<Manager::Student>& B)
             {
-                return _evaluation(*database, A, B, argv[2]);
+                return _evaluation(*database, A, B, argv[2], w0, w1);
             });
 
     std::cout << "\n Elapsed time: " << (std::clock() - beg) / (double) CLOCKS_PER_SEC << std::endl;
@@ -71,11 +87,7 @@ int main(int argc, char * argv[])
     delete cluster;
 
     for (const auto& schedule : schedules)
-    {
-        std::cout << "***" << std::endl;
-        Manager::print(schedule);
-        std::cout << "***" << std::endl;
-    }
+        Manager::log(schedule);
 
     return 0;
 }
@@ -103,7 +115,12 @@ static double intersection(const Vector2& A, const Vector2& B)
     return (minY - maxX);
 }
 
-double _evaluation(SQLite::Database& database, const Cluster<Manager::Student>& A, const Cluster<Manager::Student>& B, const std::string& daypart)
+double _evaluation(
+    SQLite::Database& database,
+    const Cluster<Manager::Student>& A,
+    const Cluster<Manager::Student>& B,
+    const std::string& daypart,
+    double w0, double w1)
 {
     const Manager::Student * target[] = { nullptr, nullptr };
     const Manager::Student * best[]   = { nullptr, nullptr };
@@ -139,10 +156,10 @@ double _evaluation(SQLite::Database& database, const Cluster<Manager::Student>& 
 
     double dx = 0.0, dt = 0.0;
 
-    dx += (1.0 - w[0]) * Manager::distance(database, *pair1.first, *pair1.second, daypart);
-    dx += w[0]         * Manager::distance(database, *pair2.first, *pair2.second, daypart);
+    dx += (1.0 - w0) * Manager::distance(database, *pair1.first, *pair1.second, daypart);
+    dx += w0         * Manager::distance(database, *pair2.first, *pair2.second, daypart);
 
     dt = intersection(A.centroid()._timespan, B.centroid()._timespan);
 
-    return (1.0 - w[1]) * (1.0 / dx) + w[1] * dt;
+    return (1.0 - w1) * (1.0 / dx) + w1 * dt;
 }
