@@ -2,7 +2,7 @@
 
 #### Version Control
 * Clustering 1.12
-* TSP 0.3
+* TSP 0.4
 
 #### Third Party Code
 * [SQLite3 Wrapper](https://github.com/SRombauts/SQLiteCpp) (MIT License)

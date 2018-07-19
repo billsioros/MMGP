@@ -2,30 +2,27 @@
 #include "manager.hpp"
 #include "vector2.hpp"
 #include "Database.h"
-#include <bitset>
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
+#include <bitset>       // std::bitset
+#include <string>       // std::string
+#include <fstream>      // std::ostream
+#include <iostream>     // std::cerr
+#include <iomanip>      // std::setw & std::setfill
 
-namespace Manager
+std::ostream& operator<<(std::ostream& os, const Manager::Student& student)
 {
-    std::ostream& operator<<(std::ostream& os, const Student& student)
-    {
-        os << "| " << student._studentId << " | " << student._position << " | " << student._timespan << " | " << student._days << " |";
+    os << student._studentId << ", " << student._position << ", " << student._timespan << ", " << student._days;
 
-        return os;
-    }
+    return os;
+}
 
-    std::ostream& operator<<(std::ostream& os, const Bus& bus)
-    {
-        os << "| ID " << bus._busId;
-        os << " | NUMBER " <<  std::right << std::setw(3) << std::setfill('0') << bus._number;
-        os << " | CAPACITY " << std::right << std::setw(3) << std::setfill('0') << bus._capacity;
-        os << " | SIZE " << std::right << std::setw(3) << std::setfill('0') << bus._students.size() << " |";
+std::ostream& operator<<(std::ostream& os, const Manager::Bus& bus)
+{
+    os << "Bus, " << bus._busId;
+    os << ", " <<  std::right << std::setw(3) << std::setfill('0') << bus._number;
+    os << ", " << std::right << std::setw(3) << std::setfill('0') << bus._capacity;
+    os << ", " << std::right << std::setw(3) << std::setfill('0') << bus._students.size();
 
-        return os;
-    }
+    return os;
 }
 
 void Manager::load(SQLite::Database& database, std::list<Student>& students, const std::string& daypart)
@@ -118,44 +115,30 @@ void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
     }
 }
 
-void Manager::print(const std::list<Student>& students)
+void Manager::log(const std::vector<Bus>& buses)
 {
-    if (students.empty())
-        return;
+    std::ofstream schedules("schedules.csv");
+    if (!schedules.is_open())
+    {
+        std::cerr << "<ERR>: Unable to log bus info" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 
-    std::cout << std::endl;
-
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-    std::cout << "|ID                                    |POSITION               |TIMESPAN                 |DAYS   |" << std::endl;
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-
-    for (const auto& student : students)
-        std::cout << student << std::endl;
-
-    std::cout << "+--------------------------------------+-----------------------+-------------------------+-------+" << std::endl;
-
-    std::cout << std::endl;
-}
-
-void Manager::print(const std::vector<Bus>& buses)
-{
     if (buses.empty())
         return;
 
-    std::cout << std::endl;
+    schedules << "busId, studentId, studentPosition, studentTimespan, studentDays" << std::endl;
 
     for (const auto& bus : buses)
     {
-        std::cout << "+-----------------------------------------+------------+--------------+----------+" << std::endl;
+        if (bus._students.empty())
+            continue;
 
-        std::cout << bus << std::endl;
-
-        std::cout << "+-----------------------------------------+------------+--------------+----------+" << std::endl;
-
-        print(bus._students);
+        for (const auto& student : bus._students)
+            schedules << bus._busId << ", " << student << std::endl;
     }
 
-    std::cout << std::endl;
+    schedules << std::endl;
 }
 
 double Manager::distance(SQLite::Database& database, const Student& A, const Student& B, const std::string& daypart)

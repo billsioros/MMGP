@@ -1,16 +1,14 @@
 
 #include "vector2.hpp"
-#include <fstream>      // Definition of istream & ostream
-#include <iomanip>      // Vector2 IO Operations
+#include <fstream>      // std::istream & std::ostream
+#include <iomanip>      // std::setprecision
 
 // IO:
 std::ostream& operator<<(std::ostream& out, const Vector2& vec2)
 {
-    out << "[ ";
     out << std::fixed << std::setprecision(5) << std::showpos << vec2._x;
-    out << ' ';
+    out << ", ";
     out << std::fixed << std::setprecision(5) << std::showpos << vec2._y;
-    out << " ]";
 }
 
 std::istream& operator>>(std::istream& in, Vector2& vec2)

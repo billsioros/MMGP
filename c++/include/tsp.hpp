@@ -1,11 +1,10 @@
 
 #pragma once
 
-#include <functional>
-#include <vector>
-#include <utility>
-#include <iosfwd>
-#include <unordered_map>
+#include <functional>   // std::function
+#include <vector>       // std::vector
+#include <utility>      // std::pair
+#include <iosfwd>       // std::ostream
 
 namespace TSP
 {
