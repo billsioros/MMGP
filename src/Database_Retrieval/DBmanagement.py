@@ -52,6 +52,11 @@ class DBManager:
                     Around      varchar(255),       \
                     AltAddress  varchar(255),       \
                     Comment     text,               \
+                    BusSchedule varchar(255),       \
+                    Phone       varchar(255),       \
+                    Mobile      varchar(255),       \
+                    OtherPhone1 varchar(255),       \
+                    OtherPhone2 varchar(255),       \
                     Foreign Key (AddressID) References Address(AddressID)  )"
         self.Cursor.execute(sql)
 
@@ -174,12 +179,16 @@ class DBManager:
     LevelDescription
     ClassDescription
     SchMonday
-    SchTuesday,
+    SchTuesday
     SchWednesday
     SchThursday
     SchFriday
     SchGPS_X
-    SchGPS_Y    
+    SchGPS_Y
+    StContactPhone
+    StContactMobile
+    StOtherPhone1
+    StOtherPhone2    
     """
 
     """ Note To Self:
@@ -202,13 +211,7 @@ class DBManager:
 
             # Insert All Records that already have GPS coordinates
             for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
-            Mon, Tue, Wen, Thu, Fri, GPSX, GPSY in RowList:
-                # If there are not coordinates add them to standby list
-                if not GPSX or not GPSY:
-                    NoGPS.append([ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area,\
-                    Notes, Level, Class, Mon, Tue, Wen, Thu, Fri])
-
-                    continue
+            Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
 
                 # Concatenate the Address to a single string and hash it
                 FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
@@ -216,18 +219,31 @@ class DBManager:
                 HashAddress = self.__Hash(FullAddress)
                 
                 # If address has not been added to the database add it
-                if not Addresses.has_key(HashAddress):
-                    # Decimals must be turned to strings
-                    GPSX = str(GPSX)
-                    GPSY = str(GPSY)
-                    
-                    Addresses[HashAddress] = (GPSX, GPSY)
-                    AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, FullAddress, None]
+                if GPSX and GPSY:
+                    if not Addresses.has_key(HashAddress):
+                        # Decimals must be turned to strings
+                        GPSX = str(GPSX)
+                        GPSY = str(GPSY)
+                        
+                        Addresses[HashAddress] = (GPSX, GPSY)
+                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, FullAddress, None]
 
-                    self.Cursor.execute("Insert Into Address    \
-                                        Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
-                
+                        self.Cursor.execute("Insert Into Address    \
+                                            Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                # If there is no GPS coordinates add address to GeoCoding list and geocode it after 
+                # all other addresses have been inserted. This way if an address is already in the database
+                # we do not have to geocode it. (Trying to reduce geocoding requests)
+                else:
+                    NoGPS.append((HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress))
+
                 # Add student to the database
+                # Format Some Values
+                if Class:
+                    Class = Class.replace('-', "")
+                    Class.strip()
+                    if Class == "":
+                        Class = None
+
                 if Notes:
                     self.__InitParser()
                     NotesDict = self._Parser.Parse(Notes)
@@ -247,26 +263,43 @@ class DBManager:
                     Comment = None
                     Around = None
 
-                StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,\
-                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment]
+                if Phone != None:
+                    Phone.strip(" ")
+                    if Phone == "":
+                        Phone = None
+
+                if Mobile != None:
+                    Mobile.strip(" ")
+                    if Mobile == "":
+                        Mobile = None
+
+                if OtherPhone1 != None:
+                    OtherPhone1.strip(" ")
+                    if OtherPhone1 == "":
+                        OtherPhone1 = None
+
+                if OtherPhone2 != None:
+                    OtherPhone2.strip(" ")
+                    if OtherPhone2 == "":
+                        OtherPhone2 = None
+
+                BusSchedule = None
+
+                StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,
+                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule,
+                Phone, Mobile, OtherPhone1, OtherPhone2]
                 
                 self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
 
             # Insert All Records that do not have GPS coordinates
             i = 0 # Geocoding per sec
+          
+            for HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress in NoGPS:
 
-            
-            for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes,\
-            Level, Class, Mon, Tue, Wen, Thu, Fri in NoGPS:
-
-                # Concatenate the Address to a single string and hash it
-                FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
                 if not FullAddress:
                     continue
-
-                HashAddress = self.__Hash(FullAddress)
 
                 # If address has not been added to the database, geocode it and add it
                 if not Addresses.has_key(HashAddress):
@@ -292,32 +325,6 @@ class DBManager:
 
                         self.Cursor.execute("Insert Into Address    \
                                             Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
-
-                # Add student to the database
-                if Notes:
-                    self.__InitParser()
-                    NotesDict = self._Parser.Parse(Notes)
-                    EarlyPickup = NotesDict["Early Pickup"]
-                    LatePickup = NotesDict["Late Pickup"]
-                    EarlyDrop = NotesDict["Early Drop"]
-                    LateDrop = NotesDict["Late Drop"]
-                    AltAddress = NotesDict["Address"]
-                    Comment = NotesDict["Comments"]
-                    Around = NotesDict["Around"]
-                else:
-                    EarlyPickup = None
-                    LatePickup = None
-                    EarlyDrop = None
-                    LateDrop = None
-                    AltAddress = None
-                    Comment = None
-                    Around = None
-
-                StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,\
-                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment]
-                
-                self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
         self.__DiscardAddresses()
 
@@ -396,9 +403,9 @@ class DBManager:
             logcsv.close()
 
         else:
+            self.Cursor.execute("Delete From " + Table)
             for id1, id2, duration, distance in Matrix:
-                # All previous distances will be overwritten
-                self.Cursor.execute("Delete From " + Table)
+                # All previous distances will be overwritten              
                 if not duration:
                     duration = 0
                 if not distance:

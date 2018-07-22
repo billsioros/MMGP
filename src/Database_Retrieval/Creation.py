@@ -5,6 +5,7 @@ from util import GetCredentials
 import os
 import sys
 import csv
+from itertools import izip
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
@@ -25,159 +26,41 @@ con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
 
 cursor = con.cursor() 
 
-sql = "SELECT                       \
-            StCode,                 \
-            StLastName,             \
-            StFirstName,            \
-            SchAddress,             \
-            SchAddressNumber,       \
-            SchZipCode,             \
-            PrefectureDescription,  \
-            MunicipalDescription,   \
-            AreaDescription,        \
-            SchNotes,               \
-            LevelDescription,       \
-            ClassDescription,       \
-            SchMonday,              \
-            SchTuesday,             \
-            SchWednesday,           \
-            SchThursday,            \
-            SchFriday,              \
-            SchGPS_X,               \
-            SchGPS_Y                \
-      FROM dbo.SRP_Morning_Students_NewYear"
+ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
+          "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
+RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
+RowLists = dict()
 
-cursor.execute(sql)
-NewYearMorning = cursor.fetchall()
+for tableName, key in izip(ogDbTables, RowListKeys):
+      sql = "Select                             \
+                  sched.StCode,                 \
+                  sched.StLastName,             \
+                  sched.StFirstName,            \
+                  sched.SchAddress,             \
+                  sched.SchAddressNumber,       \
+                  sched.SchZipCode,             \
+                  sched.PrefectureDescription,  \
+                  sched.MunicipalDescription,   \
+                  sched.AreaDescription,        \
+                  sched.SchNotes,               \
+                  sched.LevelDescription,       \
+                  sched.ClassDescription,       \
+                  sched.SchMonday,              \
+                  sched.SchTuesday,             \
+                  sched.SchWednesday,           \
+                  sched.SchThursday,            \
+                  sched.SchFriday,              \
+                  sched.SchGPS_X,               \
+                  sched.SchGPS_Y,               \
+                  stud.StContactPhone,          \
+                  stud.StContactMobile,         \
+                  stud.StOtherPhone1,           \
+                  stud.StOtherPhone2            \
+            From " + tableName + " as sched, dbo.Student as stud     \
+            Where stud.StCode = sched.StCode"
 
-sql = "SELECT                       \
-            StCode,                 \
-            StLastName,             \
-            StFirstName,            \
-            SchAddress,             \
-            SchAddressNumber,       \
-            SchZipCode,             \
-            PrefectureDescription,  \
-            MunicipalDescription,   \
-            AreaDescription,        \
-            SchNotes,               \
-            LevelDescription,       \
-            ClassDescription,       \
-            SchMonday,              \
-            SchTuesday,             \
-            SchWednesday,           \
-            SchThursday,            \
-            SchFriday,              \
-            SchGPS_X,               \
-            SchGPS_Y                \
-      FROM dbo.SRP_Morning_Students_OldYear"
-
-cursor = con.cursor().execute(sql)
-OldYearMorning = cursor.fetchall()
-
-# Select All Noon Students
-
-sql = "SELECT                       \
-            StCode,                 \
-            StLastName,             \
-            StFirstName,            \
-            SchAddress,             \
-            SchAddressNumber,       \
-            SchZipCode,             \
-            PrefectureDescription,  \
-            MunicipalDescription,   \
-            AreaDescription,        \
-            SchNotes,               \
-            LevelDescription,       \
-            ClassDescription,       \
-            SchMonday,              \
-            SchTuesday,             \
-            SchWednesday,           \
-            SchThursday,            \
-            SchFriday,              \
-            SchGPS_X,               \
-            SchGPS_Y                \
-      FROM dbo.SRP_Noon_Students_OldYear"
-
-cursor.execute(sql)
-OldYearNoon = cursor.fetchall()
-
-sql = "SELECT                       \
-            StCode,                 \
-            StLastName,             \
-            StFirstName,            \
-            SchAddress,             \
-            SchAddressNumber,       \
-            SchZipCode,             \
-            PrefectureDescription,  \
-            MunicipalDescription,   \
-            AreaDescription,        \
-            SchNotes,               \
-            LevelDescription,       \
-            ClassDescription,       \
-            SchMonday,              \
-            SchTuesday,             \
-            SchWednesday,           \
-            SchThursday,            \
-            SchFriday,              \
-            SchGPS_X,               \
-            SchGPS_Y                \
-      FROM dbo.SRP_Noon_Students_NewYear"
-
-cursor.execute(sql)
-NewYearNoon = cursor.fetchall()
-
-# Select All Study Students
-
-sql = "SELECT                       \
-            StCode,                 \
-            StLastName,             \
-            StFirstName,            \
-            SchAddress,             \
-            SchAddressNumber,       \
-            SchZipCode,             \
-            PrefectureDescription,  \
-            MunicipalDescription,   \
-            AreaDescription,        \
-            SchNotes,               \
-            LevelDescription,       \
-            ClassDescription,       \
-            SchMonday,              \
-            SchTuesday,             \
-            SchWednesday,           \
-            SchThursday,            \
-            SchFriday,              \
-            SchGPS_X,               \
-            SchGPS_Y                \
-      FROM dbo.SRP_Study_Students_NewYear"
-
-cursor.execute(sql)
-NewYearStudy = cursor.fetchall()
-
-sql = "SELECT                       \
-            StCode,                 \
-            StLastName,             \
-            StFirstName,            \
-            SchAddress,             \
-            SchAddressNumber,       \
-            SchZipCode,             \
-            PrefectureDescription,  \
-            MunicipalDescription,   \
-            AreaDescription,        \
-            SchNotes,               \
-            LevelDescription,       \
-            ClassDescription,       \
-            SchMonday,              \
-            SchTuesday,             \
-            SchWednesday,           \
-            SchThursday,            \
-            SchFriday,              \
-            SchGPS_X,               \
-            SchGPS_Y                \
-      FROM dbo.SRP_Study_Students_OldYear"
-
-cursor.execute(sql)
-OldYearStudy = cursor.fetchall()
+      cursor.execute(sql)
+      RowLists[key] = cursor.fetchall()
 
 # Select All Buses
 
@@ -200,12 +83,12 @@ GeoFailsFile = open("FormatFails.tsv", "w+")
 GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()
-Tables.append((OldYearMorning, "Morning"))
-Tables.append((NewYearMorning, "Morning"))
-Tables.append((OldYearNoon, "Noon"))
-Tables.append((NewYearNoon, "Noon"))
-Tables.append((OldYearStudy, "Study"))
-Tables.append((NewYearStudy, "Study"))
+
+for key in RowLists.keys():
+      DayPart = key.replace("_NewYear", "")
+      DayPart = DayPart.replace("_OldYear", "")
+      Tables.append((RowLists[key], DayPart))
+
 
 DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
@@ -214,7 +97,7 @@ DBManager.InsertDepot([["ERECHTHIOU", "6", "17455", "ATTIKIS", "ALIMOY", None]])
 DBManager.Commit()
 
 for DayPart in ["Morning", "Noon", "Study"]:
-    DBManager.InsertDistances(DayPart, direct=True)
+      DBManager.InsertDistances(DayPart, direct=True)
 
 
 DBManager.Commit()
