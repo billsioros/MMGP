@@ -1,1 +1,6 @@
-./src/Database_Retrieval/DataFiles/*
+MMGP_Data.db
+TimeLogs.txt
+*.json
+*.tsv
+*.csv
+*.pyc
