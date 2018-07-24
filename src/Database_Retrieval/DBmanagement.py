@@ -32,31 +32,32 @@ class DBManager:
 
         self.Connect(fileName)
 
-        sql = "CREATE TABLE Student (               \
-                    StudentID   varchar(255),       \
-                    LastName    varchar(255),       \
-                    FirstName   varchar(255),       \
-                    AddressID   varchar(255),       \
-                    Level       varchar(255),       \
-                    Class       varchar(255),       \
-                    Monday      bit,                \
-                    Tuesday     bit,                \
-                    Wednesday   bit,                \
-                    Thursday    bit,                \
-                    Friday      bit,                \
-                    DayPart     varchar(255),       \
-                    EarlyPickup varchar(255),       \
-                    LatePickup  varchar(255),       \
-                    EarlyDrop   varchar(255),       \
-                    LateDrop    varchar(255),       \
-                    Around      varchar(255),       \
-                    AltAddress  varchar(255),       \
-                    Comment     text,               \
-                    BusSchedule varchar(255),       \
-                    Phone       varchar(255),       \
-                    Mobile      varchar(255),       \
-                    OtherPhone1 varchar(255),       \
-                    OtherPhone2 varchar(255),       \
+        sql = "CREATE TABLE Student (                   \
+                    StudentID       varchar(255),       \
+                    LastName        varchar(255),       \
+                    FirstName       varchar(255),       \
+                    AddressID       varchar(255),       \
+                    Level           varchar(255),       \
+                    Class           varchar(255),       \
+                    Monday          bit,                \
+                    Tuesday         bit,                \
+                    Wednesday       bit,                \
+                    Thursday        bit,                \
+                    Friday          bit,                \
+                    DayPart         varchar(255),       \
+                    EarlyPickup     varchar(255),       \
+                    LatePickup      varchar(255),       \
+                    EarlyDrop       varchar(255),       \
+                    LateDrop        varchar(255),       \
+                    Around          varchar(255),       \
+                    AltAddress      varchar(255),       \
+                    Comment         text,               \
+                    BusSchedule     varchar(255),       \
+                    ScheduleOrder   int                 \
+                    Phone           varchar(255),       \
+                    Mobile          varchar(255),       \
+                    OtherPhone1     varchar(255),       \
+                    OtherPhone2     varchar(255),       \
                     Foreign Key (AddressID) References Address(AddressID)  )"
         self.Cursor.execute(sql)
 
@@ -284,13 +285,14 @@ class DBManager:
                         OtherPhone2 = None
 
                 BusSchedule = None
+                ScheduleOrder = None
 
                 StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,
-                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule,
+                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule, ScheduleOrder,
                 Phone, Mobile, OtherPhone1, OtherPhone2]
                 
                 self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
 
             # Insert All Records that do not have GPS coordinates
