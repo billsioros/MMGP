@@ -8,23 +8,6 @@
 #include <iostream>     // std::cerr
 #include <iomanip>      // std::setw & std::setfill
 
-std::ostream& operator<<(std::ostream& os, const Manager::Student& student)
-{
-    os << student._studentId << ", " << student._position << ", " << student._timespan << ", " << student._days;
-
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Manager::Bus& bus)
-{
-    os << "Bus, " << bus._busId;
-    os << ", " <<  std::right << std::setw(3) << std::setfill('0') << bus._number;
-    os << ", " << std::right << std::setw(3) << std::setfill('0') << bus._capacity;
-    os << ", " << std::right << std::setw(3) << std::setfill('0') << bus._students.size();
-
-    return os;
-}
-
 void Manager::load(SQLite::Database& database, std::list<Student>& students, const std::string& daypart)
 {
     bool failed = false;
@@ -115,8 +98,11 @@ void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
     }
 }
 
-void Manager::log(const std::vector<Bus>& buses)
+void Manager::csv(const std::vector<Bus>& buses)
 {
+    if (buses.empty())
+        return;
+
     std::ofstream schedules("schedules.csv");
     if (!schedules.is_open())
     {
@@ -124,10 +110,7 @@ void Manager::log(const std::vector<Bus>& buses)
         std::exit(EXIT_FAILURE);
     }
 
-    if (buses.empty())
-        return;
-
-    schedules << "busId, studentId, studentPosition, studentTimespan, studentDays" << std::endl;
+    schedules << "busId, studentId, longitude, latitude, earliest, latest, days" << std::endl;
 
     for (const auto& bus : buses)
     {
@@ -135,10 +118,66 @@ void Manager::log(const std::vector<Bus>& buses)
             continue;
 
         for (const auto& student : bus._students)
-            schedules << bus._busId << ", " << student << std::endl;
+        {
+            schedules
+            << bus._busId << ", "
+            << student._studentId << ", "
+            << student._position.x() << ", "
+            << student._position.y() << ", "
+            << student._timespan.x() << ", "
+            << student._timespan.y() << ", "
+            << student._days << std::endl;
+    }
     }
 
     schedules << std::endl;
+}
+
+void Manager::json(const std::vector<Bus>& buses)
+{
+    if (buses.empty())
+        return;
+
+    std::ofstream schedules("schedules.js");
+    if (!schedules.is_open())
+    {
+        std::cerr << "<ERR>: Unable to log bus info" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    schedules
+    << "schedules =" << std::endl
+    << '[' << std::endl;
+    for (const auto& bus : buses)
+    {
+        schedules
+        << "    {" << std::endl
+        << "        \"busId\": " << "\"" << bus._busId << "\"" << ',' << std::endl
+        << "        \"students\":" << std::endl
+        << "        [" << std::endl;
+        for (const auto& student : bus._students)
+        {
+            schedules
+            << "            {"
+            << std::endl
+            << "                \"studentId\": "  << "\"" << student._studentId << "\"" << ',' << std::endl
+            << "                \"longitude\": "           << student._position.x()         << ',' << std::endl
+            << "                \"latitude\": "          << student._position.y()         << ',' << std::endl
+            << "                \"earliest\": "           << student._timespan.x()         << ',' << std::endl
+            << "                \"latest\": "             << student._timespan.y()         << ',' << std::endl
+            << "                \"days\": "       << "\"" << student._days      << "\""           << std::endl
+            << "            }"
+            << (student._studentId != bus._students.back()._studentId ? "," : "")
+            << std::endl;
+        }
+        
+        schedules
+        << "        ]" << std::endl
+        << "    }"
+        << (bus._busId != buses.back()._busId ? "," : "") << std::endl;
+    }
+
+   schedules << ']' << std::endl;
 }
 
 double Manager::distance(SQLite::Database& database, const Student& A, const Student& B, const std::string& daypart)

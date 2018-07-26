@@ -5,7 +5,7 @@ CCFLAGS = -W -g3 -std=c++14
 
 PATH_SRC = ./src
 PATH_INC = ./include
-PATH_BIN = ./bin
+PATH_BIN = ./../bin
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
 MNGR_DEP = $(addprefix $(PATH_INC)/, Database.h vector2.hpp manager.hpp) $(PATH_SRC)/manager.cpp
@@ -25,13 +25,6 @@ all:
 	@echo "***"
 	mkdir -p $(PATH_BIN)
 	make $(PATH_BIN)/$(CCNAME)
-	@echo "***\n"
-
-.PHONY: clean
-clean:
-	@echo "\n*** Purging "$(PATH_BIN)" ***"
-	@echo "***"
-	rm -rvf $(PATH_BIN)
 	@echo "***\n"
 
 # MMGP:

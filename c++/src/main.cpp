@@ -87,7 +87,10 @@ int main(int argc, char * argv[])
     delete cluster;
 
     for (const auto& schedule : schedules)
-        Manager::log(schedule);
+    {
+        Manager::json(schedule);
+        // Manager::csv(schedule);
+    }
 
     return 0;
 }
