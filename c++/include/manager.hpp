@@ -46,10 +46,8 @@ namespace Manager
     void load(SQLite::Database&, std::list<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void log(const std::vector<Bus>&);
+    void csv(const std::vector<Bus>&);
+    void json(const std::vector<Bus>&);
 
     double distance(SQLite::Database&, const Student&, const Student&, const std::string&);
 }
-
-std::ostream& operator<<(std::ostream&, const Manager::Student&);
-std::ostream& operator<<(std::ostream&, const Manager::Bus&);

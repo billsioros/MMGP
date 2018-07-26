@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/c++/bin/MMGP",
-            "args": ["../../MMGP_Data.db", "Morning"],
+            "args": ["../../data/MMGP_Data.db", "Morning", "0.25", "0.25"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}/c++/bin",
             "environment": [],
