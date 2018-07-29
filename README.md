@@ -1,7 +1,7 @@
 # Multiagent Multitarget Geospatial Pathfinding
 
 #### Version Control
-* Clustering 1.12
+* Clustering 1.13
 * TSP 0.4
 
 #### Third Party Code
