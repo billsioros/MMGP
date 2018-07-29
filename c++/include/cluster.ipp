@@ -130,8 +130,8 @@ void Cluster<T>::traverse(const std::function<void(const Cluster<T>&)>& f) const
     f(*this);
 }
 
-// #define __DEBUG__
-#ifdef  __DEBUG__
+// #define __DEBUG_CLUSTER__
+#ifdef  __DEBUG_CLUSTER__
 
 #include <iostream>
 
@@ -141,18 +141,18 @@ void Cluster<T>::traverse(const std::function<void(const Cluster<T>&)>& f) const
 template <typename T>
 void ICluster<T>::traverse(const std::function<void(const Cluster<T>&)>& f) const
 {
-    #ifdef __DEBUG__
+    #ifdef __DEBUG_CLUSTER__
 
-    std::cout << " <- " << std::endl;
+    std::cout << "<DBG>: <- " << std::endl;
 
     #endif
 
     if (_left)
         _left->traverse(f);
 
-    #ifdef __DEBUG__
+    #ifdef __DEBUG_CLUSTER__
 
-    std::cout << " -> " << std::endl;
+    std::cout << "<DBG>: -> " << std::endl;
     
     #endif
 

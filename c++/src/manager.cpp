@@ -38,7 +38,7 @@ void Manager::load(SQLite::Database& database, std::list<Student>& students, con
 
     try
     {
-        #ifdef __DEBUG__
+        #ifdef __DEBUG_MANAGER__
         SQLite::Statement stmt(database,
             "SELECT Student.StudentID, Student.AddressID, "\
             "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
@@ -92,7 +92,7 @@ void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
 {
     try
     {
-        #ifdef __DEBUG__
+        #ifdef __DEBUG_MANAGER__
         SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
         #else
         SQLite::Statement stmt(database, "SELECT * FROM BUS");
