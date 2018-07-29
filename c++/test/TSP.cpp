@@ -82,4 +82,7 @@ int main()
 
     TSP::path<point> path2b = TSP::opt2<point>(path1b.second.front(), path1b.second, cost);
     std::cout << "MF & opt2: " << path2b.first << std::endl;
+
+    TSP::path<point> path1c = TSP::opt2<point>(depot, points, cost);
+    std::cout << "opt2: " << path1c.first << std::endl;
 }

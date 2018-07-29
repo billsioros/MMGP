@@ -21,6 +21,10 @@ public:
     virtual ~Cluster() {};
 
     const T& centroid() const { return _centroid; }
+    std::size_t size() const { return _size; }
+
+    virtual const Cluster<T> * left()  const { return nullptr; }
+    virtual const Cluster<T> * right() const { return nullptr; }
 
     static const Cluster * hierarchical
     (
@@ -45,6 +49,11 @@ class ICluster : public Cluster<T>
         if (_left)  delete _left;
         if (_right) delete _right;
     }
+
+public:
+
+    const Cluster<T> * left()  const { return _left;  }
+    const Cluster<T> * right() const { return _right; }
 
     void traverse(const std::function<void(const Cluster<T>&)>& f) const;
 };
