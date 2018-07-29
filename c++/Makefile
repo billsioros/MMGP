@@ -23,7 +23,7 @@ NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o manager.o main.o Backup.o Column.
 all:
 	@echo "\n*** Compiling executable "$(CCNAME)" ***"
 	@echo "***"
-	mkdir -p $(PATH_BIN)
+	mkdir -p $(PATH_BIN)/debug
 	make $(PATH_BIN)/$(CCNAME)
 	@echo "***\n"
 
