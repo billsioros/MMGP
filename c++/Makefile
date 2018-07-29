@@ -30,33 +30,33 @@ all:
 # MMGP:
 
 $(PATH_BIN)/$(CCNAME): $(NAME_DEP)
-	$(CC) $(CCFLAGS) $(NAME_DEP) -lsqlite3 -o $(PATH_BIN)/$(CCNAME)
+	$(CC) $(DEFLAGS) $(CCFLAGS) $(NAME_DEP) -lsqlite3 -o $(PATH_BIN)/$(CCNAME)
 
 $(PATH_BIN)/vector2.o: $(VEC2_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/vector2.cpp -c -o $(PATH_BIN)/vector2.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/vector2.cpp -c -o $(PATH_BIN)/vector2.o
 
 $(PATH_BIN)/manager.o: $(MNGR_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/manager.cpp -c -o $(PATH_BIN)/manager.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/manager.cpp -c -o $(PATH_BIN)/manager.o
 
 $(PATH_BIN)/main.o: $(MAIN_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o
 
 # SQLite3 Wrapper:
 
 $(PATH_BIN)/Backup.o: $(BACK_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/Backup.cpp -c -o $(PATH_BIN)/Backup.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/Backup.cpp -c -o $(PATH_BIN)/Backup.o
 
 $(PATH_BIN)/Column.o: $(CLMN_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/Column.cpp -c -o $(PATH_BIN)/Column.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/Column.cpp -c -o $(PATH_BIN)/Column.o
 
 $(PATH_BIN)/Database.o: $(DATA_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/Database.cpp -c -o $(PATH_BIN)/Database.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/Database.cpp -c -o $(PATH_BIN)/Database.o
 
 $(PATH_BIN)/Exception.o: $(EXCP_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/Exception.cpp -c -o $(PATH_BIN)/Exception.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/Exception.cpp -c -o $(PATH_BIN)/Exception.o
 
 $(PATH_BIN)/Statement.o: $(STMT_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/Statement.cpp -c -o $(PATH_BIN)/Statement.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/Statement.cpp -c -o $(PATH_BIN)/Statement.o
 
 $(PATH_BIN)/Transaction.o: $(TRNS_DEP)
-	$(CC) -I $(PATH_INC) $(CCFLAGS) $(PATH_SRC)/Transaction.cpp -c -o $(PATH_BIN)/Transaction.o
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/Transaction.cpp -c -o $(PATH_BIN)/Transaction.o
