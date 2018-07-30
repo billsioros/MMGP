@@ -1,4 +1,43 @@
 
+// Create an empty map:
+map = new OpenLayers.Map("map");
+map.addLayer(new OpenLayers.Layer.OSM());
+
+map.setCenter(
+    new OpenLayers.LonLat(23.727539, 37.883810).transform(
+        new OpenLayers.Projection("EPSG:4326"),
+        map.getProjectionObject()
+    ),
+12);
+
+var markers = new OpenLayers.Layer.Markers("Markers");
+map.addLayer(markers);
+
+// On DOM event read the specified file and create the Schedules-Buses Menu:
+let schedules;
+
+function readFile(event)
+{
+    var files = event.target.files;
+
+    if (window.FileReader)
+    {
+        var reader = new FileReader;
+        
+        reader.onloadend = function(event)
+        {
+            schedules = JSON.parse(event.target.result);
+
+            createMenu();
+        }
+
+        reader.readAsText(files[0]);
+    }
+}
+
+document.getElementById("json").addEventListener("change", readFile, false);
+
+// Dynamic HTML functionality:
 function createInput(type, name, value)
 {
     var input   = document.createElement("input");
@@ -38,20 +77,6 @@ function createList(content, css)
     return list;
 }
 
-// Create map
-map = new OpenLayers.Map("map");
-map.addLayer(new OpenLayers.Layer.OSM());
-
-map.setCenter(
-    new OpenLayers.LonLat(23.727539, 37.883810).transform(
-        new OpenLayers.Projection("EPSG:4326"),
-        map.getProjectionObject()
-    ),
-12);
-
-var markers = new OpenLayers.Layer.Markers("Markers");
-map.addLayer(markers);
-
 function plotStudents(schedules, sci, bsi)
 {
     var _students = schedules[sci].buses[bsi].students;
@@ -71,62 +96,64 @@ function plotStudents(schedules, sci, bsi)
     }
 }
 
-// Create menu
-var menu = document.getElementById("menu");
-
-let _schedules = [];
-for (let sci = 0; sci < schedules.length; sci++)
+function createMenu()
 {
-    var _buses = [];
-    for (let bsi = 0; bsi < schedules[sci].buses.length; bsi++)
+    var menu = document.getElementById("menu");
+
+    let _schedules = [];
+    for (let sci = 0; sci < schedules.length; sci++)
     {
-        var radio = createInput("radio", "busButton", bsi);
-
-        radio.onclick = function()
+        var _buses = [];
+        for (let bsi = 0; bsi < schedules[sci].buses.length; bsi++)
         {
-            markers.clearMarkers();
+            var radio = createInput("radio", "busButton", bsi);
 
-            plotStudents(schedules, sci, bsi);
+            radio.onclick = function()
+            {
+                markers.clearMarkers();
+
+                plotStudents(schedules, sci, bsi);
+            }
+
+            _buses.push(createLabel(radio, "Bus No." + radio.value));
         }
 
-        _buses.push(createLabel(radio, "Bus No." + radio.value));
-    }
+        var checkbox = createInput("checkbox", "scheduleButton", sci);
+        var label    = createLabel(checkbox, "Schedule No." + checkbox.value);
+        let list     = createList(_buses, "buses");
 
-    var checkbox = createInput("checkbox", "scheduleButton", sci);
-    var label    = createLabel(checkbox, "Schedule No." + checkbox.value);
-    let list     = createList(_buses, "buses");
-
-    checkbox.checked = true;
-    if (sci)
-    {
-        checkbox.checked = false;
-        list.classList.toggle("hidden");
-    }
-
-    checkbox.onclick = function()
-    {        
-        for (var sci = 0; sci < _schedules.length; sci++)
+        checkbox.checked = true;
+        if (sci)
         {
-            if (sci != this.value)
+            checkbox.checked = false;
+            list.classList.toggle("hidden");
+        }
+
+        checkbox.onclick = function()
+        {        
+            for (var sci = 0; sci < _schedules.length; sci++)
             {
-                if (_schedules[sci].children[0].children[0].checked)
+                if (sci != this.value)
                 {
-                    _schedules[sci].children[0].children[0].checked = false;
-                    _schedules[sci].children[1].classList.toggle("hidden");
+                    if (_schedules[sci].children[0].children[0].checked)
+                    {
+                        _schedules[sci].children[0].children[0].checked = false;
+                        _schedules[sci].children[1].classList.toggle("hidden");
+                    }
                 }
             }
+            
+            list.classList.toggle("hidden");
         }
-        
-        list.classList.toggle("hidden");
+
+        var div = document.createElement("div");
+        div.classList.add("container");
+
+        div.appendChild(label);
+        div.appendChild(list);
+
+        _schedules.push(div);
     }
 
-    var div = document.createElement("div");
-    div.classList.add("container");
-
-    div.appendChild(label);
-    div.appendChild(list);
-
-    _schedules.push(div);
+    menu.appendChild(createList(_schedules, "schedules"));
 }
-
-menu.appendChild(createList(_schedules, "schedules"));
