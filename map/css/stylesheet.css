@@ -24,11 +24,19 @@ html, body
     float: right;
 }
 
+#menu input[type="file"]
+{
+    width: 80%;
+    margin: 10px auto;
+    float: right;
+}
+
 .schedules
 {
     height: 90%;
     width: 60%;
     margin: 10px auto;
+    overflow: scroll;
 }
 
 .container
@@ -45,7 +53,7 @@ html, body
 .buses
 {
     height: 100%;
-    width: 100%;
+    width: 70%;
     padding: 0px;
     margin: 0px 20px;
     list-style: none;
