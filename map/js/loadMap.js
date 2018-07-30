@@ -1,18 +1,4 @@
 
-// Create an empty map:
-map = new OpenLayers.Map("map");
-map.addLayer(new OpenLayers.Layer.OSM());
-
-map.setCenter(
-    new OpenLayers.LonLat(23.727539, 37.883810).transform(
-        new OpenLayers.Projection("EPSG:4326"),
-        map.getProjectionObject()
-    ),
-12);
-
-var markers = new OpenLayers.Layer.Markers("Markers");
-map.addLayer(markers);
-
 // On DOM event read the specified file and create the Schedules-Buses Menu:
 let schedules;
 
@@ -34,8 +20,6 @@ function readFile(event)
         reader.readAsText(files[0]);
     }
 }
-
-document.getElementById("json").addEventListener("change", readFile, false);
 
 // Dynamic HTML functionality:
 function createInput(type, name, value)

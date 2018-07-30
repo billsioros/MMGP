@@ -168,16 +168,14 @@ void Manager::csv(const char * dayPart, const std::list<std::vector<Bus>>& sched
 
 void Manager::json(const char * dayPart, const std::list<std::vector<Bus>>& schedules)
 {
-    std::ofstream json(unique(dayPart) + ".js");
+    std::ofstream json(unique(dayPart) + ".json");
     if (!json.is_open())
     {
         std::cerr << "<ERR>: Unable to log bus info" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
-    json
-    << "let schedules =" << std::endl
-    << '[' << std::endl;
+    json << '[' << std::endl;
     
     std::size_t scheduleId = 0UL;
     for (const auto& buses : schedules)
