@@ -1,33 +1,22 @@
-/* C++ Heap implementation by Vasileios Sioros */
 
-#ifndef __HEAP__
-#define __HEAP__
-
-#include <functional>
+#pragma once
 
 template <typename T>
-class heap
+bool heap<T>::less(const T& a, const T& b)
 {
-    const std::function<bool(const T&, const T&)> priority;
+    return a < b;
+}
 
-    const size_t max; size_t size;
-
-    T * items;
-
-public:
-    
-    heap(size_t, const std::function<bool(const T&, const T&)>& priority);
-    ~heap();
-
-    bool push(const T&);
-    bool pop(T&);
-};
-
-// Heap Implementation:
 template <typename T>
-heap<T>::heap(size_t max, const std::function<bool(const T&, const T&)>& priority)
+bool heap<T>::greater(const T& a, const T& b)
+{
+    return a > b;
+}
+
+template <typename T>
+heap<T>::heap(std::size_t max, const std::function<bool(const T&, const T&)>& priority)
 :
-priority(priority), max(max + 1U), size(0U), items(new T[this->max])
+priority(priority), max(max), size(0U), items(new T[this->max + 1U])
 {
 }
 
@@ -43,7 +32,7 @@ bool heap<T>::push(const T& item)
     if(size == max)
         return false;
 
-    size_t child = ++size, parent = child / 2;
+    std::size_t child = ++size, parent = child / 2;
     items[child] = item;
 
     while (parent)
@@ -71,10 +60,10 @@ bool heap<T>::pop(T& item)
     item = items[1];
     items[1] = items[size--];
 
-    size_t current = 1, child = 2 * current;
+    std::size_t current = 1, child = 2 * current;
     while (child <= size)
     {
-        size_t next;
+        std::size_t next;
         if (child + 1 <= size && priority(items[child + 1], items[child]))
             next = child + 1;
         else
@@ -93,5 +82,3 @@ bool heap<T>::pop(T& item)
 
     return true;
 }
-
-#endif

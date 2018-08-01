@@ -1,3 +1,8 @@
-### Multiagent Multitarget Geospatial Pathfinding
+# Multiagent Multitarget Geospatial Pathfinding
 
-Currently under development
+#### Version Control
+* Clustering 1.13
+* TSP 0.4
+
+#### Third Party Code
+* [SQLite3 Wrapper](https://github.com/SRombauts/SQLiteCpp) (MIT License)

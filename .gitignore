@@ -4,3 +4,5 @@ TimeLogs.txt
 *.tsv
 *.csv
 *.pyc
+bin/
+data/
