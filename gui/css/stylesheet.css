@@ -1,0 +1,91 @@
+
+/*
+    Black:   #0E0B16
+    Fuschia: #A239CA
+    Bluish:  #4717F6
+    Whitie:  #E7DFDD
+*/
+
+/* Global */
+body
+{
+    padding: 0px;
+    margin: 0px;
+
+    font: 15px/1.5 Arial, Helvetica, sans-serif;
+    background-color: #eff0f2;
+}
+
+.container
+{
+    margin: auto;
+    width: 80%;
+    min-height: 30px;
+    overflow: hidden;
+}
+
+/* Header */
+header
+{
+    margin: 0px;
+    padding: 30px 0px 0px 0px;
+    color:#E7DFDD;
+    background-color: #0E0B16;
+    border-bottom: #A239CA 3px solid;
+}
+
+header #branding
+{
+    padding: 0px;
+    margin: 0px;
+    float: left;
+}
+
+header #search
+{
+    padding-top: 10px;
+    margin: 0px;
+    float: right;
+}
+
+header #search input[type="text"]
+{
+    padding: 0px;
+    margin: 0px;
+    min-height: 10px;
+    min-width: 70px;
+    float: left;
+}
+
+header #search ul
+{
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+    float: right;
+}
+
+header #search ul li
+{
+    float: left;
+    text-decoration: none;
+    display: inline;
+    margin: 0px 10px 0px 10px;
+}
+
+/* Main */
+
+main
+{
+    min-width: 90%;
+}
+
+/* Footer */
+footer
+{
+    min-width: 10%;
+    background-color: #0E0B16;
+    color: #A239CA;
+    position: relative;
+    clear: both;
+}

@@ -1,33 +1,11 @@
 
-CC = g++
-CCFLAGS = -W -g3 -std=c++11
-
-PATH_SRC = ./src/
-PATH_BIN = ./bin/
-
-VEC2_DEP = $(addprefix $(PATH_SRC), vector2.hpp vector2.cpp)
-CLST_DEP = $(addprefix $(PATH_SRC), vector2.hpp cluster.hpp cluster.cpp)
-MAIN_DEP = $(addprefix $(PATH_SRC), cluster.hpp main.cpp)
-
-ROUT_DEP = $(addprefix $(PATH_BIN), vector2.o cluster.o main.o)
-
+.PHONY: all
 all:
-	@echo -e ">: Compiling executable "route"\n"
-	mkdir -p $(PATH_BIN)
-	make route
-
-$(PATH_BIN)route: $(OBJS)
-	$(CC) $(CCFLAGS) $(OBJS) -o $(PATH_BIN)route
-
-$(PATH_BIN)vector2.o: $(VEC2_DEP)
-	$(CC) $(CCFLAGS) $(PATH_SRC)vector2.cpp -c -o $(PATH_BIN)vector2.o
-
-$(PATH_BIN)cluster.o: $(VEC2_DEP)
-	$(CC) $(CCFLAGS) $(PATH_SRC)cluster.cpp -c -o $(PATH_BIN)cluster.o
-
-$(PATH_BIN)main.o: $(VEC2_DEP)
-	$(CC) $(CCFLAGS) $(PATH_SRC)main.cpp -c -o $(PATH_BIN)main.o
+	$(MAKE) -C ./c++
 
 .PHONY: clean
 clean:
-	rm -rI $(PATH_BIN)
+	@echo "\n*** Purging "./bin" ***"
+	@echo "***"
+	rm -rvf ./bin
+	@echo "***\n"
