@@ -1,7 +1,7 @@
 
 .PHONY: all
 all:
-	$(MAKE) -C ./c++
+	$(MAKE) -C ./cpp
 
 .PHONY: clean
 clean:
