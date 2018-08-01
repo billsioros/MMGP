@@ -1,8 +1,4 @@
-MMGP_Data.db
-TimeLogs.txt
-*.json
-*.tsv
-*.csv
-*.pyc
+.vscode/settings.json
+python/*.pyc
 bin/
 data/
