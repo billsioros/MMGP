@@ -3,6 +3,7 @@
 #include "Statement.h"
 #include "cluster.hpp"
 #include "manager.hpp"
+#include "tsp.hpp"
 #include <list>
 #include <iostream>
 #include <memory>
@@ -69,7 +70,7 @@ int main(int argc, char * argv[])
     std::list<Manager::Student> students;
     Manager::load(*database, students, argv[2]); // Manager::print(students);
 
-    auto beg = std::chrono::high_resolution_clock().now();
+    auto beg = std::chrono::system_clock().now();
 
     const Group * group =
         Group::hierarchical(students,
@@ -78,20 +79,22 @@ int main(int argc, char * argv[])
                 return _evaluation(*database, A, B, argv[2], w0, w1);
             });
 
-    auto end = std::chrono::high_resolution_clock().now();
+    auto end = std::chrono::system_clock().now();
 
-    std::chrono::duration<double, std::micro> elapsed = end - beg;
-    std::cerr << "<MSG>: Elapsed time: " << elapsed.count() << " seconds" << std::endl;
+    std::cerr
+    << "<MSG>: Elapsed time: "
+    << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
+    << " seconds" << std::endl;
 
     Buses buses;
     Manager::load(*database, buses); // Manager::print(buses);
 
     Schedules schedules;
-    createSchedules1(group, buses, schedules);
-    // createSchedules2(group, buses, schedules);
+    // createSchedules1(group, buses, schedules);
+    createSchedules2(group, buses, schedules);
 
     delete group;
-
+  
     Manager::json(argv[2], schedules);
 
     return 0;
@@ -260,63 +263,69 @@ void createSchedules2(
     const Buses& buses,
     Schedules& schedules)
 {
-    std::unordered_set<const Group *> visited;
-
-    auto assign = [&visited](const Group * group, Manager::Bus& bus)
+    auto betterThanChildren = [](const Group * current, const Manager::Bus& bus)
     {
-        std::stack<const Group *> adjacent; adjacent.push(group);
-
-        do
+        auto error = [](double exact, double estimate)
         {
-            const Group * current = adjacent.top(); adjacent.pop();
+            return std::abs(exact - estimate) / std::abs(exact);
+        };
 
-            if (visited.find(current) == visited.end())
-                visited.insert(current);
-            else
-                continue;
+        const std::size_t Psize = current->size();
+        const std::size_t Lsize = current->left()  ? current->left()->size()  : 0UL;
+        const std::size_t Rsize = current->right() ? current->right()->size() : 0UL;
 
+        if (bus._capacity < Psize)
+        {
+            if (Psize < 3UL * bus._capacity)
+            {
+                const double Perror = error(bus._capacity, static_cast<double>(Psize));
+                const double Lerror = error(bus._capacity, static_cast<double>(Lsize));
+                const double Rerror = error(bus._capacity, static_cast<double>(Rsize));
+
+                return Perror < Lerror + Rerror;
+            }
+            
+            return false;
+        }
+        
+        return true;
+    };
+
+    std::size_t busId = std::numeric_limits<std::size_t>().max();
+    
+    std::unordered_set<const Group *> visited;
+    std::queue<const Group *> adjacent; adjacent.push(group);
+    do
+    {
+        if (busId >= buses.size())
+        {
+            schedules.push_back(buses); busId = 0UL;
+        }
+
+        Manager::Bus& bus = schedules.back()[busId];
+        
+        const Group * current = adjacent.front(); adjacent.pop();
+        if (visited.find(current) != visited.end())
+            continue;
+
+        if (betterThanChildren(current, bus))
+        {
+            visited.insert(current);
+
+            current->traverse([&bus](const Group& leaf)
+            {
+                bus._students.push_back(leaf.centroid());
+            });
+
+            busId++;
+        }
+        else
+        {
             if (current->left() && current->right())
             {
                 adjacent.push(current->left());
                 adjacent.push(current->right());
             }
-            else
-            {
-                bus._students.push_back(current->centroid());
-            }
-
-        } while (!adjacent.empty());
-    };
-
-    std::size_t busId = std::numeric_limits<std::size_t>().max();
-
-    std::queue<const Group *> adjacent; adjacent.push(group);
-    do
-    {
-        const Group * current = adjacent.front(); adjacent.pop();
-
-        if (current->size() <= schedules.back()[busId]._capacity)
-        {
-            if (busId >= buses.size())
-            {
-                schedules.push_back(buses); busId = 0UL;
-            }
-
-            assign(current, schedules.back()[busId]);
-
-            busId++;
         }
-
-        if (visited.find(current) == visited.end())
-            visited.insert(current);
-        else
-            continue;
-
-        if (current->left() && current->right())
-        {
-            adjacent.push(current->left());
-            adjacent.push(current->right());
-        }
-
     } while (!adjacent.empty());
 }
