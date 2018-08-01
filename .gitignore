@@ -1,2 +1,8 @@
+MMGP_Data.db
+TimeLogs.txt
+*.json
+*.tsv
+*.csv
+*.pyc
 bin/
 data/
