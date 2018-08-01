@@ -56,5 +56,6 @@
         "cinttypes": "cpp",
         "*.ipp": "cpp",
         "string": "cpp"
-    }
+    },
+    "python.pythonPath": "C:\\Python27\\python.exe"
 }

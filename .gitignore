@@ -1,2 +1,5 @@
+.vscode/settings.json
+python/*.pyc
 bin/
 data/
+app/node_modules
