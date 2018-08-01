@@ -1,11 +1,11 @@
 import pyodbc
 import sqlite3
-from DBManagement import DBManager as DBM
 from util import GetCredentials
 import os
 import sys
 import csv
 from itertools import izip
+from DBmanagement import DBManager as DBM
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
