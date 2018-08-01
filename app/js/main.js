@@ -1,4 +1,5 @@
-const {app, BrowserWindow} = require('electron')
+const {app, Menu, BrowserWindow} = require('electron')
+const {BackClick, ForwardClick} = require('./search.js')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -13,6 +14,27 @@ function createWindow() {
     // and Load the index.html of the app
     win.loadFile("html/index.html")
 
+    var menu = Menu.buildFromTemplate([
+        {
+            label: 'Menu',
+            submenu: [
+                {label: 'Run MMGP Algorithm'},                
+                {type: 'separator'},
+                {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {app.quit()}}
+            ]
+        },
+        {
+            label: 'Window',
+            submenu: [
+                {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {win.reload();}},
+                {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools();}},
+                {label: 'Back', accelerator: 'PageUp', click() {BackClick();}},
+                {label: 'Forward', accelerator: 'PageDown', click() {ForwardClick();}}
+            ]
+        }
+    ])
+
+    Menu.setApplicationMenu(menu);
 
     // Emitted when the window is closed.
     win.on('closed', () => {

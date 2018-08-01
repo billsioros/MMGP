@@ -1,10 +1,12 @@
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('../data/MMGP_data.db');
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('../data/MMGP_data.db');
 
-var DOMElementHistory = require("domelementhistory")
+const DOMElementHistory = require("domelementhistory")
 
 
 let currentOpenBus = '0';
+let docmain;
+let mainHistory;
 
 function PullBuses() {
     if (this.innerHTML === currentOpenBus) {
@@ -12,11 +14,9 @@ function PullBuses() {
     }
 
     currentOpenBus = this.innerHTML;
-    // Get Table
-    var main = document.getElementsByTagName("main")
     
     // Remove previously formatted table
-    main[0].innerHTML = ""
+    docmain.innerHTML = ""
 
     var table = document.createElement("div")
     table.className = "Table"
@@ -98,7 +98,7 @@ function PullBuses() {
         table.appendChild(row)
     }
 
-    main[0].appendChild(table)
+    docmain.appendChild(table)
 
     mainHistory.saveState();
 }
@@ -214,11 +214,9 @@ function GetStudentFromDB(sql) {
 }
 
 function DisplayStudentTable(Students) {
-    // Get Table
-    var main = document.getElementsByTagName("main")
     
     // Remove previously formatted table
-    main[0].innerHTML = ""
+   docmain.innerHTML = ""
 
     var table = document.createElement("div")
     table.className = "Table"
@@ -283,7 +281,7 @@ function DisplayStudentTable(Students) {
         table.appendChild(row)
     }
         
-    main[0].appendChild(table)
+    docmain.appendChild(table)
 }
 
 function SearchStudents() {
@@ -297,18 +295,17 @@ function SearchStudents() {
     const SearchFields = ["FirstName", "LastName", "Class", "Level"]
     let toSearch = "Where Student.AddressID = Address.AddressID"
 
-    // let empty = true;
-    // SearchValues.forEach(function(value) {
-    //     if (value) {
-    //         empty = false;
-    //     }
-    // })
+    let empty = true;
+    SearchValues.forEach(function(value) {
+        if (value) {
+            empty = false;
+        }
+    })
 
-    // if (empty) {
-    //     header.innerHTML = "Empty Search Fields."
-    //     alert("Empty Search Fields")
-    //     return;
-    // }
+    if (empty) {
+        if(!confirm("You have given no filters. This will display the whole database. Are you sure?"))
+            return;
+    }
 
     for (var i = 0; i < SearchValues.length; i++) {
         if (SearchValues[i]) {
@@ -368,11 +365,8 @@ function DisplayStudentCard(id) {
 
     // Display student Card
 
-    // Get main
-    var main = document.getElementsByTagName("main")[0]
-
     // Remove previously formatted main
-    main.innerHTML = ""
+    docmain.innerHTML = ""
 
     var StCard = document.createElement("div")
     StCard.className = "StudentCard"
@@ -569,7 +563,7 @@ function DisplayStudentCard(id) {
         StCard.appendChild(Schedules);
     }
 
-    main.appendChild(StCard)
+    docmain.appendChild(StCard)
 }
 
 function OnMorePress() {
@@ -594,7 +588,7 @@ function OnForwBackClick() {
     fButton.onclick = ForwardClick;
 }
 
-function BackClick() {
+function BackClick() { 
     mainHistory.goBack();
     ReassignMainButtons();
 }
@@ -613,11 +607,20 @@ function ReassignMainButtons() {
 
 }
 
-GenerateBusButtons();
-OnClickBus();
-OnSearchClearStudent();
 
-var docmain = document.getElementsByTagName("main")[0];
-var mainHistory = new DOMElementHistory.History(docmain)
 
-OnForwBackClick();
+function OnCreateWindow() {
+    GenerateBusButtons();
+    OnClickBus();
+    OnSearchClearStudent();
+
+    docmain = document.getElementsByTagName("main")[0];
+    mainHistory = new DOMElementHistory.History(docmain)
+
+    OnForwBackClick();
+}
+
+
+
+
+module.exports = {BackClick, ForwardClick};
