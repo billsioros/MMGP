@@ -31,10 +31,10 @@ namespace Manager
 
     struct Bus
     {
-        std::string        _busId;
-        unsigned           _number;
-        unsigned           _capacity;
-        std::list<Student> _students;
+        std::string          _busId;
+        unsigned             _number;
+        unsigned             _capacity;
+        std::vector<Student> _students;
 
         Bus(const char * _busId, unsigned _number, unsigned _capacity)
         :
