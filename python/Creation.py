@@ -73,13 +73,13 @@ Buses = cursor.fetchall()
 con.close()
 
 # Create a new Database
-DBManager = DBM("MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
+DBManager = DBM("../data/MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
 
 
 DBManager.InsertBus(Buses)
 DBManager.Commit()
 
-GeoFailsFile = open("FormatFails.tsv", "w+")
+GeoFailsFile = open("../data/FormatFails.tsv", "w+")
 GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()

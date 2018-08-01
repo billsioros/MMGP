@@ -1,0 +1,21 @@
+{
+  "name": "MMGP",
+  "version": "0.1.0",
+  "description": "User Interface for the Multitarget Multiagent Geospatial Pathfinding project",
+  "main": "./js/main.js",
+  "scripts": {
+    "install": ".\\node_modules\\.bin\\electron-rebuild",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "domelementhistory": "^1.0.2",
+    "sqlite3": "^4.0.2"
+  },
+  "devDependencies": {
+    "electron": "^2.0.5",
+    "electron-rebuild": "^1.8.1"
+  }
+}
