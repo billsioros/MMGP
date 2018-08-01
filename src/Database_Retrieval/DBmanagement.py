@@ -53,7 +53,7 @@ class DBManager:
                     AltAddress      varchar(255),       \
                     Comment         text,               \
                     BusSchedule     varchar(255),       \
-                    ScheduleOrder   int                 \
+                    ScheduleOrder   int,                \
                     Phone           varchar(255),       \
                     Mobile          varchar(255),       \
                     OtherPhone1     varchar(255),       \
@@ -307,9 +307,9 @@ class DBManager:
                 if not Addresses.has_key(HashAddress):
 
                     self.__InitMapsHandler()
-                    # Only 100 requests per sec
-                    if i == 99:
-                        sleep(4) # Sleep 4 seconds for safety
+                    # Only 10 requests per sec
+                    if i == 10:
+                        sleep(1) # Sleep 1 seconds for safety
                         i = 0
                     FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
                     i += 1
