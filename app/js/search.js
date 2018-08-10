@@ -1,8 +1,8 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('../data/MMGP_data.db');
-
-const DOMElementHistory = require("domelementhistory")
-
+let sqlite3;
+let db;
+let TabGroup;
+let DOMElementHistory;
+let InfoMapTabGroup;
 
 let currentOpenBus = '0';
 let docmain;
@@ -17,6 +17,7 @@ function PullBuses() {
     
     // Remove previously formatted table
     docmain.innerHTML = ""
+
 
     var table = document.createElement("div")
     table.className = "Table"
@@ -101,6 +102,15 @@ function PullBuses() {
     docmain.appendChild(table)
 
     mainHistory.saveState();
+
+    let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
+    InfoMapTabGroup.addTab(InfoTab, OnTabPress);
+
+    docmain.innerHTML = "";
+    let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
+    InfoMapTabGroup.addTab(MapTab, OnTabPress);
+
+    InfoTab.activate();
 }
 
 function OnClickBus() {
@@ -294,7 +304,7 @@ function SearchStudents() {
     const SearchValues = [FirstName, LastName, Class, Level]
     const SearchFields = ["FirstName", "LastName", "Class", "Level"]
     let toSearch = "Where Student.AddressID = Address.AddressID"
-
+    InfoMapTabGroup.clearTabs();
     let empty = true;
     SearchValues.forEach(function(value) {
         if (value) {
@@ -576,7 +586,21 @@ function OnMorePress() {
     mainHistory.saveState();
 }
 
+// "Info - Map" Tabs
 
+function CreateInfoMap() {
+    let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
+    InfoMapTabGroup.addTab(InfoTab, OnTabPress);
+
+    let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
+    InfoMapTabGroup.addTab(MapTab, OnTabPress);
+
+    InfoTab.activate()
+}
+
+function OnTabPress() {
+    InfoMapTabGroup.activatePressed(this);
+}
 
 // Back - Forward Functionality
 
@@ -608,14 +632,24 @@ function ReassignMainButtons() {
 }
 
 
+// Loader
 
 function OnCreateWindow() {
+
+    sqlite3 = require('sqlite3').verbose();
+    db = new sqlite3.Database('../data/MMGP_data.db');
+    TabGroup = require("electron-tabs");
+    DOMElementHistory = require("domelementhistory");
+
+
     GenerateBusButtons();
     OnClickBus();
     OnSearchClearStudent();
 
     docmain = document.getElementsByTagName("main")[0];
     mainHistory = new DOMElementHistory.History(docmain)
+
+    InfoMapTabGroup = new DOMElementHistory.TabGroup(document.getElementsByTagName("header")[0])
 
     OnForwBackClick();
 }
