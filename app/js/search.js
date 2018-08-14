@@ -1,12 +1,17 @@
 let sqlite3;
 let db;
-let TabGroup;
 let DOMElementHistory;
 let InfoMapTabGroup;
 
 let currentOpenBus = '0';
+let studentsToPlot;
+
 let docmain;
+let docheader;
 let mainHistory;
+let headerHistory;
+
+let map;
 
 function PullBuses() {
     if (this.innerHTML === currentOpenBus) {
@@ -101,23 +106,30 @@ function PullBuses() {
 
     docmain.appendChild(table)
 
-    mainHistory.saveState();
-
-    let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
+    // let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
+    let InfoTab = new Tab(docmain, "Info", false);
     InfoMapTabGroup.addTab(InfoTab, OnTabPress);
 
     docmain.innerHTML = "";
-    let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
+    // let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
+    let MapTab = new Tab(docmain, "Map", false);
     InfoMapTabGroup.addTab(MapTab, OnTabPress);
 
     InfoTab.activate();
+
+    mainHistory.saveState();
+    headerHistory.saveState();
+}
+
+function DisplayBusMap() {
+
 }
 
 function OnClickBus() {
-    var BusButons = document.getElementsByClassName("bus")
+    var BusButtons = document.getElementsByClassName("bus")
 
-    for (let i = 0; i < BusButons.length; i++) {
-        BusButons[i].onmouseup = PullBuses
+    for (let i = 0; i < BusButtons.length; i++) {
+        BusButtons[i].onmouseup = PullBuses
     }
 }
 
@@ -184,7 +196,9 @@ function GetStudentFromDB(sql) {
             }
             
             let key = row.DayPart + 'Addresses';
-            student[key].push(row.FullAddress);
+            student[key].push({ FullAddress: row.FullAddress,
+                                Longitude: row.GPS_X,
+                                Latitude: row.GPS_Y } );
 
             key = row.DayPart + 'Days';
             student[key].push( {    Monday: row.Monday,
@@ -203,14 +217,16 @@ function GetStudentFromDB(sql) {
         }
         else {
             let key = row.DayPart + 'Addresses';
-            Students[id][key].push(row.FullAddress);
+            Students[id][key].push({    FullAddress: row.FullAddress,
+                                        Longitude: row.GPS_X,
+                                        Latitude: row.GPS_Y } );
 
             key = row.DayPart + 'Days';
-            Students[id][key].push( {    Monday: row.Monday,
-                                    Tuesday: row.Tuesday,
-                                    Wednesday: row.Wednesday,
-                                    Thursday: row.Thursday,
-                                    Friday: row.Friday }  );
+            Students[id][key].push( {   Monday: row.Monday,
+                                        Tuesday: row.Tuesday,
+                                        Wednesday: row.Wednesday,
+                                        Thursday: row.Thursday,
+                                        Friday: row.Friday }  );
             
             key = row.DayPart + 'Notes';
             Students[id][key].push(row.Notes);
@@ -223,7 +239,7 @@ function GetStudentFromDB(sql) {
     return Students;
 }
 
-function DisplayStudentTable(Students) {
+function DisplayStudentSearchTable(Students) {
     
     // Remove previously formatted table
    docmain.innerHTML = ""
@@ -294,6 +310,26 @@ function DisplayStudentTable(Students) {
     docmain.appendChild(table)
 }
 
+function DisplayStudentSearchMap(Students) {
+    studentsToPlot = {};
+
+    StudentKeys = Object.keys(Students);
+    for (let i = 0; i < StudentKeys.length; i++) {
+        let student = Students[StudentKeys[i]];
+        id = "\"" + student.ID + "\"";
+    
+        let Addresses = [];
+        Addresses.push.apply(Addresses, student.MorningAddresses);
+        Addresses.push.apply(Addresses, student.NoonAddresses);
+        Addresses.push.apply(Addresses, student.StudyAddresses);
+        studentsToPlot[id] = {
+            Name: student.LastName + ' ' + student.FirstName,
+            Addresses: Addresses };
+    }
+
+    console.log(studentsToPlot);
+}
+
 function SearchStudents() {
     var header = document.getElementsByTagName("header")[0]
     var FirstName = document.getElementById("FirstNameBar").value;
@@ -334,11 +370,30 @@ function SearchStudents() {
     let Students = GetStudentFromDB(sql)
 
     // Apparently Students object has no values at this point
-    // If window waits for 5 MILLIseconds everything is fine. for some reason...
-    setTimeout(() => {DisplayStudentTable(Students);}, 5)
-    CurrentStudents = Students;
+    // If window waits for 10 MILLIseconds everything is fine. for some reason...
+
+    let InfoTab;
+    let MapTab;
+
+    setTimeout(() => {
+        DisplayStudentSearchTable(Students);
+        InfoTab = new Tab(docmain, "Info", false);
+        InfoMapTabGroup.addTab(InfoTab, OnTabPress);
+        }, 10)
     
-    setTimeout(() => {mainHistory.saveState();}, 5);
+    CurrentStudents = Students;
+
+    setTimeout(() => {
+        docmain.innerHTML = "";
+        DisplayStudentSearchMap(Students);
+        MapTab = new Tab(docmain, "Map", false);
+        InfoMapTabGroup.addTab(MapTab, OnSearchStudentMapTabPress);
+    }, 10)
+    
+
+    setTimeout(() => {InfoTab.activate(); ReassignAllButtons(); mainHistory.saveState(); headerHistory.saveState();}, 11);
+
+
 }
 
 function ClearSearchBars() {
@@ -538,7 +593,7 @@ function DisplayStudentCard(id) {
 
                 p = document.createElement("p")
                 p.className = "rowData"
-                p.innerHTML = student[Addresses][i]
+                p.innerHTML = student[Addresses][i].FullAddress
                 row.appendChild(p)
 
                 p = document.createElement("p")
@@ -576,30 +631,129 @@ function DisplayStudentCard(id) {
     docmain.appendChild(StCard)
 }
 
+function DisplayStudentMap(id) {
+    var student;
+    if (CurrentStudents.hasOwnProperty(id)) {
+        student = CurrentStudents[id];
+    }
+    else {
+        let sql = "Select * From Student, Address\
+        Where Student.AddressID = Address.AddressID and\
+        Student.StudentID = \"" + id + "\"";
+
+        student = GetStudentFromDB(sql)[id];
+    }
+
+    // Display Student Map
+    studentsToPlot = {};
+    let Addresses = [];
+    Addresses.push.apply(Addresses, student.MorningAddresses);
+    Addresses.push.apply(Addresses, student.NoonAddresses);
+    Addresses.push.apply(Addresses, student.StudyAddresses);
+    studentsToPlot[id] = {
+        Name: student.LastName + ' ' + student.FirstName,
+        Addresses: Addresses };
+
+    //CreateMap();
+    //PlotStudents(studentsToPlot);
+}
+
 function OnMorePress() {
+    InfoMapTabGroup.clearTabs();
+
     let children = this.parentNode.childNodes;
     let id = children[0].innerHTML;
     id = "\"" + id + "\""
     
-    DisplayStudentCard(id)
+    DisplayStudentCard(id);
+    let InfoTab = new Tab(docmain, "Info", false);
+    InfoMapTabGroup.addTab(InfoTab, OnTabPress);
+
+    docmain.innerHTML = "";
+
+    DisplayStudentMap(id);
+    let MapTab = new Tab(docmain, "Map", false);
+    InfoMapTabGroup.addTab(MapTab, OnStudentMapTabPress);
+
+    InfoTab.activate();
 
     mainHistory.saveState();
+    headerHistory.saveState();
 }
 
 // "Info - Map" Tabs
 
-function CreateInfoMap() {
-    let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
-    InfoMapTabGroup.addTab(InfoTab, OnTabPress);
-
-    let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
-    InfoMapTabGroup.addTab(MapTab, OnTabPress);
-
-    InfoTab.activate()
-}
-
 function OnTabPress() {
     InfoMapTabGroup.activatePressed(this);
+    ReassignAllButtons();
+}
+
+function OnStudentMapTabPress() {
+    InfoMapTabGroup.activatePressed(this);
+    docmain.innerHTML = "";
+    CreateMap(studentsToPlot);
+    PlotStudents(studentsToPlot);
+    ReassignAllButtons();
+}
+
+function OnSearchStudentMapTabPress() {
+    InfoMapTabGroup.activatePressed(this);
+    docmain.innerHTML = "";
+    CreateMap(studentsToPlot);
+    PlotStudents(studentsToPlot);
+}
+
+function CreateMap(Students) {
+    // Create an empty map:
+    let coords = [];
+    StudentKeys = Object.keys(Students);
+    for (let i = 0; i < StudentKeys.length; i++) {
+        let student = Students[StudentKeys[i]];
+        for (let j = 0; j < student.Addresses.length; j++) {
+            let address = student.Addresses[j]
+            coords.push([address.Latitude, address.Longitude]);
+        }
+    }
+
+    let Ox = 0;
+    let Oy = 0;
+    coords.forEach(element => {
+        Ox += element[0];
+        Oy += element[1];
+    });
+
+    Ox /= coords.length;
+    Oy /= coords.length
+    
+    map=khtml.maplib.Map(document.getElementById("main"));
+    map.centerAndZoom(new khtml.maplib.LatLng(Ox, Oy), 12)
+}
+
+function PlotStudents(Students) {
+    let icon = {
+		url: "../images/red-dot.png",
+		size: {width: 26, height: 32},
+		origin: {x: 0, y: 0},
+		anchor: {
+			x: "-10px",
+			y: "-32px"
+		}
+	};
+    
+    StudentKeys = Object.keys(Students);
+    for (let i = 0; i < StudentKeys.length; i++) {
+        let student = Students[StudentKeys[i]];
+        let studentName = student.Name;
+        for (let j = 0; j < student.Addresses.length; j++) {
+            let address = student.Addresses[j];
+            var marker = new khtml.maplib.overlay.Marker({
+                position: new khtml.maplib.LatLng(address.Latitude, address.Longitude), 
+                map: map,
+                title: studentName + "\n" + address.FullAddress,
+                icon: icon
+            });
+        }
+    }
 }
 
 // Back - Forward Functionality
@@ -614,21 +768,24 @@ function OnForwBackClick() {
 
 function BackClick() { 
     mainHistory.goBack();
-    ReassignMainButtons();
+    headerHistory.goBack();
+    ReassignAllButtons();
 }
 
 function ForwardClick() {
     mainHistory.goForward();
-    ReassignMainButtons();
+    headerHistory.goForward();
+    ReassignAllButtons();
 }
 
-function ReassignMainButtons() {
+function ReassignAllButtons() {
     var moreButtons = document.getElementsByClassName("MoreButton");
 
     for (let i = 0; i < moreButtons.length; i++) {
         moreButtons[i].onclick = OnMorePress;
     }
 
+    OnForwBackClick();
 }
 
 
@@ -638,7 +795,6 @@ function OnCreateWindow() {
 
     sqlite3 = require('sqlite3').verbose();
     db = new sqlite3.Database('../data/MMGP_data.db');
-    TabGroup = require("electron-tabs");
     DOMElementHistory = require("domelementhistory");
 
 
@@ -647,10 +803,12 @@ function OnCreateWindow() {
     OnSearchClearStudent();
 
     docmain = document.getElementsByTagName("main")[0];
-    mainHistory = new DOMElementHistory.History(docmain)
+    docheader = document.getElementsByTagName("header")[0];
+    mainHistory = new DOMElementHistory.History(docmain);
+    headerHistory = new DOMElementHistory.History(docheader);
 
-    InfoMapTabGroup = new DOMElementHistory.TabGroup(document.getElementsByTagName("header")[0])
-
+    // InfoMapTabGroup = new DOMElementHistory.TabGroup(document.getElementsByTagName("header")[0])
+    InfoMapTabGroup = new TabGroup(document.getElementsByTagName("header")[0])
     OnForwBackClick();
 }
 

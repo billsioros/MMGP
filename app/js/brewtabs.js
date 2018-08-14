@@ -166,6 +166,5 @@ function indexOfNode(node) {
     return index;
 }
 
-
 module.exports.TabGroup = TabGroup;
 module.exports.Tab = Tab;
