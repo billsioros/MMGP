@@ -1,12 +1,20 @@
+// External modules
 let sqlite3;
 let db;
 let DOMElementHistory;
-let InfoMapTabGroup;
+
+// TabGroups
+let SearchTabGroup;
+
+// Dom Elements
+let InfoMapTabHeader;
+let SearchTabHeader;
+let MainInfo;
+let docmain;
 
 let currentOpenBus = '0';
-let studentsToPlot;
+//let studentsToPlot;
 
-let docmain;
 let docheader;
 let mainHistory;
 let headerHistory;
@@ -21,7 +29,7 @@ function PullBuses() {
     currentOpenBus = this.innerHTML;
     
     // Remove previously formatted table
-    docmain.innerHTML = ""
+    // docmain.innerHTML = ""
 
 
     var table = document.createElement("div")
@@ -104,21 +112,21 @@ function PullBuses() {
         table.appendChild(row)
     }
 
-    docmain.appendChild(table)
+    MainInfo.appendChild(table)
 
     // let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
     let InfoTab = new Tab(docmain, "Info", false);
     InfoMapTabGroup.addTab(InfoTab, OnTabPress);
 
-    docmain.innerHTML = "";
+    // docmain.innerHTML = "";
     // let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
     let MapTab = new Tab(docmain, "Map", false);
     InfoMapTabGroup.addTab(MapTab, OnTabPress);
 
     InfoTab.activate();
 
-    mainHistory.saveState();
-    headerHistory.saveState();
+    // mainHistory.saveState();
+    // headerHistory.saveState();
 }
 
 function DisplayBusMap() {
@@ -242,7 +250,7 @@ function GetStudentFromDB(sql) {
 function DisplayStudentSearchTable(Students) {
     
     // Remove previously formatted table
-   docmain.innerHTML = ""
+   //docmain.innerHTML = ""
 
     var table = document.createElement("div")
     table.className = "Table"
@@ -307,11 +315,12 @@ function DisplayStudentSearchTable(Students) {
         table.appendChild(row)
     }
         
-    docmain.appendChild(table)
+    MainInfo.appendChild(table)
 }
 
+// This does not actually display map. It just saves info for when map will be displayed
 function DisplayStudentSearchMap(Students) {
-    studentsToPlot = {};
+    let studentsToPlot = {};
 
     StudentKeys = Object.keys(Students);
     for (let i = 0; i < StudentKeys.length; i++) {
@@ -327,11 +336,11 @@ function DisplayStudentSearchMap(Students) {
             Addresses: Addresses };
     }
 
-    console.log(studentsToPlot);
+    return studentsToPlot;
 }
 
 function SearchStudents() {
-    var header = document.getElementsByTagName("header")[0]
+
     var FirstName = document.getElementById("FirstNameBar").value;
     var LastName = document.getElementById("LastNameBar").value;
     var Class = document.getElementById("ClassBar").value;
@@ -340,7 +349,8 @@ function SearchStudents() {
     const SearchValues = [FirstName, LastName, Class, Level]
     const SearchFields = ["FirstName", "LastName", "Class", "Level"]
     let toSearch = "Where Student.AddressID = Address.AddressID"
-    InfoMapTabGroup.clearTabs();
+
+
     let empty = true;
     SearchValues.forEach(function(value) {
         if (value) {
@@ -372,28 +382,17 @@ function SearchStudents() {
     // Apparently Students object has no values at this point
     // If window waits for 10 MILLIseconds everything is fine. for some reason...
 
-    let InfoTab;
-    let MapTab;
+    setTimeout(() => {     
+        let title = "Student Search : \"" + FirstName + " " + LastName + " " + Class + " " + Level + "\"";
+        let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
+        newSearchTab.activate(false);
 
-    setTimeout(() => {
-        DisplayStudentSearchTable(Students);
-        InfoTab = new Tab(docmain, "Info", false);
-        InfoMapTabGroup.addTab(InfoTab, OnTabPress);
-        }, 10)
+        ReassignAllButtons(); 
+        // mainHistory.saveState();
+        CurrentStudents = Students;
+    }, 10);
+
     
-    CurrentStudents = Students;
-
-    setTimeout(() => {
-        docmain.innerHTML = "";
-        DisplayStudentSearchMap(Students);
-        MapTab = new Tab(docmain, "Map", false);
-        InfoMapTabGroup.addTab(MapTab, OnSearchStudentMapTabPress);
-    }, 10)
-    
-
-    setTimeout(() => {InfoTab.activate(); ReassignAllButtons(); mainHistory.saveState(); headerHistory.saveState();}, 11);
-
-
 }
 
 function ClearSearchBars() {
@@ -414,24 +413,7 @@ function OnSearchClearStudent() {
 
 // Specific Student Info
 
-function DisplayStudentCard(id) {
-    // Acquire student info
-    var student;
-    if (CurrentStudents.hasOwnProperty(id)) {
-        student = CurrentStudents[id];
-    }
-    else {
-        let sql = "Select * From Student, Address\
-        Where Student.AddressID = Address.AddressID and\
-        Student.StudentID = \"" + id + "\"";
-
-        student = GetStudentFromDB(sql)[id];
-    }
-
-    // Display student Card
-
-    // Remove previously formatted main
-    docmain.innerHTML = ""
+function DisplayStudentCard(student) {
 
     var StCard = document.createElement("div")
     StCard.className = "StudentCard"
@@ -544,16 +526,17 @@ function DisplayStudentCard(id) {
         var Schedules = document.createElement("div")
         Schedules.className = "StudentSchedules"
 
-        StCard.appendChild(Schedules)
-
         const DayParts = ['Morning', 'Noon', 'Study'];
 
         DayParts.forEach(function(dayPart) {
+            var scheduleDiv = document.createElement("div");
+            scheduleDiv.className = "ScheduleHeaderTable";
+
             var Header = document.createElement("header")
             Header.id = dayPart + "SchedulesHeader"
             Header.className = "StudentSchedulesHeader"
             Header.innerHTML = dayPart + " Schedules"
-            Schedules.appendChild(Header)
+            scheduleDiv.appendChild(Header)
 
             var table = document.createElement("div")
             table.className = "Table"
@@ -576,6 +559,13 @@ function DisplayStudentCard(id) {
             let Addresses = dayPart + 'Addresses'
             let Notes = dayPart + 'Notes'
             let Days = dayPart + 'Days'
+            
+            if (student[Addresses].length === 0) {
+                var p = document.createElement("p");
+                p.className = "rowData"
+                p.innerHTML = "-";
+                scheduleDiv.appendChild(p);
+            }
 
             for (i = 0; i < student[Addresses].length; i++) {
                 var row = document.createElement("div")
@@ -619,20 +609,40 @@ function DisplayStudentCard(id) {
                 }
 
                 table.appendChild(row);
+                scheduleDiv.appendChild(table)
             }
 
-            Schedules.appendChild(table);
+            Schedules.appendChild(scheduleDiv);
             
         });  
         
         StCard.appendChild(Schedules);
     }
 
-    docmain.appendChild(StCard)
+    MainInfo.appendChild(StCard)
 }
 
-function DisplayStudentMap(id) {
+function DisplayStudentMap(student) {
+    // Display Student Map
+    let studentsToPlot = {};
+    let Addresses = [];
+    Addresses.push.apply(Addresses, student.MorningAddresses);
+    Addresses.push.apply(Addresses, student.NoonAddresses);
+    Addresses.push.apply(Addresses, student.StudyAddresses);
+    studentsToPlot[id] = {
+        Name: student.LastName + ' ' + student.FirstName,
+        Addresses: Addresses };
+
+    return studentsToPlot
+}
+
+function OnMorePress() {
+    let children = this.parentNode.childNodes;
+    let id = children[0].innerHTML;
+    id = "\"" + id + "\""
+
     var student;
+    var CurrentStudents = SearchTabGroup.activeTab().students;
     if (CurrentStudents.hasOwnProperty(id)) {
         student = CurrentStudents[id];
     }
@@ -644,64 +654,78 @@ function DisplayStudentMap(id) {
         student = GetStudentFromDB(sql)[id];
     }
 
-    // Display Student Map
-    studentsToPlot = {};
-    let Addresses = [];
-    Addresses.push.apply(Addresses, student.MorningAddresses);
-    Addresses.push.apply(Addresses, student.NoonAddresses);
-    Addresses.push.apply(Addresses, student.StudyAddresses);
-    studentsToPlot[id] = {
-        Name: student.LastName + ' ' + student.FirstName,
-        Addresses: Addresses };
+    let title = "Student Info: " + student.LastName + " " + student.FirstName;
+    let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentCard, DisplayStudentMap, student);
+    newSearchTab.activate(false);
 
-    //CreateMap();
-    //PlotStudents(studentsToPlot);
+    // mainHistory.saveState();
 }
 
-function OnMorePress() {
-    InfoMapTabGroup.clearTabs();
+// Search Tabs
+// Each search tab will have 2 sub tabs
+function OpenSearchTab(element, title, infoDisplayFunction, mapDisplayFunction, students) {
+    let newTab = new Tab([element], title, true);
+    SearchTabGroup.addTab(newTab, OnSearchTabPress);
+    newTab.students = students;
 
-    let children = this.parentNode.childNodes;
-    let id = children[0].innerHTML;
-    id = "\"" + id + "\""
-    
-    DisplayStudentCard(id);
-    let InfoTab = new Tab(docmain, "Info", false);
-    InfoMapTabGroup.addTab(InfoTab, OnTabPress);
+    newTab.infoDisplayFunction = infoDisplayFunction;
+    newTab.mapDisplayFunction = mapDisplayFunction;
 
-    docmain.innerHTML = "";
+    DisplaySearchTab(newTab);
+    return newTab;
+}
 
-    DisplayStudentMap(id);
-    let MapTab = new Tab(docmain, "Map", false);
-    InfoMapTabGroup.addTab(MapTab, OnStudentMapTabPress);
+function DisplaySearchTab(tab) {
+    MainInfo.innerHTML = "";
+    InfoMapTabHeader.innerHTML = "";
+
+    let InfoMapTabGroup = new TabGroup(InfoMapTabHeader);
+    tab.subTabGroup = InfoMapTabGroup;
+
+    tab.infoDisplayFunction(tab.students)
+    let InfoTab = new Tab([MainInfo], "Info", false);
+    InfoMapTabGroup.addTab(InfoTab, OnInfoTabPress);
+
+    MainInfo.innerHTML = "";
+    tab.studentsToPlot = tab.mapDisplayFunction(tab.students);
+
+    let MapTab = new Tab([MainInfo], "Map", false);
+    InfoMapTabGroup.addTab(MapTab, OnMapTabPress);
 
     InfoTab.activate();
+    tab.updateContents();
+}
 
-    mainHistory.saveState();
-    headerHistory.saveState();
+function OnSearchTabPress() {
+    let pressedTab = SearchTabGroup.getPressed(this);
+    DisplaySearchTab(pressedTab);
+    pressedTab.activate(false);
+    ReassignAllButtons();
 }
 
 // "Info - Map" Tabs
 
-function OnTabPress() {
-    InfoMapTabGroup.activatePressed(this);
+function OnInfoTabPress() {
+    MainInfo.removeAttribute("style");
+    SearchTabGroup.activeTab().subTabGroup.activatePressed(this);
     ReassignAllButtons();
 }
 
-function OnStudentMapTabPress() {
-    InfoMapTabGroup.activatePressed(this);
-    docmain.innerHTML = "";
-    CreateMap(studentsToPlot);
-    PlotStudents(studentsToPlot);
-    ReassignAllButtons();
+function OnMapTabPress() {
+    let searchTab = SearchTabGroup.activeTab();
+    searchTab.subTabGroup.activatePressed(this);
+    MainInfo.innerHTML = "";
+    CreateMap(searchTab.studentsToPlot);
+    PlotStudents(searchTab.studentsToPlot);
 }
 
-function OnSearchStudentMapTabPress() {
-    InfoMapTabGroup.activatePressed(this);
-    docmain.innerHTML = "";
-    CreateMap(studentsToPlot);
-    PlotStudents(studentsToPlot);
-}
+// function OnSearchStudentMapTabPress() {
+//     let searchTab = SearchTabGroup.activeTab();
+//     searchTab.subTabGroup.activatePressed(this);
+//     MainInfo.innerHTML = "";
+//     CreateMap(searchTab.studentsToPlot);
+//     PlotStudents(searchTab.studentsToPlot);
+// }
 
 function CreateMap(Students) {
     // Create an empty map:
@@ -725,7 +749,7 @@ function CreateMap(Students) {
     Ox /= coords.length;
     Oy /= coords.length
     
-    map=khtml.maplib.Map(document.getElementById("main"));
+    map = khtml.maplib.Map(document.getElementsByClassName("MainInfo")[0]);
     map.centerAndZoom(new khtml.maplib.LatLng(Ox, Oy), 12)
 }
 
@@ -785,7 +809,7 @@ function ReassignAllButtons() {
         moreButtons[i].onclick = OnMorePress;
     }
 
-    OnForwBackClick();
+    // OnForwBackClick();
 }
 
 
@@ -803,13 +827,15 @@ function OnCreateWindow() {
     OnSearchClearStudent();
 
     docmain = document.getElementsByTagName("main")[0];
-    docheader = document.getElementsByTagName("header")[0];
-    mainHistory = new DOMElementHistory.History(docmain);
-    headerHistory = new DOMElementHistory.History(docheader);
+    SearchTabHeader = document.getElementsByClassName("SearchTabGroup")[0];
+    InfoMapTabHeader = document.getElementsByClassName("InfoMapTabGroup")[0];
+    MainInfo = document.getElementsByClassName("MainInfo")[0];
 
-    // InfoMapTabGroup = new DOMElementHistory.TabGroup(document.getElementsByTagName("header")[0])
-    InfoMapTabGroup = new TabGroup(document.getElementsByTagName("header")[0])
-    OnForwBackClick();
+    // mainHistory = new DOMElementHistory.History(docmain);
+    //headerHistory = new DOMElementHistory.History(docheader);
+
+    SearchTabGroup = new TabGroup(document.getElementsByClassName("SearchTabGroup")[0])
+    // OnForwBackClick();
 }
 
 

@@ -4,11 +4,11 @@
  
 /* Handle */
 ::-webkit-scrollbar-thumb {
-    background: rgb(54, 54, 54); 
+    background: rgb(92, 92, 92); 
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgb(74, 74, 74);
+    background: rgb(143, 143, 143);
 }
 
 body {
@@ -26,7 +26,7 @@ body {
     padding: 0px;
 }
 
-/* Forward - Back Buttons */
+/* Forward - Back Buttons
 .backForwardButtonImage {
     height: 70%;
     width: 70%;
@@ -39,7 +39,7 @@ body {
     border: none;
     background-color: #252526;
     /* background-color: rgb(43, 43, 43); */
-}
+/* }
 
 #BackButton:hover, #ForwardButton:hover {
     background-color: rgb(63, 63, 63);
@@ -47,7 +47,7 @@ body {
 
 #BackButton:active, #ForwardButton:active {
     background-color: rgb(46, 46, 46);
-}
+} */
 
 .side_bar {
     grid-area: sidebar;
@@ -147,17 +147,35 @@ h2 {
     background-color: rgb(39, 39, 39);
 }
 
+/* TabGroups */
+.InfoMapTabGroup {
+    width: 100%;
+    grid-area: tabs;
+    /* margin-top: 0.4%; */
+    margin-bottom: 0.1%;
+    position: fixed;
+}
 
+.MainInfo {
+    width: 100%;
+    grid-area: info;
+    margin-top: 60px;
+}
 
 /* Table Results */
 
 main {
     text-align: center;
     grid-row: 2 / 3;
-    background-color: #292a2b;
+    background-color: #3b3b3b;
     overflow-x: hidden;
     overflow-y: scroll;
     color: white;
+
+    display: grid;
+    grid-template-areas: "tabs"
+                         "info";
+    grid-template-rows: 1fr 25fr
 }
 
 .Table {
@@ -269,8 +287,13 @@ p {
 
 .StudentSchedules {
     grid-area: Sched;
-    margin-top: 50px;
+    margin-top: 20px;
     margin-bottom: 50px;
+}
+
+.ScheduleHeaderTable {
+    margin-bottom: 60px;
+    margin-top: 50px;
 }
 
 .GeneralInfo p, .StudentPhones p {

@@ -25,12 +25,20 @@ class TabGroup {
         var tabbutton = document.createElement("div");
         tabbutton.className = "brewtabs-tab";
         tabbutton.onclick = OnClick;
+        tabbutton.classList.add("tooltip")
         tab.tabButton = tabbutton;
 
         var tabtitle = document.createElement("span");
         tabtitle.className = "brewtabs-tab-title";
         tabtitle.innerHTML = tab.title;
         tab.tabButton.appendChild(tabtitle);
+
+        var tabtooltiptext = document.createElement("span");
+        tabtooltiptext.className = "brewtabs-tab-tootltiptext";
+        tabtooltiptext.classList.add("tooltiptext");
+        tabtooltiptext.innerHTML = tab.tooltip;
+        tabtooltiptext.hidden = true;
+        tab.tabButton.appendChild(tabtooltiptext);
 
         this.currentActive = this.tabArray.length - 1;
 
@@ -89,7 +97,7 @@ class TabGroup {
     }
 
     activeTab() {
-        return this.tabArray(this.currentActive);
+        return this.tabArray[this.currentActive];
     }
 
     deactivateAllExcept(index) {
@@ -104,6 +112,12 @@ class TabGroup {
     activatePressed(node) {
         let index = indexOfNode(node);
         this.tabArray[index].activate();
+        return this.tabArray[index];
+    }
+
+    getPressed(node) {
+        let index = indexOfNode(node);
+        return this.tabArray[index];
     }
 
     updateIndices() {
@@ -111,6 +125,8 @@ class TabGroup {
             this.tabArray[i].tabArrayIndex = i;
         }
     }
+
+
 }
 
 class Tab {
@@ -122,23 +138,38 @@ class Tab {
     // In order to start creating Tabs you will have to have created a TabGroup first.
 
     // element is the DOMelement that will change when alternating between tabs
-    constructor(element, title, closable = true) {
-        this.element = element;
-        this.innerHTML = element.innerHTML;
+    constructor(elements, title, closable = true, tooltip = "") {
+        this.elements = elements;
+        this.innerHTMLs = [];
+
+        elements.forEach(element => {
+            this.innerHTMLs.push(element.innerHTML);
+        });
+
         this.title = title;
         this.active = false;
 
         this.closable = closable;
+
+        if (!tooltip) {
+            tooltip = "Show " + title;
+        }
+        this.tooltip = tooltip;
 
         this.tabButton = undefined;
         this.tabGroup = undefined;
         this.tabArrayIndex = undefined;
     }
 
-    activate() {
+    activate(change=true) {
         this.active = true;
         this.tabButton.classList.add("active")
-        this.element.innerHTML = this.innerHTML;
+
+        if(change) {
+            for (let i = 0; i < this.elements.length; i++) {
+                this.elements[i].innerHTML = this.innerHTMLs[i];
+            }
+        }
 
         this.tabGroup.deactivateAllExcept(this.tabArrayIndex);
     }
@@ -150,6 +181,12 @@ class Tab {
 
     close() {
         this.tabGroup.closeTab(this.tabArrayIndex);
+    }
+
+    updateContents() {
+        for (let i = 0; i < this.elements.length; i++) {
+            this.innerHTMLs[i] = this.elements[i].innerHTML;
+        }
     }
 }
 
