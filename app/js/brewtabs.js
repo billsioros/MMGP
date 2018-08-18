@@ -54,6 +54,7 @@ class TabGroup {
 
     clearTabs() {
         while(this.tabArray.length) {
+            if (this.tabArray[0])
             this.tabArray[0].close();
         }
 
