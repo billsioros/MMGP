@@ -931,8 +931,6 @@ function OnCreateWindow() {
 
     sqlite3 = require('sqlite3').verbose();
     db = new sqlite3.Database('../data/MMGP_data.db');
-    DOMElementHistory = require("domelementhistory");
-
 
     GenerateBusButtons();
     OnClickBus();

@@ -11,10 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "domelementhistory": "^1.0.2",
-    "electron-tabs": "^0.9.3",
     "npm": "^6.3.0",
-    "ol": "^5.1.3",
     "sqlite3": "^4.0.2"
   },
   "devDependencies": {
