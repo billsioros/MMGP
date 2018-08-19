@@ -718,7 +718,7 @@ function DisplayStudentMap(student) {
 function OpenSearchTab(element, title, infoDisplayFunction, mapDisplayFunction, students) {
     // Create a new Search Tab and Display it.
     let newTab = new Tab([element], title, true);
-    SearchTabGroup.addTab(newTab, OnSearchTabPress);
+    SearchTabGroup.addTab(newTab, OnSearchTabPress, OnCloseTabPress);
     newTab.students = students;
 
     // Depending on the process we want to do, we give different functions
@@ -733,6 +733,12 @@ function OpenSearchTab(element, title, infoDisplayFunction, mapDisplayFunction, 
 function DisplaySearchTab(tab) {
     MainInfo.innerHTML = "";
     InfoMapTabHeader.innerHTML = "";
+
+    let prevActive = null;
+
+    if (tab.subTabGroup) {
+        prevActive = tab.subTabGroup.currentActive;
+    }
 
     // Create a subTabGroup in tab to hold Info and Map
     let InfoMapTabGroup = new TabGroup(InfoMapTabHeader);
@@ -754,7 +760,20 @@ function DisplaySearchTab(tab) {
     let MapTab = new Tab([MainInfo], "Map", false);
     InfoMapTabGroup.addTab(MapTab, OnMapTabPress);
 
-    InfoTab.activate();
+    if (prevActive === 0) {
+        InfoTab.activate();
+    }
+    else if (prevActive === 1) {
+        MapTab.activate();
+        MainInfo.innerHTML = "";
+
+        CreateMap(tab.studentsToPlot);
+        PlotStudents(tab.studentsToPlot);
+    }
+    else if (prevActive === null) {
+        InfoTab.activate();
+    }
+    
     tab.updateContents();
 }
 
@@ -776,12 +795,14 @@ function OnClearTabsPress() {
     MainInfo.innerHTML = "";
 }
 
+function OnCloseTabPress() {
+    SearchTabGroup.closePressed(this);
+}
+
 
 // "Info - Map" Click handlers
 
 function OnInfoTabPress() {
-    MainInfo.removeAttribute("style");
-    MainInfo.onclick = () => {};
     SearchTabGroup.activeTab().subTabGroup.activatePressed(this);
     ReassignAllButtons();
 }

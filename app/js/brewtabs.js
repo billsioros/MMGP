@@ -20,13 +20,15 @@ class TabGroup {
         this.currentActive = undefined;
     }
 
-    addTab(tab, OnClick) {
+    addTab(tab, OnClick, OnClose = undefined) {
         this.tabArray.push(tab);
         var tabbutton = document.createElement("div");
         tabbutton.className = "brewtabs-tab";
         tabbutton.onclick = OnClick;
         tabbutton.classList.add("tooltip")
         tab.tabButton = tabbutton;
+
+        
 
         var tabtitle = document.createElement("span");
         tabtitle.className = "brewtabs-tab-title";
@@ -39,6 +41,22 @@ class TabGroup {
         tabtooltiptext.innerHTML = tab.tooltip;
         tabtooltiptext.hidden = true;
         tab.tabButton.appendChild(tabtooltiptext);
+
+        if (tab.closable) {
+            var closebutton = document.createElement("button");
+            closebutton.className = "brewtabs-tab-closebutton";
+            closebutton.onclick = OnClose;
+            closebutton.type = "button";
+
+            let closeimg = document.createElement("img");
+            closeimg.src = "../Images/x.png";
+            closeimg.className = "brewtabs-tab-closebutton-image";
+
+            closebutton.appendChild(closeimg);
+
+            tab.closebutton = closebutton;
+            tab.tabButton.appendChild(closebutton)
+        }
 
         this.currentActive = this.tabArray.length - 1;
 
@@ -116,8 +134,19 @@ class TabGroup {
         return this.tabArray[index];
     }
 
+    closePressed(node) {
+        let index = indexOfNode(node.parentNode);
+        this.tabArray[index].close();
+        return this.tabArray[index];
+    }
+
     getPressed(node) {
         let index = indexOfNode(node);
+        return this.tabArray[index];
+    }
+
+    getClosed(node) {
+        let index = indexOfNode(node.parentNode);
         return this.tabArray[index];
     }
 
