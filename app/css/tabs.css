@@ -2,10 +2,6 @@
     -webkit-user-select: none;
 }
 
-.brewtabs-tabs {
-
-}
-
 .brewtabs-tab {
     color: white;
     text-align: center;
@@ -16,6 +12,7 @@
     font-size: 0.9vw;
     float: left;
     z-index: 3;
+    /* position: relative; */
 }
 
 .brewtabs-tab.active {
@@ -29,8 +26,9 @@
     width: 8px;
     float: right;
     padding: 0%;
-    margin-left: 8px;
+    margin-left: 20px;
     z-index: 4;
+    /* position: absolute; */
 }
 
 .brewtabs-tab-closebutton:hover {
@@ -47,3 +45,16 @@
     height: 100%;
     background: none;
 }
+
+
+
+.InfoMapTabGroup .brewtabs-tab {
+    font-size: 13px;
+    padding: 18.5px 10px;
+}
+
+.SearchTabGroup .brewtabs-tab {
+    font-size: 12px;
+    padding: 18.5px 10px;
+}
+

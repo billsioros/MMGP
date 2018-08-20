@@ -1,0 +1,12 @@
+::-webkit-scrollbar {
+    width: 12px;
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: rgb(92, 92, 92); 
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(143, 143, 143);
+}

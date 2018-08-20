@@ -4,10 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <title>MMGP</title>
+
+    <!-- Style -->
     <link rel="stylesheet" type="text/css" href="../css/style.css"/>
     <link rel="stylesheet" type="text/css" href="../css/tabs.css">
+    <link rel="stylesheet" type="text/css" href="../css/scrollbar.css">
+    <link rel="stylesheet" type="text/css" href="../css/tables.css">
 
-    
+    <!-- Scripts -->
+    <script type="text/javascript" src="../js/brewtabs.js"> </script>
+    <script type="text/javascript" src="../js/search.js">   </script>
+    <script type="text/javascript" src="../js/khtml_all.js"></script>
 </head>
 
 <body>
@@ -18,23 +25,23 @@
         </button>    
     </header>
 
-    <div class = "side_bar">
+    <div class = "SideBar">
         
-        <h2>Bus</h2>
-        <div class = "BusButtons">
+        <h2 class = "SideBarHeader">Bus</h2>
+        <div class = "BusButtonsContainer">
             
         </div>
 
         <br><br><br>
 
-        <div class = 'SearchBars'>
-            <h2>Student</h2>
+        <div class = 'SearchBarsContainer'>
+            <h2 class = "SideBarHeader">Student</h2>
             <input type="text" placeholder="First Name.." id = "FirstNameBar" class="SearchBar">
             <input type="text" placeholder="Last Name.." id = "LastNameBar" class="SearchBar">
             <input type="text" placeholder="Class.." id = "ClassBar" class="SearchBar">
             <input type="text" placeholder="Level.." id = "LevelBar" class="SearchBar">
-            <button type="submit" id = "studentSearchButton">Search</button>
-            <button type='button' id = "studentClearButton">Clear</button>          
+            <button type="submit" id = "StudentSearchButton">Search</button>
+            <button type='button' id = "StudentClearButton">Clear</button>          
         </div>
 
         
@@ -45,9 +52,7 @@
         <div class="MainInfo"></div>
         
     </main>
-    <script type="text/javascript" src="../js/brewtabs.js"> </script>
-    <script type="text/javascript" src="../js/search.js">   </script>
-    <script type="text/javascript" src="../js/khtml_all.js"></script>
+    
     
     <script>
         OnCreateWindow();

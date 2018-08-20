@@ -12,7 +12,7 @@ let SearchTabHeader;
 let MainInfo;
 let docmain;
 
-let currentOpenBus = '0';
+let currentOpenBusID = '0';
 //let studentsToPlot;
 
 let docheader;
@@ -20,14 +20,21 @@ let mainHistory;
 let headerHistory;
 
 let map;
+let closing = false;
 
 function PullBuses() {
-    if (this.innerHTML === currentOpenBus) {
+    if (this.id === currentOpenBusID) {
         return;
     }
 
-    currentOpenBus = this.innerHTML;
+    MainInfo.innerHTML = "";
 
+    var currentOpenBus = document.getElementById(currentOpenBusID);
+    if (currentOpenBus)
+    currentOpenBus.classList.remove("active");
+
+    currentOpenBusID = this.id;
+    this.classList.add("active");
 
     var table = document.createElement("div")
     table.className = "Table"
@@ -35,13 +42,13 @@ function PullBuses() {
 
     // Create the first row of headers
     var firstRow = document.createElement("div")
-    firstRow.className = "busTableRow"
+    firstRow.className = "BusTableRow TableRow"
 
     var Headers = [' ', 'Bus Number', 'First Name', 'Last Name', 'Address', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
 
     for (var i = 0; i < Headers.length; i++) {
         var p = document.createElement("p")
-        p.className = "rowHeader"
+        p.className = "RowHeader"
         p.innerHTML = Headers[i]
         firstRow.appendChild(p)
     }
@@ -56,37 +63,37 @@ function PullBuses() {
 
     for (var studs = 0; studs < 50; studs++) {
         var row = document.createElement("div")
-        row.className = "busTableRow"
+        row.className = "BusTableRow TableRow"; 
 
         let first = Math.floor(Math.random() * 6)
         let last = Math.floor(Math.random() * 6)
 
         let button = document.createElement("button")
         button.type =  "button";
-        button.className = "rowData"
+        button.className = "RowData MoreButton"
         let searchimg = document.createElement("img");
         searchimg.src = "../Images/more.png";
-        searchimg.className = "searchButtonImage"
+        searchimg.className = "MoreButtonImage"
         button.appendChild(searchimg);
         row.appendChild(button);
 
         let p = document.createElement("p")
-        p.className = "rowData"
+        p.className = "RowData"
         p.innerHTML = this.innerHTML
         row.appendChild(p)
         
         p = document.createElement("p")
-        p.className = "rowData"
+        p.className = "RowData"
         p.innerHTML = Firsts[first]
         row.appendChild(p)
 
         p = document.createElement("p")
-        p.className = "rowData"
+        p.className = "RowData"
         p.innerHTML = Lasts[last]
         row.appendChild(p)
 
         p = document.createElement("p")
-        p.className = "rowData"
+        p.className = "RowData"
         p.innerHTML = Add
         row.appendChild(p)
 
@@ -97,11 +104,11 @@ function PullBuses() {
             else day = false;
 
             p = document.createElement("p")
-            p.className = "rowData"
+            p.className = "RowData"
             if (day === true)
-                p.className += " onDay"
+                p.className += " OnDay"
             else 
-                p.className += " offDay"
+                p.className += " OffDay"
             row.appendChild(p)
         }
 
@@ -111,19 +118,6 @@ function PullBuses() {
 
     MainInfo.appendChild(table)
 
-    // let InfoTab = new DOMElementHistory.Tab(docmain, "Info", false);
-    let InfoTab = new Tab(docmain, "Info", false);
-    InfoMapTabGroup.addTab(InfoTab, OnTabPress);
-
-    // docmain.innerHTML = "";
-    // let MapTab = new DOMElementHistory.Tab(docmain, "Map", false);
-    let MapTab = new Tab(docmain, "Map", false);
-    InfoMapTabGroup.addTab(MapTab, OnTabPress);
-
-    InfoTab.activate();
-
-    // mainHistory.saveState();
-    // headerHistory.saveState();
 }
 
 function DisplayBusMap() {
@@ -131,7 +125,7 @@ function DisplayBusMap() {
 }
 
 function OnClickBus() {
-    var BusButtons = document.getElementsByClassName("bus");
+    var BusButtons = document.getElementsByClassName("BusButton");
 
     for (let i = 0; i < BusButtons.length; i++) {
         BusButtons[i].onmouseup = PullBuses;
@@ -139,14 +133,15 @@ function OnClickBus() {
 }
 
 function GenerateBusButtons() {
-    const BusButtons = document.getElementsByClassName("BusButtons")[0];
+    const BusButtons = document.getElementsByClassName("BusButtonsContainer")[0];
 
     for (var i = 1; i <= 32; i++) {
 
         const newButton = document.createElement("button");
         newButton.type = "button";
-        newButton.className = "bus";
-        newButton.innerHTML = i.toString();
+        newButton.className = "BusButton";
+        newButton.id = i;
+        newButton.innerHTML = i;
 
         BusButtons.appendChild(newButton);
     }
@@ -254,14 +249,14 @@ function DisplayStudentSearchTable(Students) {
     table.className = "Table";
 
     var firstRow = document.createElement("div");
-    firstRow.className = "studentTableRow";
+    firstRow.className = "StudentTableRow TableRow";
 
     var Headers = [' ', 'Index', 'Last Name', 'First Name', 'ClassLevel'];
 
     // Use Headers above to create the first row of the table, showing column Names
     for (var i = 0; i < Headers.length; i++) {
         var p = document.createElement("p");
-        p.className = "rowHeader";
+        p.className = "RowHeader";
         p.innerHTML = Headers[i];
         firstRow.appendChild(p);
     }
@@ -273,12 +268,12 @@ function DisplayStudentSearchTable(Students) {
     for (let i = 0; i < StudentKeys.length; i++) {
         key = StudentKeys[i];
         var row = document.createElement("div");
-        row.className = "studentTableRow";
+        row.className = "StudentTableRow TableRow";
         
         // Keep the ID in html level but hidden,
         // so it can be retrieved afterwards for the "More" button
         let p = document.createElement("p");
-        p.className = "rowData";
+        p.className = "RowData";
         p.innerHTML = Students[key].ID;
         p.hidden = true;
         row.appendChild(p);
@@ -286,36 +281,36 @@ function DisplayStudentSearchTable(Students) {
         // The "More" button
         let button = document.createElement("button");
         button.type =  "button";
-        button.classList.add("rowData");
+        button.classList.add("RowData");
         button.classList.add("MoreButton");
         button.onclick = OnMorePress;
         let searchimg = document.createElement("img");
         searchimg.src = "../Images/more.png";
-        searchimg.className = "searchButtonImage";
+        searchimg.className = "MoreButtonImage";
         button.appendChild(searchimg);
         row.appendChild(button);
 
         // Index
         p = document.createElement("p");
-        p.className = "rowData";
+        p.className = "RowData";
         p.innerHTML = i + 1;
         row.appendChild(p);
       
         // Last Name
         p = document.createElement("p");
-        p.className = "rowData";
+        p.className = "RowData";
         p.innerHTML = Students[key].LastName;
         row.appendChild(p);
 
         // First Name
         p = document.createElement("p");
-        p.className = "rowData";
+        p.className = "RowData";
         p.innerHTML = Students[key].FirstName;
         row.appendChild(p);
 
         // Class - Level
         p = document.createElement("p");
-        p.className = "rowData";
+        p.className = "RowData";
         p.innerHTML = Students[key].ClassLevel;
         row.appendChild(p);
 
@@ -427,15 +422,24 @@ function SearchStudents() {
     // If window waits for 10 MILLIseconds everything is fine. for some reason...
 
     // Open a new SearchTab, which displays Students as a Table and Map Tabs.
+    let title;
+    let waitTime;
+    if (empty) {
+        title = "All Students";
+        waitTime = 50;
+    }
+    else {
+        title = "Student Search : \"" + FirstName + " " + LastName + " " + Class + " " + Level + "\"";
+        waitTime = 20;
+    }
     setTimeout(() => {     
-        let title = "Student Search : \"" + FirstName + " " + LastName + " " + Class + " " + Level + "\"";
         let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
         newSearchTab.activate(false);
 
         // Assign onclick to More Buttons.
         ReassignAllButtons(); 
         CurrentStudents = Students;
-    }, 10);
+    }, waitTime);
 
     
 }
@@ -451,10 +455,10 @@ function ClearSearchBars() {
 // Onclick assignment
 function OnSearchClearStudent() {   
     // Assign OnClick functions to search-clear buttons.
-    var StudentSearchButton = document.getElementById("studentSearchButton");
+    var StudentSearchButton = document.getElementById("StudentSearchButton");
     StudentSearchButton.onclick = SearchStudents;
 
-    var StudentClearButton = document.getElementById("studentClearButton");
+    var StudentClearButton = document.getElementById("StudentClearButton");
     StudentClearButton.onclick = ClearSearchBars;
 }
 
@@ -603,13 +607,13 @@ function DisplayStudentCard(student) {
 
             // Create the first row of headers
             var firstRow = document.createElement("div");
-            firstRow.className = "schedulesTableRow";
+            firstRow.className = "SchedulesTableRow TableRow";
             
             var Headers = ['Bus Number', 'Pickup Order', 'Address', 'Note', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri'];
 
             for (var i = 0; i < Headers.length; i++) {
                 var p = document.createElement("p");
-                p.className = "rowHeader";
+                p.className = "RowHeader";
                 p.innerHTML = Headers[i];
                 firstRow.appendChild(p);
             }
@@ -624,7 +628,7 @@ function DisplayStudentCard(student) {
             // If dayPart does not exist in students create a "p" with nothing in it
             if (student[Addresses].length === 0) {
                 var p = document.createElement("p");
-                p.className = "rowData";
+                p.className = "RowData";
                 p.innerHTML = "-";
                 scheduleDiv.appendChild(p);
             }
@@ -632,29 +636,29 @@ function DisplayStudentCard(student) {
 
             for (i = 0; i < student[Addresses].length; i++) {
                 var row = document.createElement("div");
-                row.className = "schedulesTableRow";
+                row.className = "SchedulesTableRow TableRow";
 
                 // Bus Number
                 p = document.createElement("p");
-                p.className = "rowData";
+                p.className = "RowData";
                 p.innerHTML = "Unassigned Bus";
                 row.appendChild(p)
 
                 // Schedule Order (at what index student will be picked up)
                 p = document.createElement("p");
-                p.className = "rowData";
+                p.className = "RowData";
                 p.innerHTML = "Unassigned Order";
                 row.appendChild(p);
 
                 // Address
                 p = document.createElement("p");
-                p.className = "rowData";
+                p.className = "RowData";
                 p.innerHTML = student[Addresses][i].FullAddress;
                 row.appendChild(p);
 
                 // Notes
                 p = document.createElement("p");
-                p.className = "rowData";
+                p.className = "RowData";
                 if (student.MorningNotes[i])
                     p.innerHTML = student[Notes][i];
                 else
@@ -666,12 +670,12 @@ function DisplayStudentCard(student) {
                 
                 for (let j = 0; j < WeekDays.length; j++) {
                     p = document.createElement("p");
-                    p.className = "rowData";
+                    p.className = "RowData";
 
                     if (student[Days][i][WeekDays[j]] === 1)
-                        p.className += " onDay";
+                        p.className += " OnDay";
                     else 
-                        p.className += " offDay";
+                        p.className += " OffDay";
 
                     row.appendChild(p);
                 }
@@ -782,6 +786,11 @@ function OnSearchTabPress() {
     // When search Tab is pressed display it and activate it.
     // Note: Displaying here is important because buttons(onclicks) and maps cannot be stored in any other way.
     let pressedTab = SearchTabGroup.getPressed(this);
+    if (pressedTab === SearchTabGroup.activeTab() || pressedTab.closed || closing) {
+        closing = false;
+        return;
+    }
+
     DisplaySearchTab(pressedTab);
     pressedTab.activate(false);
     ReassignAllButtons();
@@ -796,7 +805,18 @@ function OnClearTabsPress() {
 }
 
 function OnCloseTabPress() {
-    SearchTabGroup.closePressed(this);
+    closing = true;
+    let a = SearchTabGroup.closePressed(this);
+    if (SearchTabGroup.length === 0) {
+        InfoMapTabHeader.innerHTML = "";
+        MainInfo.innerHTML = "";
+    }
+    else {
+        let active = SearchTabGroup.activeTab();
+        DisplaySearchTab(SearchTabGroup.activeTab());
+        SearchTabGroup.activeTab().activate(false);
+        ReassignAllButtons();
+    }
 }
 
 
@@ -858,7 +878,7 @@ function PlotStudents(Students) {
 		size: {width: 26, height: 32},
 		origin: {x: 0, y: 0},
 		anchor: {
-			x: "-10px",
+			x: "-16px",
 			y: "-32px"
 		}
 	};
@@ -931,10 +951,10 @@ function ReassignAllButtons() {
     }
 
     // Assign OnClick functions to search-clear buttons.
-    var StudentSearchButton = document.getElementById("studentSearchButton");
+    var StudentSearchButton = document.getElementById("StudentSearchButton");
     StudentSearchButton.onclick = SearchStudents;
 
-    var StudentClearButton = document.getElementById("studentClearButton");
+    var StudentClearButton = document.getElementById("StudentClearButton");
     StudentClearButton.onclick = ClearSearchBars;
 }
 

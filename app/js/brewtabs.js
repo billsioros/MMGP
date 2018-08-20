@@ -18,6 +18,7 @@ class TabGroup {
         this.tabArray = [];
 
         this.currentActive = undefined;
+        this.length = this.tabArray.length;
     }
 
     addTab(tab, OnClick, OnClose = undefined) {
@@ -62,8 +63,9 @@ class TabGroup {
 
         tab.tabGroup = this;
         tab.tabArrayIndex = this.tabArray.length - 1;
+        this.length = this.tabArray.length;
 
-        this.DOMtabs.appendChild(tab.tabButton)
+        this.DOMtabs.appendChild(tab.tabButton);
     }
 
     removeTab(index) {
@@ -78,6 +80,7 @@ class TabGroup {
 
         this.tabArray = [];
         this.currentActive = undefined;
+        this.length = 0;
     }
 
     moveRight() {
@@ -103,16 +106,17 @@ class TabGroup {
     }
 
     closeTab(index) {
-        if (this.currentActive > index) {
+        if (this.currentActive > index || index === this.tabArray.length - 1) {
             this.currentActive--;
         }
         this.DOMtabs.removeChild(this.tabArray[index].tabButton)
         this.tabArray.splice(index, 1);
         this.updateIndices();
 
-        if (this.tabArray.length !== 0) {
-            this.tabArray[this.currentActive].activate();
-        }
+        // if (this.tabArray.length !== 0) {
+        //     this.tabArray[this.currentActive].activate();
+        // }
+        this.length = this.tabArray.length;
     }
 
     activeTab() {
@@ -180,6 +184,7 @@ class Tab {
         this.active = false;
 
         this.closable = closable;
+        this.closed = false;
 
         if (!tooltip) {
             tooltip = "Show " + title;
@@ -210,6 +215,7 @@ class Tab {
     }
 
     close() {
+        this.closed = true;
         this.tabGroup.closeTab(this.tabArrayIndex);
     }
 
