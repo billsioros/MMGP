@@ -5,12 +5,12 @@
 #include <vector>       // std::vector
 #include <bitset>       // std::bitset
 #include <string>       // std::string
-#include <list>         // std::list
+#include <vector>       // std::vector
 #include <fstream>      // std::ostream
 #include <iostream>     // std::cerr
 #include <ctime>        // std::time etc
 
-void Manager::load(SQLite::Database& database, std::list<Student>& students, const std::string& daypart)
+void Manager::load(SQLite::Database& database, std::vector<Student>& students, const std::string& daypart)
 {
     bool failed = false;
 
@@ -126,7 +126,7 @@ static std::string unique(const char * fname)
     return std::string(fname) + strtime;
 }
 
-void Manager::csv(const char * dayPart, const std::list<std::vector<Bus>>& schedules)
+void Manager::csv(const char * dayPart, const std::vector<std::vector<Bus>>& schedules)
 {
     std::ofstream csv(unique(dayPart) + ".csv");
     if (!csv.is_open())
@@ -166,7 +166,7 @@ void Manager::csv(const char * dayPart, const std::list<std::vector<Bus>>& sched
     }
 }
 
-void Manager::json(const char * dayPart, const std::list<std::vector<Bus>>& schedules)
+void Manager::json(const char * dayPart, const std::vector<std::vector<Bus>>& schedules)
 {
     std::ofstream json(unique(dayPart) + ".json");
     if (!json.is_open())
@@ -256,4 +256,27 @@ double Manager::distance(SQLite::Database& database, const Student& A, const Stu
         std::cerr << "<ERR>: No such students" << std::endl;
         std::exit(EXIT_FAILURE);
     }
+}
+
+Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)
+{
+    Manager::Student student;
+    
+    for (std::size_t i = 0; i < A._days.size(); i++)
+        student._days[i] = A._days[i] || B._days[i];
+
+    student._position = A._position + B._position;
+    student._timespan = A._timespan + B._timespan;
+
+    return student;
+}
+
+Manager::Student operator/(const Manager::Student& _student, double factor)
+{
+    Manager::Student student;
+
+    student._position = _student._position / factor;
+    student._timespan = _student._timespan / factor;
+
+    return student;
 }

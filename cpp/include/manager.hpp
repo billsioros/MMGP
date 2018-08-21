@@ -6,7 +6,7 @@
 #include <vector>       // std::vector
 #include <bitset>       // std::bitset
 #include <string>       // std::string
-#include <list>         // std::list
+#include <vector>       // std::vector
 #include <iosfwd>       // std::ostream
 
 namespace Manager
@@ -43,11 +43,14 @@ namespace Manager
         }
     };
 
-    void load(SQLite::Database&, std::list<Student>&, const std::string&);
+    void load(SQLite::Database&, std::vector<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void csv(const char *, const std::list<std::vector<Bus>>&);
-    void json(const char *, const std::list<std::vector<Bus>>&);
+    void csv(const char *, const std::vector<std::vector<Bus>>&);
+    void json(const char *, const std::vector<std::vector<Bus>>&);
 
     double distance(SQLite::Database&, const Student&, const Student&, const std::string&);
 }
+
+Manager::Student operator+(const Manager::Student&, const Manager::Student&);
+Manager::Student operator/(const Manager::Student&, double);
