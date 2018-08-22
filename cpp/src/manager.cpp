@@ -10,6 +10,62 @@
 #include <iostream>     // std::cerr
 #include <ctime>        // std::time etc
 
+// Student Struct:
+Manager::Student::Student()
+{
+}
+
+Manager::Student::Student(const Manager::Student& other)
+:
+_studentId(other._studentId),
+_addressId(other._addressId),
+_days(other._days),
+_position(other._position),
+_timespan(other._timespan)
+{
+}
+
+Manager::Student::Student(
+    const char * _studentId,
+    const char * _addressId,
+    const bool _days[],
+    const double _p[],
+    const double _t[]
+)
+:
+_studentId(_studentId),
+_addressId(_addressId),
+_position(_p[0], _p[1]),
+_timespan(_t[0], _t[1])
+{
+    for (std::size_t i = 0UL; i < 5UL; i++)
+        this->_days.set(i, _days[i]);
+}
+
+Manager::Student& Manager::Student::operator=(const Manager::Student& other)
+{
+    this->_studentId = other._studentId;
+    this->_addressId = other._addressId;
+    this->_days      = other._days;
+    this->_position  = other._position;
+    this->_timespan  = other._timespan;
+
+    return *this;
+}
+
+// Bus Struct:
+Manager::Bus::Bus(
+    const char * _busId,
+    unsigned _number,
+    unsigned _capacity
+)
+:
+_busId(_busId),
+_number(_number),
+_capacity(_capacity)
+{
+}
+
 void Manager::load(SQLite::Database& database, std::vector<Student>& students, const std::string& daypart)
 {
     bool failed = false;
