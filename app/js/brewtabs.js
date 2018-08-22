@@ -7,7 +7,7 @@ class TabGroup {
         tabgroup.className = "brewtabs-tabgroup";
         
 
-        var tabs = document.createElement("div");
+        var tabs = document.createElement("span");
         tabs.className = "brewtabs-tabs";
         tabgroup.appendChild(tabs);
         
@@ -50,7 +50,7 @@ class TabGroup {
             closebutton.type = "button";
 
             let closeimg = document.createElement("img");
-            closeimg.src = "../Images/x.png";
+            closeimg.src = "../images/General/x.png";
             closeimg.className = "brewtabs-tab-closebutton-image";
 
             closebutton.appendChild(closeimg);

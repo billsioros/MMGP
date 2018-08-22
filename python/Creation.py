@@ -6,16 +6,18 @@ import sys
 import csv
 from itertools import izip
 from DBmanagement import DBManager as DBM
+from kitchen.text.converters import getwriter
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
 
+# UTF8Writer = getwriter('greek')
+# sys.stdout = UTF8Writer(sys.stdout)
 
 GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
-
-con = pyodbc.connect(DRIVER=ServerType, 
-                 SERVER=ServerName, 
+con = pyodbc.connect(DRIVER=ServerType,
+                 SERVER=ServerName,
                  DATABASE=DatabaseName,
                  Trusted_Connection='yes', autocommit=True)
 
@@ -24,7 +26,7 @@ con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
 
 # Select All Morning Students
 
-cursor = con.cursor() 
+cursor = con.cursor()
 
 ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
           "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
@@ -45,6 +47,8 @@ for tableName, key in izip(ogDbTables, RowListKeys):
                   sched.SchNotes,               \
                   sched.LevelDescription,       \
                   sched.ClassDescription,       \
+                  sched.ScheduleName,           \
+                  sched.SchStudentOrder,        \
                   sched.SchMonday,              \
                   sched.SchTuesday,             \
                   sched.SchWednesday,           \
@@ -61,7 +65,7 @@ for tableName, key in izip(ogDbTables, RowListKeys):
 
       cursor.execute(sql)
       RowLists[key] = cursor.fetchall()
-
+      
 # Select All Buses
 
 sql = "Select BusCode, BusNumber, BusStudentSites     \

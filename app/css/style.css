@@ -29,6 +29,7 @@ header {
     grid-column: 2 / 3;
 }
 
+
 main {
     background-color: #3b3b3b;
     
@@ -85,11 +86,11 @@ main {
 
 .BusButtonsContainer {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(7, 1fr);
 }
 
 .BusButton {
-    font-size: 2.2vw;
+    font-size: 20px;
 
     background-color: #373838;
 
@@ -101,7 +102,7 @@ main {
 }
 
 .BusButton:hover {
-    background-color: #4f5050
+    background-color: #3e3f3f
 }
 
 .BusButton.active {
@@ -111,6 +112,92 @@ main {
 .BusButton:active {
     background-color: #424242
 }
+
+/* Bus Selectors */
+.SelectorsContainer {
+    display: grid;
+    grid-template-areas: "DayPart Schedules";
+
+    height: 150px;
+}
+
+#DayPartSelector {
+    grid-area: DayPart;
+}
+
+#SchedulesSelector {
+    grid-area: Schedules;
+}
+
+#ScheduleSelectorDropDown {
+    background-color: #2d2e2e;
+
+    border: none;
+    outline: none;
+    padding: 2%;
+    margin: 1px;
+
+    width: 100%;
+}
+
+#ScheduleSelectorDropDown:hover {
+    background-color: #3c3d3d;
+}
+
+#ScheduleSelectorDropDown:active {
+    background-color: #3c3d3d;
+}
+
+.ScheduleSelectorOption {
+    text-align: center;
+    font-size: 15px;
+    font-family: 'Ubuntu', Arial, sans-serif;
+}
+
+.Selector {
+    height: 150px;
+}
+
+.SelectorHeader {
+    font-size: 22px;
+
+    background-color: rgb(30, 30, 30); 
+
+    margin: 1px;
+
+    height: 28px;
+}
+
+.SelectorButtonsContainer {
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+
+    height: 117.69px;
+}
+
+.SelectorButton {
+    font-size: 15px;
+    
+    background-color: #2d2e2e;
+    
+    outline: none;
+    border: none;
+    margin: 1px;
+}
+
+.SelectorButton:hover {
+    background-color: #4f5050
+}
+
+.SelectorButton.active {
+    background-color: #5e5f5f
+}
+
+.SelectorButton:active {
+    background-color: #424242
+}
+
+
 
 /* Search Bars */
 
@@ -141,7 +228,7 @@ main {
 }
 
 
-#StudentSearchButton, #StudentClearButton {
+#StudentSearchButton, #StudentClearButton, #ScheduleClearButton, #ScheduleSearchButton {
     font-size: 15px;
 
     background-color: rgb(46, 46, 46);
@@ -152,11 +239,11 @@ main {
     width: 45%;
 }
 
-#StudentSearchButton:hover, #StudentClearButton:hover, #ClearTabsButton:hover {
+#StudentSearchButton:hover, #StudentClearButton:hover, #ScheduleSearchButton:hover, #ScheduleClearButton:hover, #ClearTabsButton:hover {
     background-color: rgb(54, 54, 54);
 }
 
-#StudentSearchButton:active, #StudentClearButton:active, #ClearTabsButton:active {
+#StudentSearchButton:active, #StudentClearButton:active #ScheduleSearchButton:active #ScheduleClearButton:active, #ClearTabsButton:active {
     background-color: rgb(39, 39, 39);
 }
 

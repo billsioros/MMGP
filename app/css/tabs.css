@@ -2,6 +2,13 @@
     -webkit-user-select: none;
 }
 
+.brewtabs-tabs {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    /* white-space: nowrap; */
+    /* min-width: 100%; */
+}
+
 .brewtabs-tab {
     color: white;
     text-align: center;
@@ -11,12 +18,13 @@
     background-color: #252526;
     font-size: 0.9vw;
     float: left;
+    /* display: inline-block; */
     z-index: 3;
     /* position: relative; */
 }
 
 .brewtabs-tab.active {
-    background: #292a2b;
+    background: #3a3c3d;
 }
 
 .brewtabs-tab-closebutton {
@@ -56,5 +64,10 @@
 .SearchTabGroup .brewtabs-tab {
     font-size: 12px;
     padding: 18.5px 10px;
+    background-color: #252526;
+}
+
+.SearchTabGroup .brewtabs-tab.active {
+    background: #313131;
 }
 

@@ -6,6 +6,8 @@ const {BackClick, ForwardClick} = require('./search.js')
 let win
 
 
+
+
 function createWindow() {
     // Create the browser window.
     win = new BrowserWindow({width:1640, height:840})
@@ -13,12 +15,14 @@ function createWindow() {
 
     // and Load the index.html of the app
     win.loadFile("html/index.html")
+    let search = require("../js/search.js");
 
     var menu = Menu.buildFromTemplate([
         {
             label: 'Menu',
             submenu: [
-                {label: 'Run MMGP Algorithm'},                
+                {label: 'Run MMGP Algorithm'},
+                {label: 'Create Database (overwrite)', click() {CreateDatabase();}},                
                 {type: 'separator'},
                 {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {app.quit()}}
             ]
@@ -42,6 +46,18 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
+    })
+}
+
+function CreateDatabase() {
+    spawn = require("child_process").spawn;
+    var proc = spawn('python', ["../python/test.py", "Hello", "World"] );
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
+    })
+    proc.stderr.on('data', function(data) {
+        console.log(data.toString());
     })
 }
 

@@ -45,6 +45,7 @@ class DBManager:
                     Thursday        bit,                \
                     Friday          bit,                \
                     DayPart         varchar(255),       \
+                    FullNote        varchar(255),       \
                     EarlyPickup     varchar(255),       \
                     LatePickup      varchar(255),       \
                     EarlyDrop       varchar(255),       \
@@ -184,6 +185,8 @@ class DBManager:
     SchWednesday
     SchThursday
     SchFriday
+    ScheduleName
+    SchStudentOrder
     SchGPS_X
     SchGPS_Y
     StContactPhone
@@ -195,6 +198,7 @@ class DBManager:
     """ Note To Self:
         Be sure to make Tables a double iterable of type (RowList, DayPart)"""
     def InsertStudent(self, Tables, GeoFailsFile=None):
+        requests = 0
         # Pull Addresses from Database
         Addresses = self.GetAddresses()
 
@@ -212,8 +216,9 @@ class DBManager:
 
             # Insert All Records that already have GPS coordinates
             for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
-            Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
-
+            BusSchedule, ScheduleOrder, Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
+                # print LastName.decode("greek", "strict")
+                # print BusSchedule, ScheduleOrder
                 # Concatenate the Address to a single string and hash it
                 FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
                 
@@ -284,15 +289,12 @@ class DBManager:
                     if OtherPhone2 == "":
                         OtherPhone2 = None
 
-                BusSchedule = None
-                ScheduleOrder = None
-
                 StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,
-                EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule, ScheduleOrder,
+                Notes, EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule, ScheduleOrder,
                 Phone, Mobile, OtherPhone1, OtherPhone2]
                 
                 self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
 
             # Insert All Records that do not have GPS coordinates
@@ -308,9 +310,11 @@ class DBManager:
 
                     self.__InitMapsHandler()
                     # Only 10 requests per sec
+                    
                     if i == 10:
                         sleep(1) # Sleep 1 seconds for safety
                         i = 0
+                    requests += 1
                     FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
                     i += 1
 
@@ -327,7 +331,7 @@ class DBManager:
 
                         self.Cursor.execute("Insert Into Address    \
                                             Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
-
+        print requests
         self.__DiscardAddresses()
 
 
@@ -391,7 +395,7 @@ class DBManager:
 
         self.__InitMapsHandler()
         Matrix = self._MapsHandler.DistanceMatrix(Origins)
-        print Table
+        # print Table
         
         if not direct:
             if not fileName:

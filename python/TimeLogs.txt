@@ -1,0 +1,9 @@
+
+Time elapsed for 240 requests (718x718): 10min, 43sec
+Time per request: 2.67556666036 sec
+
+Time elapsed for 260 requests (780x780): 11min, 8sec
+Time per request: 2.56478076073 sec
+
+Time elapsed for 24 requests (235x235): 0min, 24sec
+Time per request: 1.03220833341 sec

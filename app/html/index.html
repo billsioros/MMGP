@@ -32,7 +32,37 @@
             
         </div>
 
-        <br><br><br>
+        <br><br>
+
+        <div class = "SelectorsContainer">
+            <div id="DayPartSelector" class = "Selector">
+                <h2 class="SelectorHeader">Day Part</h2>
+                <div id="DayPartSelectorButtonsContainer" class="SelectorButtonsContainer">
+                    <button class="DayPartSelectorButton SelectorButton">Morning</button>
+                    <button class="DayPartSelectorButton SelectorButton">Noon</button>
+                    <button class="DayPartSelectorButton SelectorButton">Study</button>
+                </div> 
+            </div>
+
+            
+            <div id="SchedulesSelector" class = "Selector">
+                <h2 class="SelectorHeader">Schedule</h2>
+                <select id = "ScheduleSelectorDropDown">
+                </select>
+                <!-- <div id="SchedulesSelectorButtonsContainer" class="SelectorButtonsContainer">
+                    <button class="ScheduleSelectorButton SelectorButton">First</button>
+                    <button class="ScheduleSelectorButton SelectorButton">Second</button>
+                    <button class="ScheduleSelectorButton SelectorButton">Third</button>
+                </div>  -->
+            </div>
+        </div>
+
+        <!-- <br> -->
+
+        <button type="submit" id = "ScheduleSearchButton">Search</button>
+        <!-- <button type='button' id = "ScheduleClearButton">Clear</button> -->
+
+        <br><br><br><br>
 
         <div class = 'SearchBarsContainer'>
             <h2 class = "SideBarHeader">Student</h2>
@@ -40,6 +70,11 @@
             <input type="text" placeholder="Last Name.." id = "LastNameBar" class="SearchBar">
             <input type="text" placeholder="Class.." id = "ClassBar" class="SearchBar">
             <input type="text" placeholder="Level.." id = "LevelBar" class="SearchBar">
+            <h2 class = "SideBarHeader">Address</h2>
+            <input type="text" placeholder="Street.." id = "StreetBar" class="SearchBar">
+            <input type="text" placeholder="Number.." id = "NumberBar" class="SearchBar">
+            <input type="text" placeholder="Municipal.." id = "MunicipalBar" class="SearchBar">
+            <input type="text" placeholder="ZipCode.." id = "ZipCodeBar" class="SearchBar">
             <button type="submit" id = "StudentSearchButton">Search</button>
             <button type='button' id = "StudentClearButton">Clear</button>          
         </div>

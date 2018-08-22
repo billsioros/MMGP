@@ -479,7 +479,11 @@ def SecondsToMinutes(duration):
     
 
 def GetCredentials(fileName, rowIndex):
-
+    GoogleAPI_key = None
+    OpenAPI_key = None
+    ServerType = None
+    ServerName = None
+    DatabaseName = None
     with open(fileName) as credentials:
         readCSV = csv.DictReader(credentials, delimiter=',')
         i = 0

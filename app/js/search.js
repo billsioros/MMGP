@@ -2,6 +2,7 @@
 let sqlite3;
 let db;
 let DOMElementHistory;
+let spawn;
 
 // TabGroups
 let SearchTabGroup;
@@ -22,20 +23,144 @@ let headerHistory;
 let map;
 let closing = false;
 
-function PullBuses() {
-    if (this.id === currentOpenBusID) {
+// Bus Searching
+
+function GetActiveDayPart() {
+    var buttons = document.getElementsByClassName("DayPartSelectorButton");
+    var active = null;
+
+    for (let i = 0; i < buttons.length; i++) {
+        if (buttons[i].classList.contains("active")) {
+            active = buttons[i];
+            break;
+        }
+    }
+
+    return active;
+}
+
+function GetActiveSchedule() {
+    var DropDown = document.getElementById("ScheduleSelectorDropDown");
+    return DropDown.value;
+}
+
+function GetActiveBus() {
+    var buttons = document.getElementsByClassName("BusButton");
+    var active = null;
+
+    for (let i = 0; i < buttons.length; i++) {
+        if (buttons[i].classList.contains("active")) {
+            active = buttons[i];
+            break;
+        }
+    }
+
+    return active
+}
+
+function OnBusClickHandle() {
+    var buttons = document.getElementsByClassName("DayPartSelectorButton");
+    
+    for (let i = 0; i < buttons.length; i++) {
+        buttons[i].onclick = OnDayPartClick;
+    }
+
+    // buttons = document.getElementsByClassName("ScheduleSelectorButton");
+
+    // for (let i = 0; i < buttons.length; i++) {
+    //     buttons[i].onclick = OnScheduleClick;
+    // }
+
+    buttons = document.getElementsByClassName("BusButton");
+
+    for (let i = 0; i < buttons.length; i++) {
+        buttons[i].onclick = OnBusClick;
+    }
+
+    var button = document.getElementById("ScheduleSearchButton");
+    button.onmouseup = SearchSchedule;
+
+}
+
+function OnDayPartClick() {
+    var prevActive = GetActiveDayPart();
+    if (prevActive)
+        prevActive.classList.remove("active");
+    this.classList.add("active");
+    GenerateScheduleButtons();
+}
+
+function OnScheduleClick() {
+    var prevActive = GetActiveSchedule();
+    if (prevActive)
+        prevActive.classList.remove("active");
+    this.classList.add("active");
+}
+
+function OnBusClick() {
+    var prevActive = GetActiveBus();
+    if (prevActive)
+        prevActive.classList.remove("active");
+    this.classList.add("active");
+}
+
+function SearchSchedule() {
+    let activeBus = null;
+    let activeBusButton = GetActiveBus();
+
+    if (activeBusButton)
+        activeBus = activeBusButton.innerHTML
+
+    let activeDayPartButton = GetActiveDayPart()
+    let activeSchedule = GetActiveSchedule();
+
+    if (!activeDayPartButton || !activeSchedule) {
+        alert("Error: No DayPart or Schedule given.");
         return;
     }
 
-    MainInfo.innerHTML = "";
+    let activeDayPart = activeDayPartButton.innerHTML
 
-    var currentOpenBus = document.getElementById(currentOpenBusID);
-    if (currentOpenBus)
-    currentOpenBus.classList.remove("active");
+    let busSchedule;
 
-    currentOpenBusID = this.id;
-    this.classList.add("active");
+    switch(activeDayPart) {
+        case "Morning":
+            if (!activeBus) {
+                alert("Error: No Bus given.");
+                return
+            }
+            busSchedule = activeBus + "Π" + activeSchedule;
+            break;
+        case "Noon":
+            if (!activeBus) {
+                alert("Error: No Bus given.");
+                return
+            }
+            busSchedule = activeBus + "Μ" + activeSchedule;
+            break;
+        case "Study":
+            busSchedule = activeSchedule;
+            break;
+        default: break;
+    }
 
+    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
+    let Students = GetBusFromDB(sql);
+
+    let title = activeDayPart + ": " +  busSchedule;
+    let waitTime = 20;
+
+    setTimeout(() => {     
+        let newSearchTab = OpenSearchTab(docmain, title, DisplayBusTable, DisplayBusMap, Students);
+        newSearchTab.activate(false);
+
+        // Assign onclick to More Buttons.
+        ReassignAllButtons(); 
+        CurrentStudents = Students;
+    }, waitTime);
+}
+
+function DisplayBusTable(Students) {
     var table = document.createElement("div")
     table.className = "Table"
 
@@ -44,7 +169,7 @@ function PullBuses() {
     var firstRow = document.createElement("div")
     firstRow.className = "BusTableRow TableRow"
 
-    var Headers = [' ', 'Bus Number', 'First Name', 'Last Name', 'Address', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
+    var Headers = [' ', 'Bus Schedule', 'Schedule Order', 'Last Name', 'First Name', 'Class - Level', 'Address', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
 
     for (var i = 0; i < Headers.length; i++) {
         var p = document.createElement("p")
@@ -55,98 +180,216 @@ function PullBuses() {
 
     table.appendChild(firstRow);
 
-    // Pull from sql and print out
-    // For now test:
-    var Firsts = ['Giannis', 'Dimitris', 'Vasilis', 'Giorgos', 'Nikos', 'Kostas']
-    var Lasts = ['Ioannou', 'Dimitriou', 'Vasileiou', 'Georgiou', 'Nikolaou', 'Konstantinou']
-    var Add = 'Erechthiou 5, Alimos 17455'
-
-    for (var studs = 0; studs < 50; studs++) {
+    for (var i = 0; i < Students.length; i++) {
+        let student = Students[i];
         var row = document.createElement("div")
         row.className = "BusTableRow TableRow"; 
 
-        let first = Math.floor(Math.random() * 6)
-        let last = Math.floor(Math.random() * 6)
+        // Keep the ID in html level but hidden,
+        // so it can be retrieved afterwards for the "More" button
+        let p = document.createElement("p");
+        p.className = "RowData";
+        p.innerHTML = student.ID;
+        p.hidden = true;
+        row.appendChild(p);
 
         let button = document.createElement("button")
         button.type =  "button";
         button.className = "RowData MoreButton"
         let searchimg = document.createElement("img");
-        searchimg.src = "../Images/more.png";
+        searchimg.src = "../images/General/more.png";
         searchimg.className = "MoreButtonImage"
         button.appendChild(searchimg);
         row.appendChild(button);
 
-        let p = document.createElement("p")
+        p = document.createElement("p")
         p.className = "RowData"
-        p.innerHTML = this.innerHTML
+        p.innerHTML = student.BusSchedule;
+        row.appendChild(p)
+
+        p = document.createElement("p")
+        p.className = "RowData"
+        p.innerHTML = student.ScheduleOrder;
         row.appendChild(p)
         
         p = document.createElement("p")
         p.className = "RowData"
-        p.innerHTML = Firsts[first]
+        p.innerHTML = student.LastName
         row.appendChild(p)
 
         p = document.createElement("p")
         p.className = "RowData"
-        p.innerHTML = Lasts[last]
+        p.innerHTML = student.FirstName
         row.appendChild(p)
+
+        p = document.createElement("p");
+        p.className = "RowData";
+        p.innerHTML = student.ClassLevel;
+        row.appendChild(p);
 
         p = document.createElement("p")
         p.className = "RowData"
-        p.innerHTML = Add
+        p.innerHTML = student.Address.FullAddress
         row.appendChild(p)
 
-        for (var i = 0; i < 5; i++) {
-            rand = Math.random() * 100;
-            var day = true;
-            if (rand > 50) day = true;
-            else day = false;
+        // Days
+        let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                
+        for (let j = 0; j < WeekDays.length; j++) {
+            p = document.createElement("p");
+            p.className = "RowData";
 
-            p = document.createElement("p")
-            p.className = "RowData"
-            if (day === true)
-                p.className += " OnDay"
+            if (student.Days[WeekDays[j]] === 1)
+                p.className += " OnDay";
             else 
-                p.className += " OffDay"
-            row.appendChild(p)
+                p.className += " OffDay";
+
+            row.appendChild(p);
         }
 
-
-        table.appendChild(row)
+        table.appendChild(row);
     }
-
-    MainInfo.appendChild(table)
-
+    MainInfo.appendChild(table);
 }
 
-function DisplayBusMap() {
+function DisplayBusMap(Students) {
+    let studentsToPlot = [];
 
+    for (let i = 0; i < Students.length; i++) {
+        let student = Students[i];
+
+        studentsToPlot.push({
+            Name: student.Name,
+            Addresses: [student.Address],
+            Order: i.toString()
+        })
+    }
+
+    return studentsToPlot;
 }
 
-function OnClickBus() {
-    var BusButtons = document.getElementsByClassName("BusButton");
+function GenerateScheduleButtons() {
+    let selectordropdown = document.getElementById("ScheduleSelectorDropDown");
+    selectordropdown.innerHTML = "";
 
-    for (let i = 0; i < BusButtons.length; i++) {
-        BusButtons[i].onmouseup = PullBuses;
+    let DayPart = GetActiveDayPart().innerHTML;
+    let sql;
+    let ScheduleCount;
+
+    switch(DayPart) {
+        case "Morning":
+            ScheduleCount = 2;
+            sql = "Select Count(distinct(BusSchedule)) as Count From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
+            break;
+        case "Noon":
+            ScheduleCount = 3;
+            sql = "Select Count(distinct(BusSchedule)) as Count From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
+            break;
+        case "Study":
+            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
+            break;
+        default: break;
     }
+
+    let option = document.createElement("option");
+        option.className = "ScheduleSelectorOption";
+        option.value = "";
+        option.innerHTML = "";
+        selectordropdown.appendChild(option);
+
+    if (DayPart === "Study") {
+        
+        db.each(sql, function(err, row) {
+            let option = document.createElement("option");
+            option.className = "ScheduleSelectorOption";
+            option.value = row.BusSchedule;
+            option.innerHTML = row.BusSchedule;
+            selectordropdown.appendChild(option);
+        })
+    }
+    else {
+        // let Count;
+        // db.each(sql, function(err, row) {
+        //     Count = row.Count;
+        // })
+
+        // ScheduleCount = Math.floor(Count / 32);
+
+        for (let i = 0; i < ScheduleCount; i++) {
+            let option = document.createElement("option");
+            option.className = "ScheduleSelectorOption";
+            option.value = i + 1;
+            option.innerHTML = i + 1;
+            selectordropdown.appendChild(option);
+        }
+    }
+    
 }
 
 function GenerateBusButtons() {
     const BusButtons = document.getElementsByClassName("BusButtonsContainer")[0];
 
-    for (var i = 1; i <= 32; i++) {
+    let sql = "Select Number From Bus Order By Number";
 
+    db.each(sql, function(err, row) {
         const newButton = document.createElement("button");
         newButton.type = "button";
         newButton.className = "BusButton";
-        newButton.id = i;
-        newButton.innerHTML = i;
+        newButton.id = row.Number;
+        newButton.innerHTML = row.Number;
 
         BusButtons.appendChild(newButton);
-    }
+    });
 }
 
+function GetBusFromDB(sql) {
+    let Students = [];
+
+    db.each(sql, function(err, row) {
+        let id = "\"" + row.StudentID + "\"";
+
+        let classLevel;
+        if (!row.Class)
+            classLevel = row.Level;
+        else 
+            classLevel = row.Class + " - " + row.Level + "Y";
+
+        student = {
+            ID: row.StudentID,
+            Name: row.LastName + " " + row.FirstName,
+            ClassLevel: classLevel,
+            FirstName: row.FirstName,
+            LastName: row.LastName,
+
+            Phone: row.Phone,
+            Mobile: row.Mobile,
+            OtherPhone1: row.OtherPhone1,
+            OtherPhone2: row.OtherPhone2,
+
+            Address: {
+                FullAddress: row.FullAddress,
+                Longitude: row.GPS_X,
+                Latitude: row.GPS_Y
+            },
+
+            Days: {
+                Monday: row.Monday,
+                Tuesday: row.Tuesday,
+                Wednesday: row.Wednesday,
+                Thursday: row.Thursday,
+                Friday: row.Friday
+            },
+
+            Notes: row.FullNote,
+            BusSchedule: row.BusSchedule,
+            ScheduleOrder: row.ScheduleOrder
+        }
+
+        Students.push(student);
+    })
+
+    return Students
+}
 // Student Searching
 
 let CurrentStudents = {};
@@ -203,16 +446,19 @@ function GetStudentFromDB(sql) {
 
             key = row.DayPart + 'Days';
             student[key].push( {    Monday: row.Monday,
-                                    Tuesday: row.Tuesday,
-                                    Wednesday: row.Wednesday,
-                                    Thursday: row.Thursday,
-                                    Friday: row.Friday }  );
+                                Tuesday: row.Tuesday,
+                                Wednesday: row.Wednesday,
+                                Thursday: row.Thursday,
+                                Friday: row.Friday }  );
             
             key = row.DayPart + 'Notes';
-            student[key].push(row.Notes);
+            student[key].push(row.FullNote);
 
             key = row.DayPart + 'Buses';
             student[key].push(row.BusSchedule);
+            
+            key = row.DayPart + "Order";
+            student[key].push(row.ScheduleOrder);
 
             Students[id] = student;
         }
@@ -236,7 +482,7 @@ function GetStudentFromDB(sql) {
             key = row.DayPart + 'Buses';
             Students[id][key].push(row.BusSchedule)
         }
-    })
+    });
 
     return Students;
 }
@@ -285,7 +531,7 @@ function DisplayStudentSearchTable(Students) {
         button.classList.add("MoreButton");
         button.onclick = OnMorePress;
         let searchimg = document.createElement("img");
-        searchimg.src = "../Images/more.png";
+        searchimg.src = "../images/General/more.png";
         searchimg.className = "MoreButtonImage";
         button.appendChild(searchimg);
         row.appendChild(button);
@@ -322,7 +568,7 @@ function DisplayStudentSearchTable(Students) {
 
     // This does not actually display map. It just saves info for when map will be displayed
 function DisplayStudentSearchMap(Students) {
-    let studentsToPlot = {};
+    let studentsToPlot = [];
 
     StudentKeys = Object.keys(Students);
     for (let i = 0; i < StudentKeys.length; i++) {
@@ -336,9 +582,11 @@ function DisplayStudentSearchMap(Students) {
         Addresses.push.apply(Addresses, student.MorningAddresses);
         Addresses.push.apply(Addresses, student.NoonAddresses);
         Addresses.push.apply(Addresses, student.StudyAddresses);
-        studentsToPlot[id] = {
+        studentsToPlot.push({
             Name: student.LastName + ' ' + student.FirstName,
-            Addresses: Addresses };
+            Addresses: Addresses,
+            Order: ""
+         });
     }
 
     return studentsToPlot;
@@ -353,23 +601,37 @@ function OnMorePress() {
     var student;
     var CurrentStudents = SearchTabGroup.activeTab().students;
 
+    let exists = false;
     // If students exist in active tab's students get it from those.
     if (CurrentStudents.hasOwnProperty(id)) {
         student = CurrentStudents[id];
+        exists = true;
     }
     // else get a new one
     else {
+        id = children[0].innerHTML;
         let sql = "Select * From Student, Address\
         Where Student.AddressID = Address.AddressID and\
         Student.StudentID = \"" + id + "\"";
 
-        student = GetStudentFromDB(sql)[id];
+        id = "\"" + id + "\"";
+        
+        student = GetStudentFromDB(sql);
     }
 
-    // Open a new search tab holding the specific student's info and Addressmap.
-    let title = "Student Info: " + student.LastName + " " + student.FirstName;
-    let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentCard, DisplayStudentMap, student);
-    newSearchTab.activate(false);
+    setTimeout(() => {     
+        if (!exists) {
+            student = student[id];
+        }
+
+        // Open a new search tab holding the specific student's info and Addressmap.
+        let title = student.LastName + " " + student.FirstName;
+        let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentCard, DisplayStudentMap, student);
+        newSearchTab.activate(false);
+
+    }, 5);
+    
+    
 
 }
 
@@ -382,9 +644,13 @@ function SearchStudents() {
     const LastName = document.getElementById("LastNameBar").value;
     const Class = document.getElementById("ClassBar").value;
     const Level = document.getElementById("LevelBar").value;
+    const Street = document.getElementById("StreetBar").value;
+    const Number = document.getElementById("NumberBar").value;
+    const Municipal = document.getElementById("MunicipalBar").value;
+    const ZipCode = document.getElementById("ZipCodeBar").value;
 
-    const SearchValues = [FirstName, LastName, Class, Level];
-    const SearchFields = ["FirstName", "LastName", "Class", "Level"];
+    const SearchValues = [FirstName, LastName, Class, Level, Street, Number, Municipal, ZipCode];
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
     let toSearch = "Where Student.AddressID = Address.AddressID";
 
     // Check if no filters are given.
@@ -429,7 +695,8 @@ function SearchStudents() {
         waitTime = 50;
     }
     else {
-        title = "Student Search : \"" + FirstName + " " + LastName + " " + Class + " " + Level + "\"";
+        // Student Search : 
+        title = "\"" + FirstName + " " + LastName + " " + Class + " " + Level + " " + Street + " " + Number + " " + Municipal + " " + ZipCode + "\"";
         waitTime = 20;
     }
     setTimeout(() => {     
@@ -440,8 +707,6 @@ function SearchStudents() {
         ReassignAllButtons(); 
         CurrentStudents = Students;
     }, waitTime);
-
-    
 }
 
 // Clear search bars click handler
@@ -624,6 +889,8 @@ function DisplayStudentCard(student) {
             let Addresses = dayPart + 'Addresses';
             let Notes = dayPart + 'Notes';
             let Days = dayPart + 'Days';
+            let Buses = dayPart + 'Buses';
+            let Orders = dayPart + 'Order';
             
             // If dayPart does not exist in students create a "p" with nothing in it
             if (student[Addresses].length === 0) {
@@ -641,13 +908,19 @@ function DisplayStudentCard(student) {
                 // Bus Number
                 p = document.createElement("p");
                 p.className = "RowData";
-                p.innerHTML = "Unassigned Bus";
+                if (student[Buses][i])
+                    p.innerHTML = student[Buses][i];
+                else 
+                    p.innerHTML = "-"
                 row.appendChild(p)
 
                 // Schedule Order (at what index student will be picked up)
                 p = document.createElement("p");
                 p.className = "RowData";
-                p.innerHTML = "Unassigned Order";
+                if (student[Orders][i])
+                    p.innerHTML = student[Orders][i];
+                else 
+                    p.innerHTML = "-"
                 row.appendChild(p);
 
                 // Address
@@ -659,7 +932,7 @@ function DisplayStudentCard(student) {
                 // Notes
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student.MorningNotes[i])
+                if (student[Notes][i])
                     p.innerHTML = student[Notes][i];
                 else
                     p.innerHTML = "-";
@@ -696,7 +969,7 @@ function DisplayStudentCard(student) {
 
 function DisplayStudentMap(student) {
     // Display Student Map
-    let studentsToPlot = {};
+    let studentsToPlot = [];
 
     // Find the id = key to Students "dict"
     let id = "\"" + student.ID + "\"";
@@ -707,9 +980,11 @@ function DisplayStudentMap(student) {
     Addresses.push.apply(Addresses, student.MorningAddresses);
     Addresses.push.apply(Addresses, student.NoonAddresses);
     Addresses.push.apply(Addresses, student.StudyAddresses);
-    studentsToPlot[id] = {
+    studentsToPlot.push( {
         Name: student.LastName + ' ' + student.FirstName,
-        Addresses: Addresses };
+        Addresses: Addresses,
+        Order: ""
+     });
 
     return studentsToPlot;
 }
@@ -842,9 +1117,9 @@ function OnMapTabPress() {
 function CreateMap(Students) {
     // Create an empty map:
     let coords = [];
-    StudentKeys = Object.keys(Students);
-    for (let i = 0; i < StudentKeys.length; i++) {
-        let student = Students[StudentKeys[i]];
+    // StudentKeys = Object.keys(Students);
+    for (let i = 0; i < Students.length; i++) {
+        let student = Students[i];
         for (let j = 0; j < student.Addresses.length; j++) {
             let address = student.Addresses[j];
             coords.push([address.Latitude, address.Longitude]);
@@ -873,8 +1148,8 @@ function CreateMap(Students) {
 
 function PlotStudents(Students) {
     // Define icon to render
-    let icon = {
-		url: "../images/red-dot.png",
+    let defaultIcon = {
+		url: "../images/Markers/red-dot.png",
 		size: {width: 26, height: 32},
 		origin: {x: 0, y: 0},
 		anchor: {
@@ -884,10 +1159,10 @@ function PlotStudents(Students) {
 	};
     
     // For each student add a marker to the current open map.
-    StudentKeys = Object.keys(Students);
+    // StudentKeys = Object.keys(Students);
     let plottedAddresses = {};
-    for (let i = 0; i < StudentKeys.length; i++) {
-        let student = Students[StudentKeys[i]];
+    for (let i = 0; i < Students.length; i++) {
+        let student = Students[i];
         let studentName = student.Name;
 
         for (let j = 0; j < student.Addresses.length; j++) {
@@ -918,7 +1193,8 @@ function PlotStudents(Students) {
                 plottedAddresses[key] = {
                     title: "1) " + studentName + "\n" + address.FullAddress,
                     names: [studentName],
-                    address: address
+                    address: address,
+                    order: student.Order
                 };
             }
         }
@@ -927,6 +1203,21 @@ function PlotStudents(Students) {
     let plottedAddressKeys = Object.keys(plottedAddresses);
     for (let i = 0; i < plottedAddressKeys.length; i++) {
         let toMark = plottedAddresses[plottedAddressKeys[i]];
+
+        let icon
+        if (toMark.order === "")
+            icon = defaultIcon;
+        else {
+            icon = {
+                url: "../images/NumberedMarkers/marker" + toMark.order + ".png",
+                size: {width: 26, height: 32},
+                origin: {x: 0, y: 0},
+                anchor: {
+                    x: "-16px",
+                    y: "-32px"
+                }
+            }
+        }
 
         var marker = new khtml.maplib.overlay.Marker({
             position: new khtml.maplib.LatLng(toMark.address.Latitude, toMark.address.Longitude), 
@@ -956,6 +1247,8 @@ function ReassignAllButtons() {
 
     var StudentClearButton = document.getElementById("StudentClearButton");
     StudentClearButton.onclick = ClearSearchBars;
+
+    OnBusClickHandle();
 }
 
 function CacheDOM() {
@@ -966,16 +1259,16 @@ function CacheDOM() {
     MainInfo = document.getElementsByClassName("MainInfo")[0];
 }
 
-
 // Loader
 function OnCreateWindow() {
 
     sqlite3 = require('sqlite3').verbose();
     db = new sqlite3.Database('../data/MMGP_data.db');
-
+    
     GenerateBusButtons();
-    OnClickBus();
+    // OnClickBus();
     OnSearchClearStudent();
+    OnBusClickHandle();
 
     CacheDOM();
 
@@ -983,6 +1276,8 @@ function OnCreateWindow() {
     SearchTabGroup = new TabGroup(document.getElementsByClassName("SearchTabGroup")[0])
 
     document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
+
+    ReassignAllButtons();
 }
 
-// module.exports = {BackClick, ForwardClick};
+// module.exports = {CreateDatabase};

@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "child_process": "^1.0.2",
     "npm": "^6.3.0",
     "sqlite3": "^4.0.2"
   },
