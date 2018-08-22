@@ -54,3 +54,5 @@ namespace Manager
 
 Manager::Student operator+(const Manager::Student&, const Manager::Student&);
 Manager::Student operator/(const Manager::Student&, double);
+std::ostream& operator<<(std::ostream&, const Manager::Student&);
+bool operator==(const Manager::Student&, const Manager::Student&);

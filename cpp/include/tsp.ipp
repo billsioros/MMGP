@@ -182,8 +182,9 @@ TSP::path<T> TSP::opt2(
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const TSP::path<T>& path)
 {
+    std::size_t id = 0UL;
     for (const auto& step : path.second)
-        os << step << (&step != &path.second.back() ? " -> " : "");
+        os << ++id << ". " << step << std::endl;
 
     os << "\nTotal cost: " << path.first;
 

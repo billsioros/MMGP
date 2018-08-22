@@ -280,3 +280,15 @@ Manager::Student operator/(const Manager::Student& _student, double factor)
 
     return student;
 }
+
+std::ostream& operator<<(std::ostream& os, const Manager::Student& student)
+{
+    os << "[ " << student._studentId << ' ' << student._addressId << " ]";
+    
+    return os;
+}
+
+bool operator==(const Manager::Student& A, const Manager::Student& B)
+{
+    return A._studentId == B._studentId;
+}
