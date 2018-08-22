@@ -19,14 +19,17 @@ namespace Manager
         Vector2        _position;
         Vector2        _timespan;
 
-        Student() {}
-        Student(const char * _studentId, const char * _addressId, const bool _days[], const double _p[], const double _t[])
-        :
-        _studentId(_studentId), _addressId(_addressId), _position(_p[0], _p[1]), _timespan(_t[0], _t[1])
-        {
-            for (std::size_t i = 0UL; i < 5UL; i++)
-                this->_days.set(i, _days[i]);
-        }
+        Student();
+        Student(const Student&);
+        Student(
+            const char *,
+            const char *,
+            const bool *,
+            const double *,
+            const double *
+        );
+
+        Student& operator=(const Student&);
     };
 
     struct Bus
@@ -36,11 +39,7 @@ namespace Manager
         unsigned             _capacity;
         std::vector<Student> _students;
 
-        Bus(const char * _busId, unsigned _number, unsigned _capacity)
-        :
-        _busId(_busId), _number(_number), _capacity(_capacity)
-        {
-        }
+        Bus(const char *, unsigned, unsigned);
     };
 
     void load(SQLite::Database&, std::vector<Student>&, const std::string&);
