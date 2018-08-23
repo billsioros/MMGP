@@ -331,7 +331,6 @@ class DBManager:
 
                         self.Cursor.execute("Insert Into Address    \
                                             Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
-        print requests
         self.__DiscardAddresses()
 
 
@@ -400,12 +399,12 @@ class DBManager:
         if not direct:
             if not fileName:
                 "Error: No file was given, writing on \"tempDistances.tsv\""
-                fileName = "temp.tsv"
+                fileName = "../data/temp.tsv"
 
             logcsv = open(fileName, "w+")
-            logcsv.write("ID1\tID2\tDuration\tDistance\n")
+            logcsv.write("DayPart\tID1\tID2\tDuration\tDistance\n")
             for id1, id2, duration, distance in Matrix:
-                logcsv.write(str(id1) + "\t" + str(id2) + "\t" + str(duration) + "\t" + str(distance) + "\n")
+                logcsv.write(DayPart + "\t" + str(id1) + "\t" + str(id2) + "\t" + str(duration) + "\t" + str(distance) + "\n")
             logcsv.close()
 
         else:

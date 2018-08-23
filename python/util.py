@@ -211,7 +211,6 @@ class MapsHandler:
 
 
     def __OpenDistanceMatrix(self, locations):
-
         Locations = dict()
         Locations["IDs"] = list()
         Locations["Points"] = list()
@@ -280,7 +279,7 @@ class MapsHandler:
         (Mins, Secs) = SecondsToMinutes(WholeDuration)
 
         try:
-            TimeLog = open("TimeLogs.txt", "a+")
+            TimeLog = open("../data/TimeLogs.txt", "a+")
             TimeLog.write("\n")
             full =  "Time elapsed for " + str(requests) + " requests (" + str(len(locations))\
              + "x" + str(len(locations)) + "): " + str(Mins) + "min, " + str(Secs) + "sec"

@@ -23,6 +23,12 @@ let headerHistory;
 let map;
 let closing = false;
 
+// Marker-Images
+let Markers = ["../images/Markers/blue-dot.png", "../images/Markers/red-dot.png", 
+"../images/Markers/green-dot.png", "../images/Markers/yellow-dot.png",
+"../images/Markers/purple-dot.png", "../images/Markers/orange-dot.png", "../images/Markers/pink-dot.png"];
+
+
 // Bus Searching
 
 function GetActiveDayPart() {
@@ -65,20 +71,22 @@ function OnBusClickHandle() {
         buttons[i].onclick = OnDayPartClick;
     }
 
-    // buttons = document.getElementsByClassName("ScheduleSelectorButton");
+    var busbuttons = document.getElementsByClassName("BusButton");
+    
 
-    // for (let i = 0; i < buttons.length; i++) {
-    //     buttons[i].onclick = OnScheduleClick;
-    // }
-
-    buttons = document.getElementsByClassName("BusButton");
-
-    for (let i = 0; i < buttons.length; i++) {
-        buttons[i].onclick = OnBusClick;
-    }
+    setTimeout(() => {
+        console.log(busbuttons);
+        for (let i = 0; i < busbuttons.length; i++) {
+            busbuttons[i].onclick = OnBusClick;
+        }
+    }, 20);
+    
 
     var button = document.getElementById("ScheduleSearchButton");
     button.onmouseup = SearchSchedule;
+
+    button = document.getElementById("AddScheduleButton");
+    button.onmouseup = AddSchedule;
 
 }
 
@@ -104,7 +112,7 @@ function OnBusClick() {
     this.classList.add("active");
 }
 
-function SearchSchedule() {
+function GetScheduleSearchCriteria() {
     let activeBus = null;
     let activeBusButton = GetActiveBus();
 
@@ -144,16 +152,69 @@ function SearchSchedule() {
         default: break;
     }
 
+    return busSchedule;
+}
+
+function SearchSchedule() {
+    let busSchedule = GetScheduleSearchCriteria();
+
     let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
     let Students = GetBusFromDB(sql);
 
-    let title = activeDayPart + ": " +  busSchedule;
+    let title = busSchedule;
     let waitTime = 20;
+    let type = "Schedule";
 
     setTimeout(() => {     
-        let newSearchTab = OpenSearchTab(docmain, title, DisplayBusTable, DisplayBusMap, Students);
+        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
         newSearchTab.activate(false);
+        newSearchTab.activeBuses = [busSchedule];
 
+        // Assign onclick to More Buttons.
+        ReassignAllButtons(); 
+        CurrentStudents = Students;
+    }, waitTime);
+}
+
+function AddSchedule() {
+    let activeTab = SearchTabGroup.activeTab()
+
+    if (activeTab.type !== "Schedule") {
+        return;
+    }
+    
+    let busSchedule = GetScheduleSearchCriteria();
+
+    if (activeTab.hasOwnProperty("activeBuses")) {
+        if (activeTab.activeBuses.length >= Markers.length) {
+            alert("Can't have more than 7 open schedules at once.");
+            return;
+        }
+        if (activeTab.activeBuses.includes(busSchedule)) {
+            alert("This Schedule is already open in this tab.");
+            return;
+        }
+    }
+
+    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
+    let Students = GetBusFromDB(sql);
+
+
+    let title = activeTab.title + ", " + busSchedule;
+    let type = "Schedule";
+    let waitTime = 20;
+
+    setTimeout(() => {
+        Students.push.apply(Students, activeTab.students)
+        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
+
+        newSearchTab.activeBuses = activeTab.activeBuses
+        newSearchTab.activeBuses.push(busSchedule);
+        
+
+        newSearchTab.activate(false);
+        activeTab.close();
+        
         // Assign onclick to More Buttons.
         ReassignAllButtons(); 
         CurrentStudents = Students;
@@ -261,7 +322,8 @@ function DisplayBusMap(Students) {
         studentsToPlot.push({
             Name: student.Name,
             Addresses: [student.Address],
-            Order: i.toString()
+            Order: (i + 1).toString(),
+            Schedules: [student.BusSchedule]
         })
     }
 
@@ -390,6 +452,22 @@ function GetBusFromDB(sql) {
 
     return Students
 }
+
+function CheckDisabledScheduleButton(tab) {
+    if (tab == null) {
+        document.getElementById("AddScheduleButton").disabled = true;
+        return;
+    }
+
+    if (tab.type === "Schedule") {
+        document.getElementById("AddScheduleButton").disabled = false;
+    }
+    else {
+        document.getElementById("AddScheduleButton").disabled = true;
+    }
+    return;
+}
+
 // Student Searching
 
 let CurrentStudents = {};
@@ -582,9 +660,16 @@ function DisplayStudentSearchMap(Students) {
         Addresses.push.apply(Addresses, student.MorningAddresses);
         Addresses.push.apply(Addresses, student.NoonAddresses);
         Addresses.push.apply(Addresses, student.StudyAddresses);
+
+        let Schedules = [];
+        Schedules.push.apply(Schedules, student.MorningBuses);
+        Schedules.push.apply(Schedules, student.NoonBuses);
+        Schedules.push.apply(Schedules, student.StudyBuses);
+
         studentsToPlot.push({
             Name: student.LastName + ' ' + student.FirstName,
             Addresses: Addresses,
+            Schedules: Schedules,
             Order: ""
          });
     }
@@ -626,7 +711,8 @@ function OnMorePress() {
 
         // Open a new search tab holding the specific student's info and Addressmap.
         let title = student.LastName + " " + student.FirstName;
-        let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentCard, DisplayStudentMap, student);
+        let type = "StudentCard"
+        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentCard, DisplayStudentMap, student);
         newSearchTab.activate(false);
 
     }, 5);
@@ -699,8 +785,9 @@ function SearchStudents() {
         title = "\"" + FirstName + " " + LastName + " " + Class + " " + Level + " " + Street + " " + Number + " " + Municipal + " " + ZipCode + "\"";
         waitTime = 20;
     }
+    let type = "Student"
     setTimeout(() => {     
-        let newSearchTab = OpenSearchTab(docmain, title, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
+        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
         newSearchTab.activate(false);
 
         // Assign onclick to More Buttons.
@@ -980,9 +1067,16 @@ function DisplayStudentMap(student) {
     Addresses.push.apply(Addresses, student.MorningAddresses);
     Addresses.push.apply(Addresses, student.NoonAddresses);
     Addresses.push.apply(Addresses, student.StudyAddresses);
+
+    let Schedules = [];
+    Schedules.push.apply(Schedules, student.MorningBuses);
+    Schedules.push.apply(Schedules, student.NoonBuses);
+    Schedules.push.apply(Schedules, student.StudyBuses);
+
     studentsToPlot.push( {
         Name: student.LastName + ' ' + student.FirstName,
         Addresses: Addresses,
+        Schedules: Schedules,
         Order: ""
      });
 
@@ -994,9 +1088,9 @@ function DisplayStudentMap(student) {
 // Search Tabs
 // Each search tab will have 2 sub tabs
 
-function OpenSearchTab(element, title, infoDisplayFunction, mapDisplayFunction, students) {
+function OpenSearchTab(element, title, type, infoDisplayFunction, mapDisplayFunction, students) {
     // Create a new Search Tab and Display it.
-    let newTab = new Tab([element], title, true);
+    let newTab = new Tab([element], title, type, true);
     SearchTabGroup.addTab(newTab, OnSearchTabPress, OnCloseTabPress);
     newTab.students = students;
 
@@ -1006,6 +1100,9 @@ function OpenSearchTab(element, title, infoDisplayFunction, mapDisplayFunction, 
     newTab.mapDisplayFunction = mapDisplayFunction;
 
     DisplaySearchTab(newTab);
+
+    CheckDisabledScheduleButton(newTab);
+
     return newTab;
 }
 
@@ -1025,7 +1122,7 @@ function DisplaySearchTab(tab) {
 
     // Display the info and store it to a new InfoTab
     tab.infoDisplayFunction(tab.students);
-    let InfoTab = new Tab([MainInfo], "Info", false);
+    let InfoTab = new Tab([MainInfo], "Info", "Info", false);
     InfoMapTabGroup.addTab(InfoTab, OnInfoTabPress);
 
     // Reset html to create a new MapTab
@@ -1036,7 +1133,7 @@ function DisplaySearchTab(tab) {
     // Create a new MapTab to hold the map
     // Note: This does not actually hold the map. Rather, it will render the map when it is pressed.
 
-    let MapTab = new Tab([MainInfo], "Map", false);
+    let MapTab = new Tab([MainInfo], "Map", "Map", false);
     InfoMapTabGroup.addTab(MapTab, OnMapTabPress);
 
     if (prevActive === 0) {
@@ -1046,8 +1143,8 @@ function DisplaySearchTab(tab) {
         MapTab.activate();
         MainInfo.innerHTML = "";
 
-        CreateMap(tab.studentsToPlot);
-        PlotStudents(tab.studentsToPlot);
+        CreateMap(tab);
+        PlotStudents(tab);
     }
     else if (prevActive === null) {
         InfoTab.activate();
@@ -1068,6 +1165,9 @@ function OnSearchTabPress() {
 
     DisplaySearchTab(pressedTab);
     pressedTab.activate(false);
+
+    CheckDisabledScheduleButton(pressedTab)
+
     ReassignAllButtons();
 }
 
@@ -1077,6 +1177,8 @@ function OnClearTabsPress() {
     CacheDOM();
     InfoMapTabHeader.innerHTML = "";
     MainInfo.innerHTML = "";
+
+    CheckDisabledScheduleButton(null);
 }
 
 function OnCloseTabPress() {
@@ -1090,10 +1192,10 @@ function OnCloseTabPress() {
         let active = SearchTabGroup.activeTab();
         DisplaySearchTab(SearchTabGroup.activeTab());
         SearchTabGroup.activeTab().activate(false);
+        CheckDisabledScheduleButton(SearchTabGroup.activeTab())
         ReassignAllButtons();
     }
 }
-
 
 // "Info - Map" Click handlers
 
@@ -1108,13 +1210,14 @@ function OnMapTabPress() {
     searchTab.subTabGroup.activatePressed(this);
     MainInfo.innerHTML = "";
     
-    CreateMap(searchTab.studentsToPlot);
-    PlotStudents(searchTab.studentsToPlot);
+    CreateMap(searchTab);
+    PlotStudents(searchTab);
 }
 
 // Map functions
 
-function CreateMap(Students) {
+function CreateMap(tab) {
+    let Students = tab.studentsToPlot;
     // Create an empty map:
     let coords = [];
     // StudentKeys = Object.keys(Students);
@@ -1146,7 +1249,15 @@ function CreateMap(Students) {
     map.centerAndZoom(new khtml.maplib.LatLng(Ox, Oy), 12);
 }
 
-function PlotStudents(Students) {
+function PlotStudents(tab) {
+    let Students = tab.studentsToPlot;
+    if (tab.hasOwnProperty("activeBuses")) {
+        if (tab.activeBuses.length > 1) {
+            PlotSchedules(Students, tab.activeBuses);
+            return;
+        }
+    }
+
     // Define icon to render
     let defaultIcon = {
 		url: "../images/Markers/red-dot.png",
@@ -1167,6 +1278,7 @@ function PlotStudents(Students) {
 
         for (let j = 0; j < student.Addresses.length; j++) {
             let address = student.Addresses[j];
+            let schedule = student.Schedules[j];
             let key = address.Latitude + "," + address.Longitude;
             let found = false;
 
@@ -1184,16 +1296,18 @@ function PlotStudents(Students) {
                 if (found) continue;
 
                 title += (index + ") " + studentName + "\n");
-                title += address.FullAddress;
+                title += address.FullAddress + "\n";
+                title += schedule;
                 plottedAddresses[key].names.push(studentName)
                 plottedAddresses[key].title = title;              
 
             }
             else {
                 plottedAddresses[key] = {
-                    title: "1) " + studentName + "\n" + address.FullAddress,
+                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule,
                     names: [studentName],
                     address: address,
+                    schedule: schedule,
                     order: student.Order
                 };
             }
@@ -1225,11 +1339,92 @@ function PlotStudents(Students) {
             title: toMark.title,
             names: toMark.names,
             address: toMark.address,
+            schedule: toMark.schedule,
             icon: icon
         });
     }
     
     console.log(plottedAddresses);
+}
+
+function PlotSchedules(Students, Schedules) {
+
+    SchedulesIcons = {};
+    for (let i = 0; i < Schedules.length; i++) {
+        let icon = {
+            url: Markers[i],
+            size: {width: 26, height: 32},
+            origin: {x: 0, y: 0},
+            anchor: {
+                x: "-16px",
+                y: "-32px"
+            }
+        };
+
+        SchedulesIcons[Schedules[i]] = {
+            Schedule: Schedules[i],
+            Icon: icon
+        }
+    }
+    // For each student add a marker to the current open map, depending on student's schedule
+    // StudentKeys = Object.keys(Students);
+    let plottedAddresses = {};
+    for (let i = 0; i < Students.length; i++) {
+        let student = Students[i];
+        let studentName = student.Name;
+
+        for (let j = 0; j < student.Addresses.length; j++) {
+            let address = student.Addresses[j];
+            let schedule = student.Schedules[j];
+            let key = address.Latitude + "," + address.Longitude;
+            let found = false;
+
+            if (plottedAddresses.hasOwnProperty(key)) {
+                let title = "";
+
+                let index = 1;
+                plottedAddresses[key].names.forEach(name => {
+                    if (name === studentName) {
+                        found = true;
+                    }
+                    title += (index + ") " + name + "\n");
+                    index++;
+                });
+                if (found) continue;
+
+                title += (index + ") " + studentName + "\n");
+                title += address.FullAddress + "\n";
+                title += schedule;
+                plottedAddresses[key].names.push(studentName)
+                plottedAddresses[key].title = title;              
+
+            }
+            else {
+                plottedAddresses[key] = {
+                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule,
+                    names: [studentName],
+                    address: address,
+                    schedule: schedule,
+                    order: student.Order
+                };
+            }
+        }
+    }
+
+    let plottedAddressKeys = Object.keys(plottedAddresses);
+    for (let i = 0; i < plottedAddressKeys.length; i++) {
+        let toMark = plottedAddresses[plottedAddressKeys[i]];
+
+        var marker = new khtml.maplib.overlay.Marker({
+            position: new khtml.maplib.LatLng(toMark.address.Latitude, toMark.address.Longitude), 
+            map: map,
+            title: toMark.title,
+            names: toMark.names,
+            address: toMark.address,
+            schedule: toMark.schedule,
+            icon: SchedulesIcons[toMark.schedule].Icon
+        });
+    }
 }
 
 // General Utility functions
@@ -1266,9 +1461,7 @@ function OnCreateWindow() {
     db = new sqlite3.Database('../data/MMGP_data.db');
     
     GenerateBusButtons();
-    // OnClickBus();
     OnSearchClearStudent();
-    OnBusClickHandle();
 
     CacheDOM();
 

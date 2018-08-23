@@ -19,7 +19,10 @@
 
 <body>
     
-    <header class="SearchTabGroup">
+    <header>
+        <div class="SearchTabGroup">
+
+        </div>
         <button type=button id="ClearTabsButton" name="ClearTabs">
             Clear Tabs
         </button>    
@@ -59,8 +62,8 @@
 
         <!-- <br> -->
 
-        <button type="submit" id = "ScheduleSearchButton">Search</button>
-        <!-- <button type='button' id = "ScheduleClearButton">Clear</button> -->
+        <button type="submit" id = "ScheduleSearchButton" class="SearchButton">Search</button>
+        <button type='button' id = "AddScheduleButton" class="SearchButton" disabled>Add Schedule</button>
 
         <br><br><br><br>
 
@@ -75,8 +78,8 @@
             <input type="text" placeholder="Number.." id = "NumberBar" class="SearchBar">
             <input type="text" placeholder="Municipal.." id = "MunicipalBar" class="SearchBar">
             <input type="text" placeholder="ZipCode.." id = "ZipCodeBar" class="SearchBar">
-            <button type="submit" id = "StudentSearchButton">Search</button>
-            <button type='button' id = "StudentClearButton">Clear</button>          
+            <button type="submit" id = "StudentSearchButton" class="SearchButton">Search</button>
+            <button type='button' id = "StudentClearButton" class="SearchButton">Clear</button>          
         </div>
 
         

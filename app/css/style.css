@@ -27,6 +27,9 @@ header {
     background-color: #252526;
     
     grid-column: 2 / 3;
+
+    display: grid;
+    grid-template-columns: 13fr 1fr
 }
 
 
@@ -59,7 +62,7 @@ main {
 
     margin: 1px 0;
 
-    width: 100%;
+    /* width: 100%; */
 }
 
 /* Side Bar */
@@ -227,8 +230,7 @@ main {
     background-color: #616161;
 }
 
-
-#StudentSearchButton, #StudentClearButton, #ScheduleClearButton, #ScheduleSearchButton {
+.SearchButton {
     font-size: 15px;
 
     background-color: rgb(46, 46, 46);
@@ -239,13 +241,19 @@ main {
     width: 45%;
 }
 
-#StudentSearchButton:hover, #StudentClearButton:hover, #ScheduleSearchButton:hover, #ScheduleClearButton:hover, #ClearTabsButton:hover {
-    background-color: rgb(54, 54, 54);
+.SearchButton:disabled {
+    cursor: default;
+    opacity: 0.5;
 }
 
-#StudentSearchButton:active, #StudentClearButton:active #ScheduleSearchButton:active #ScheduleClearButton:active, #ClearTabsButton:active {
+.SearchButton:hover:not([disabled]), #ClearTabsButton:hover {
+    background-color: rgb(146, 146, 146);
+}
+
+.SearchButton:active, #ClearTabsButton:active {
     background-color: rgb(39, 39, 39);
 }
+
 
 #ClearTabsButton {
     font-size: 15px;
@@ -257,7 +265,7 @@ main {
     height: 100%;
 
     cursor: pointer;
-    float: right;
+    /* float: right; */
 }
 
 

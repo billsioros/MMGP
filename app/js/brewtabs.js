@@ -113,9 +113,6 @@ class TabGroup {
         this.tabArray.splice(index, 1);
         this.updateIndices();
 
-        // if (this.tabArray.length !== 0) {
-        //     this.tabArray[this.currentActive].activate();
-        // }
         this.length = this.tabArray.length;
     }
 
@@ -172,7 +169,7 @@ class Tab {
     // In order to start creating Tabs you will have to have created a TabGroup first.
 
     // element is the DOMelement that will change when alternating between tabs
-    constructor(elements, title, closable = true, tooltip = "") {
+    constructor(elements, title, type, closable = true, tooltip = "") {
         this.elements = elements;
         this.innerHTMLs = [];
 
@@ -181,6 +178,7 @@ class Tab {
         });
 
         this.title = title;
+        this.type = type;
         this.active = false;
 
         this.closable = closable;

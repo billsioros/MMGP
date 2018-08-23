@@ -1,9 +1,9 @@
 import pyodbc
 from util import GetCredentials
 import sys
-import os
 from itertools import izip
 from DBmanagement import DBManager as DBM
+import time
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
@@ -24,6 +24,7 @@ cursor = con.cursor()
 
 ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
           "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
+
 RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
 RowLists = dict()
 
@@ -62,24 +63,11 @@ for tableName, key in izip(ogDbTables, RowListKeys):
       
 # Select All Buses
 
-sql = "Select BusCode, BusNumber, BusStudentSites     \
-       From dbo.Bus"
-
-cursor.execute(sql)
-Buses = cursor.fetchall()
-
 con.close()
 
 # Create a new Database
-
-if os.path.isfile("../data/MMGP_Data.db"):
-      os.remove("../data/MMGP_Data.db")
-
 DBManager = DBM("../data/MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
 
-
-DBManager.InsertBus(Buses)
-DBManager.Commit()
 
 GeoFailsFile = open("../data/FormatFails.tsv", "w+")
 GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
@@ -93,15 +81,6 @@ for key in RowLists.keys():
 
 
 DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
-DBManager.Commit()
-
-DBManager.InsertDepot([["ERECHTHIOU", "6", "17455", "ATTIKIS", "ALIMOY", None]])
-DBManager.Commit()
-
-for DayPart in ["Morning", "Noon", "Study"]:
-      DBManager.InsertDistances(DayPart, direct=True)
-
-
 DBManager.Commit()
 
 DBManager.Disconnect()
