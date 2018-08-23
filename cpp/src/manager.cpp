@@ -2,13 +2,29 @@
 #include "manager.hpp"
 #include "vector2.hpp"
 #include "Database.h"
-#include <vector>       // std::vector
-#include <bitset>       // std::bitset
-#include <string>       // std::string
-#include <vector>       // std::vector
-#include <fstream>      // std::ostream
-#include <iostream>     // std::cerr
-#include <ctime>        // std::time etc
+#include <vector>           // std::vector
+#include <bitset>           // std::bitset
+#include <string>           // std::string
+#include <vector>           // std::vector
+#include <fstream>          // std::ostream
+#include <iostream>         // std::cerr
+#include <ctime>            // std::time etc
+#include <unordered_set>    // std::unordered_set
+
+using Element = std::pair<std::string, std::string>;
+
+namespace std
+{
+    template <> struct hash<Element>
+    {
+        std::size_t operator()(const Element& P) const noexcept
+        {
+            return std::hash<std::string>{}(P.first + "StudentId" + P.second + "AddressId");
+        }
+    };
+}
+
+using Set = std::unordered_set<Element>;
 
 // Student Struct:
 Manager::Student::Student()
@@ -114,12 +130,17 @@ void Manager::load(
 
         stmt.bind(1, daypart);
 
+        Set studentSet;
         while (stmt.executeStep())
         {
             int current = 0;
 
             std::string _studentId(stmt.getColumn(current++).getText());
             std::string _addressId(stmt.getColumn(current++).getText());
+
+            Element element(_studentId, _addressId);
+            if (!studentSet.insert(element).second)
+                continue;
 
             std::bitset<5> _days;
             for (; current < 7; current++)
@@ -264,8 +285,8 @@ void Manager::json(
                 << "                    {"
                 << std::endl
                 << "                        \"studentId\": "  << "\"" << student._studentId    << "\"" << ',' << std::endl
-                << "                        \"longitude\": "          << student._position.x()         << ',' << std::endl
-                << "                        \"latitude\": "           << student._position.y()         << ',' << std::endl
+                << "                        \"latitude\": "          << student._position.x()         << ',' << std::endl
+                << "                        \"longitude\": "           << student._position.y()         << ',' << std::endl
                 << "                        \"earliest\": "           << student._timespan.x()         << ',' << std::endl
                 << "                        \"latest\": "             << student._timespan.y()         << ',' << std::endl
                 << "                        \"days\": "       << "\"" << student._days         << "\""        << std::endl
