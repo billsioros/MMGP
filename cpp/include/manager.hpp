@@ -22,11 +22,11 @@ namespace Manager
         Student();
         Student(const Student&);
         Student(
-            const char *,
-            const char *,
-            const bool *,
-            const double *,
-            const double *
+            const std::string&,
+            const std::string&,
+            const std::bitset<5>&,
+            const Vector2&,
+            const Vector2&
         );
 
         Student& operator=(const Student&);
@@ -39,16 +39,21 @@ namespace Manager
         unsigned             _capacity;
         std::vector<Student> _students;
 
-        Bus(const char *, unsigned, unsigned);
+        Bus(const std::string&, unsigned, unsigned);
     };
 
     void load(SQLite::Database&, std::vector<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void csv(const char *, const std::vector<std::vector<Bus>>&);
-    void json(const char *, const std::vector<std::vector<Bus>>&);
+    void csv(const std::string&, const std::vector<std::vector<Bus>>&);
+    void json(const std::string&, const std::vector<std::vector<Bus>>&);
 
-    double distance(SQLite::Database&, const Student&, const Student&, const std::string&);
+    double distance(
+        SQLite::Database&,
+        const Student&,
+        const Student&,
+        const std::string&
+    );
 }
 
 Manager::Student operator+(const Manager::Student&, const Manager::Student&);

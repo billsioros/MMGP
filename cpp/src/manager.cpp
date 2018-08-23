@@ -26,20 +26,18 @@ _timespan(other._timespan)
 }
 
 Manager::Student::Student(
-    const char * _studentId,
-    const char * _addressId,
-    const bool _days[],
-    const double _p[],
-    const double _t[]
+    const std::string& _studentId,
+    const std::string& _addressId,
+    const std::bitset<5>& _days,
+    const Vector2& _position,
+    const Vector2& _timespan
 )
 :
 _studentId(_studentId),
 _addressId(_addressId),
-_position(_p[0], _p[1]),
-_timespan(_t[0], _t[1])
+_position(_position),
+_timespan(_timespan)
 {
-    for (std::size_t i = 0UL; i < 5UL; i++)
-        this->_days.set(i, _days[i]);
 }
 
 Manager::Student& Manager::Student::operator=(const Manager::Student& other)
@@ -55,7 +53,7 @@ Manager::Student& Manager::Student::operator=(const Manager::Student& other)
 
 // Bus Struct:
 Manager::Bus::Bus(
-    const char * _busId,
+    const std::string& _busId,
     unsigned _number,
     unsigned _capacity
 )
@@ -66,7 +64,11 @@ _capacity(_capacity)
 {
 }
 
-void Manager::load(SQLite::Database& database, std::vector<Student>& students, const std::string& daypart)
+void Manager::load(
+    SQLite::Database& database,
+    std::vector<Student>& students,
+    const std::string& daypart
+)
 {
     bool failed = false;
 
@@ -116,26 +118,24 @@ void Manager::load(SQLite::Database& database, std::vector<Student>& students, c
         {
             int current = 0;
 
-            const char * _studentId = stmt.getColumn(current++).getText();
-            const char * _addressId = stmt.getColumn(current++).getText();
+            std::string _studentId(stmt.getColumn(current++).getText());
+            std::string _addressId(stmt.getColumn(current++).getText());
 
-            bool _days[5] = { false };
+            std::bitset<5> _days;
             for (; current < 7; current++)
-                _days[current - 2] = stmt.getColumn(current).getText()[0] == '1';
+                _days.set(current - 2, stmt.getColumn(current).getText()[0] == '1');
 
-            double _p[] =
-            {
+            const Vector2 _position(
                 stmt.getColumn(current++).getDouble(),
                 stmt.getColumn(current++).getDouble()
-            };
+            );
 
-            double _t[] =
-            {
+            const Vector2 _timespan(
                 0.0, // stmt.getColumn(current++).getDouble(),
                 0.0  // stmt.getColumn(current++).getDouble()
-            };
+            );
 
-            students.emplace_back(_studentId, _addressId, _days, _p, _t);
+            students.emplace_back(_studentId, _addressId, _days, _position, _timespan);
         }
     }
     catch (std::exception& e)
@@ -156,9 +156,9 @@ void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
         
         while (stmt.executeStep())
         {
-            const char * _busId    = stmt.getColumn(0).getText();
-            unsigned     _number   = stmt.getColumn(1).getUInt();
-            unsigned     _capacity = stmt.getColumn(2).getUInt();
+            std::string _busId(stmt.getColumn(0).getText());
+            unsigned _number   = stmt.getColumn(1).getUInt();
+            unsigned _capacity = stmt.getColumn(2).getUInt();
 
             buses.emplace_back(_busId, _number, _capacity);
         }
@@ -169,7 +169,7 @@ void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
     }
 }
 
-static std::string unique(const char * fname)
+static std::string unique(const std::string& fname)
 {
     time_t raw; std::time(&raw);
     
@@ -179,10 +179,13 @@ static std::string unique(const char * fname)
 
     std::strftime(strtime, 511, "%Y%m%d%H%M%S", tm);
 
-    return std::string(fname) + strtime;
+    return fname + strtime;
 }
 
-void Manager::csv(const char * dayPart, const std::vector<std::vector<Bus>>& schedules)
+void Manager::csv(
+    const std::string& dayPart,
+    const std::vector<std::vector<Bus>>& schedules
+)
 {
     std::ofstream csv(unique(dayPart) + ".csv");
     if (!csv.is_open())
@@ -222,7 +225,10 @@ void Manager::csv(const char * dayPart, const std::vector<std::vector<Bus>>& sch
     }
 }
 
-void Manager::json(const char * dayPart, const std::vector<std::vector<Bus>>& schedules)
+void Manager::json(
+    const std::string& dayPart,
+    const std::vector<std::vector<Bus>>& schedules
+)
 {
     std::ofstream json(unique(dayPart) + ".json");
     if (!json.is_open())
@@ -285,7 +291,12 @@ void Manager::json(const char * dayPart, const std::vector<std::vector<Bus>>& sc
     json << ']' << std::endl;
 }
 
-double Manager::distance(SQLite::Database& database, const Student& A, const Student& B, const std::string& daypart)
+double Manager::distance(
+    SQLite::Database& database,
+    const Student& A,
+    const Student& B,
+    const std::string& daypart
+)
 {
     bool failed = false;
 
