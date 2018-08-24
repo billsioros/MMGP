@@ -42,11 +42,15 @@ namespace Manager
         Bus(const std::string&, unsigned, unsigned);
     };
 
+    using Buses     = std::vector<Manager::Bus>;
+    using Schedules = std::vector<Buses>;
+
+    void load(SQLite::Database&, Student&);
     void load(SQLite::Database&, std::vector<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void csv(const std::string&, const std::vector<std::vector<Bus>>&);
-    void json(const std::string&, const std::vector<std::vector<Bus>>&);
+    void csv(const std::string&, const Schedules&);
+    void json(const std::string&, const Schedules&);
 
     double distance(
         SQLite::Database&,

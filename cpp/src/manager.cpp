@@ -56,7 +56,7 @@ _timespan(_timespan)
 {
 }
 
-Manager::Student& Manager::Student::operator=(const Manager::Student& other)
+Manager::Student& Manager::Student::operator=(const Student& other)
 {
     this->_studentId = other._studentId;
     this->_addressId = other._addressId;
@@ -78,6 +78,35 @@ _busId(_busId),
 _number(_number),
 _capacity(_capacity)
 {
+}
+
+void Manager::load(SQLite::Database& database, Student& depot)
+{
+    try
+    {
+        SQLite::Statement stmt(
+            database,
+            "SELECT AddressID, GPS_X, GPS_Y "\
+            "FROM Depot"
+        );
+
+        while (stmt.executeStep())
+        {
+            int current = 0;
+            const std::string _addressId(stmt.getColumn(current++).getText());
+            const Vector2 _position(
+                stmt.getColumn(current++).getDouble(),
+                stmt.getColumn(current++).getDouble()
+            );
+
+            depot._addressId = _addressId;
+            depot._position  = _position;
+        }
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 void Manager::load(
@@ -205,7 +234,7 @@ static std::string unique(const std::string& fname)
 
 void Manager::csv(
     const std::string& dayPart,
-    const std::vector<std::vector<Bus>>& schedules
+    const Schedules& schedules
 )
 {
     std::ofstream csv(unique(dayPart) + ".csv");
@@ -248,7 +277,7 @@ void Manager::csv(
 
 void Manager::json(
     const std::string& dayPart,
-    const std::vector<std::vector<Bus>>& schedules
+    const Schedules& schedules
 )
 {
     std::ofstream json(unique(dayPart) + ".json");

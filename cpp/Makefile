@@ -9,7 +9,7 @@ PATH_BIN = ./../bin
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
 MNGR_DEP = $(addprefix $(PATH_INC)/, Database.h vector2.hpp manager.hpp) $(PATH_SRC)/manager.cpp
-MAIN_DEP = $(addprefix $(PATH_INC)/, Database.h Statement.h cmeans.hpp manager.hpp) $(PATH_SRC)/main.cpp
+MAIN_DEP = $(addprefix $(PATH_INC)/, Database.h Statement.h cmeans.hpp manager.hpp tsp.hpp sannealing.hpp) $(PATH_SRC)/main.cpp
 BACK_DEP = $(addprefix $(PATH_INC)/, Backup.h Exception.h) $(PATH_SRC)/Backup.cpp
 CLMN_DEP = $(PATH_INC)/Column.h $(PATH_SRC)/Column.cpp
 DATA_DEP = $(addprefix $(PATH_INC)/, Statement.h Assertion.h Exception.h) $(PATH_SRC)/Database.cpp
