@@ -4,6 +4,9 @@ import sys
 from itertools import izip
 from DBmanagement import DBManager as DBM
 import time
+import os
+
+cwd = os.getcwd()
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
@@ -66,10 +69,10 @@ for tableName, key in izip(ogDbTables, RowListKeys):
 con.close()
 
 # Create a new Database
-DBManager = DBM("../data/MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
+DBManager = DBM(cwd + "/resources/data/MMGP_data.db", GoogleAPI_key, OpenAPI_key)
 
 
-GeoFailsFile = open("../data/FormatFails.tsv", "w+")
+GeoFailsFile = open(cwd + "/resources/data/FormatFails.tsv", "w+")
 GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()

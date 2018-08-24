@@ -23,14 +23,14 @@ body {
     word-break: break-word;
 }
 
-header { 
+/* header { 
     background-color: #252526;
     
     grid-column: 2 / 3;
 
     display: grid;
     grid-template-columns: 13fr 1fr
-}
+} */
 
 
 main {
@@ -46,6 +46,23 @@ main {
     overflow-x: hidden;
 }
 
+#SearchTabHeader {
+    background-color: #252526;
+    
+    grid-column: 2 / 3;
+
+    display: grid;
+    grid-template-columns: 13fr 1fr
+}
+
+#InfoMapTabHeader {
+    grid-area: tabs;
+    background-color: #252526;
+
+    display: grid;
+    grid-template-columns: 13fr 1fr
+}
+
 /* Main Section */
 
 .MainInfo {
@@ -58,11 +75,7 @@ main {
 }
 
 .InfoMapTabGroup {
-    grid-area: tabs;
-
     margin: 1px 0;
-
-    /* width: 100%; */
 }
 
 /* Side Bar */
@@ -241,21 +254,21 @@ main {
     width: 45%;
 }
 
-.SearchButton:disabled {
+.SearchButton:disabled, #CalculateDurationButton:disabled {
     cursor: default;
     opacity: 0.5;
 }
 
-.SearchButton:hover:not([disabled]), #ClearTabsButton:hover {
+.SearchButton:hover:not([disabled]), #ClearTabsButton:hover, #CalculateDurationButton:hover:not([disabled]) {
     background-color: rgb(146, 146, 146);
 }
 
-.SearchButton:active, #ClearTabsButton:active {
+.SearchButton:active, #ClearTabsButton:active, #CalculateDurationButton:active {
     background-color: rgb(39, 39, 39);
 }
 
 
-#ClearTabsButton {
+#ClearTabsButton, #CalculateDurationButton {
     font-size: 15px;
 
     background-color: rgb(56, 56, 56);
@@ -268,6 +281,15 @@ main {
     /* float: right; */
 }
 
+#CalculateDurationButton .loadingGif {
+    border: none;
+    background: none;
+    height: 30px;
+    width: 30px;
+    float: left;
+    padding: 0%;
+    margin-top: 5%;
+}
 
 #Map {
     border: none;

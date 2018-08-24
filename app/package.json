@@ -1,6 +1,7 @@
 {
   "name": "MMGP",
   "version": "0.1.0",
+  "productName": "MMGP",
   "description": "User Interface for the Multitarget Multiagent Geospatial Pathfinding project",
   "main": "./js/main.js",
   "scripts": {

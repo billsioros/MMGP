@@ -5,6 +5,8 @@ from hashlib import sha1 as sha1
 import util
 import csv
 
+cwd = os.getcwd()
+
 
 class DBManager:
 
@@ -399,7 +401,7 @@ class DBManager:
         if not direct:
             if not fileName:
                 "Error: No file was given, writing on \"tempDistances.tsv\""
-                fileName = "../data/temp.tsv"
+                fileName = cwd + "/resources/data/tempDistances.tsv"
 
             logcsv = open(fileName, "w+")
             logcsv.write("DayPart\tID1\tID2\tDuration\tDistance\n")
@@ -531,6 +533,24 @@ class DBManager:
 
         Depot = self.Cursor.fetchone()
         return Depot
+
+
+    def CalculateDistance(self, AddressID_1, AddressID_2, DayPart):
+        self.Connect(self.FileName)
+
+        sql = "Select Duration, Distance From " + DayPart + "Distance Where AddressID_1 = \"" + AddressID_1 + "\" and AddressID_2 = \"" + AddressID_2 + "\""
+
+        self.Cursor.execute(sql)
+        Rows = self.Cursor.fetchall()
+
+        Distance = 0
+        Duration = 0
+
+        for Dur, Dis in Rows:
+            Distance = Dis
+            Duration = Dur
+        
+        return (Distance, Duration)
 
 
     def __InitParser(self):

@@ -3,3 +3,4 @@ python/*.pyc
 bin/
 data/
 app/node_modules
+app/MMGP-win32-x64

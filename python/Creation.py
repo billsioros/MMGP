@@ -5,6 +5,8 @@ import os
 from itertools import izip
 from DBmanagement import DBManager as DBM
 
+cwd = os.getcwd()
+
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
 
@@ -72,16 +74,16 @@ con.close()
 
 # Create a new Database
 
-if os.path.isfile("../data/MMGP_Data.db"):
-      os.remove("../data/MMGP_Data.db")
+if os.path.isfile(cwd + "/resources/data/MMGP_data.db"):
+      os.remove(cwd + "/resources/data/MMGP_data.db")
 
-DBManager = DBM("../data/MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
+DBManager = DBM(cwd + "/resources/data/MMGP_data.db", GoogleAPI_key, OpenAPI_key)
 
 
 DBManager.InsertBus(Buses)
 DBManager.Commit()
 
-GeoFailsFile = open("../data/FormatFails.tsv", "w+")
+GeoFailsFile = open(cwd + "/resources/data/FormatFails.tsv", "w+")
 GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()

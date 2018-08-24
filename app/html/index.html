@@ -19,7 +19,7 @@
 
 <body>
     
-    <header>
+    <header id="SearchTabHeader">
         <div class="SearchTabGroup">
 
         </div>
@@ -52,11 +52,6 @@
                 <h2 class="SelectorHeader">Schedule</h2>
                 <select id = "ScheduleSelectorDropDown">
                 </select>
-                <!-- <div id="SchedulesSelectorButtonsContainer" class="SelectorButtonsContainer">
-                    <button class="ScheduleSelectorButton SelectorButton">First</button>
-                    <button class="ScheduleSelectorButton SelectorButton">Second</button>
-                    <button class="ScheduleSelectorButton SelectorButton">Third</button>
-                </div>  -->
             </div>
         </div>
 
@@ -86,7 +81,15 @@
     </div>
 
     <main id="main">
-        <header class="InfoMapTabGroup"></header>
+        <header id="InfoMapTabHeader">
+            <div class="InfoMapTabGroup">
+
+            </div>
+            <button type=button id="CalculateDurationButton" name="CalculateDuration" disabled>
+                <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                <span>Calculate Duration</span>
+            </button>  
+        </header>
         <div class="MainInfo"></div>
         
     </main>

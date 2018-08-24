@@ -1,0 +1,44 @@
+{
+    "students": [
+        {
+            "studentID": "F57CF8ED-8D93-4CC8-A23E-A003D8614605",
+
+            "addressID": "adljfkhaiufhergfkj",
+            "longitude": "32.4987612354",
+            "latitude": "27.4321897",
+            "earliest": 0,
+            "latest": 0,
+            "days" : "11011"
+        },
+        {
+            "studentID": "F57CF8ED-8D93-4CC8-A23E-A003D8614605",
+
+            "addressID": "adljfkhaiufhergfkj",
+            "longitude": "32.4987612354",
+            "latitude": "27.4321897",
+            "earliest": 0,
+            "latest": 0,
+            "days" : "11011"
+        },
+        {
+            "studentID": "F57CF8ED-8D93-4CC8-A23E-A003D8614605",
+
+            "addressID": "adljfkhaiufhergfkj",
+            "longitude": "32.4987612354",
+            "latitude": "27.4321897",
+            "earliest": 0,
+            "latest": 0,
+            "days" : "11011"
+        },
+        {
+            "studentID": "F57CF8ED-8D93-4CC8-A23E-A003D8614605",
+
+            "addressID": "adljfkhaiufhergfkj",
+            "longitude": "32.4987612354",
+            "latitude": "27.4321897",
+            "earliest": 0,
+            "latest": 0,
+            "days" : "11011"
+        }
+    ]
+}

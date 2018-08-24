@@ -1,6 +1,9 @@
 from util import GetCredentials
 import sys
 from DBmanagement import DBManager as DBM
+import os
+
+cwd = os.getcwd()
 
 credsFileName = sys.argv[1]
 rowIndex = sys.argv[2]
@@ -20,7 +23,7 @@ if not direct:
 GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(credsFileName, rowIndex)
 
 # Get the Database
-DBManager = DBM("../data/MMGP_Data.db", GoogleAPI_key, OpenAPI_key)
+DBManager = DBM(cwd + "/resources/data/MMGP_data.db", GoogleAPI_key, OpenAPI_key)
 
 DBManager.InsertDistances(DayPart, direct=direct, fileName=distancesFileName)
 

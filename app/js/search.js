@@ -28,6 +28,8 @@ let Markers = ["../images/Markers/blue-dot.png", "../images/Markers/red-dot.png"
 "../images/Markers/green-dot.png", "../images/Markers/yellow-dot.png",
 "../images/Markers/purple-dot.png", "../images/Markers/orange-dot.png", "../images/Markers/pink-dot.png"];
 
+let pythondir = __dirname + "/../../python/"
+let datadir = __dirname + "/../../data/"
 
 // Bus Searching
 
@@ -75,7 +77,6 @@ function OnBusClickHandle() {
     
 
     setTimeout(() => {
-        console.log(busbuttons);
         for (let i = 0; i < busbuttons.length; i++) {
             busbuttons[i].onclick = OnBusClick;
         }
@@ -87,6 +88,9 @@ function OnBusClickHandle() {
 
     button = document.getElementById("AddScheduleButton");
     button.onmouseup = AddSchedule;
+
+    button = document.getElementById("CalculateDurationButton");
+    button.onclick = CalculateScheduleDuration;
 
 }
 
@@ -174,6 +178,104 @@ function SearchSchedule() {
         ReassignAllButtons(); 
         CurrentStudents = Students;
     }, waitTime);
+}
+ 
+function CalculateScheduleDuration() {
+    let activeTab = SearchTabGroup.activeTab();
+    let Students = activeTab.students;
+
+    let loading = document.getElementById("CalculateDurationButton").childNodes[1];
+    loading.hidden = false;
+
+    loading.nextElementSibling.innerHTML = "Calculating"
+
+    let toJson = {
+        students: []
+    }
+
+    for (let i = 0; i < Students.length - 1; i++) {
+        let student = Students[i]
+        toJson.students.push({
+            studentId: student.ID,
+            addressId: student.Address.AddressID,
+            longitude: student.Address.Longitude,
+            latitude: student.Address.Latitude,
+            dayPart: student.DayPart,
+            earliest: 0,
+            latest: 0,
+        })
+    }
+
+
+    var fs = require("fs");
+
+    fs.writeFile(datadir + "tmpsched.json", JSON.stringify(toJson), (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        };
+    })
+    const spawn = require("child_process").spawn;
+    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", datadir + "tmpsched.json"]);
+
+    proc.on('close', function(code) {
+        console.log("Calculating Completed");
+        fs.unlink(datadir + "tmpsched.json", (err) => {
+            if (err)
+                console.error(err)
+        })
+    })
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
+        data = data.toString().split('\n');
+        let Distance = data[0];
+        let Duration = data[1];
+
+        let Minutes = Math.ceil(Duration / 60)
+        let Seconds = Math.ceil(Duration % 60)
+
+        alert("Distance: " + (Distance / 1000).toString() + "km\nDuration: " + Minutes.toString() + "min " + Seconds.toString() + "sec.");
+        loading.hidden = true;
+
+        loading.nextElementSibling.innerHTML = "Calculate Duration"
+    })
+
+    proc.stderr.on('data', function(data) {
+        console.error(data.toString());
+    }) 
+
+}
+
+function GetDistanceFromDB(sql) {
+    let Distances = [];
+
+    db.each(sql, function(err,row) {
+        Distances.push({
+            AddressID_1: row.AddressID_1,
+            AddressID_2: row.AddressID_2,
+            Distance: row.Distance,
+            Duration: row.Duration
+        })
+    })
+
+    return Distances
+}
+
+function GetDepotFromDB() {
+    let sql = "Select * From Depot"
+    let Depot = {}
+
+    db.each(sql, function(err, row) {
+        Depot = {
+            AddressID: row.AddressID,
+            FullAddress: row.FullAddress,
+            Longitude: row.GPS_X,
+            Latitude: row.GPS_Y
+        }
+    })
+
+    return Depot
 }
 
 function AddSchedule() {
@@ -428,8 +530,11 @@ function GetBusFromDB(sql) {
             OtherPhone1: row.OtherPhone1,
             OtherPhone2: row.OtherPhone2,
 
+            DayPart: row.DayPart,
+
             Address: {
                 FullAddress: row.FullAddress,
+                AddressID: row.AddressID,
                 Longitude: row.GPS_X,
                 Latitude: row.GPS_Y
             },
@@ -456,14 +561,17 @@ function GetBusFromDB(sql) {
 function CheckDisabledScheduleButton(tab) {
     if (tab == null) {
         document.getElementById("AddScheduleButton").disabled = true;
+        document.getElementById("CalculateDurationButton").disabled = true;
         return;
     }
 
     if (tab.type === "Schedule") {
         document.getElementById("AddScheduleButton").disabled = false;
+        document.getElementById("CalculateDurationButton").disabled = false;
     }
     else {
         document.getElementById("AddScheduleButton").disabled = true;
+        document.getElementById("CalculateDurationButton").disabled = true;
     }
     return;
 }
@@ -519,6 +627,7 @@ function GetStudentFromDB(sql) {
             
             let key = row.DayPart + 'Addresses';
             student[key].push({ FullAddress: row.FullAddress,
+                                AddressID: row.AddressID,
                                 Longitude: row.GPS_X,
                                 Latitude: row.GPS_Y } );
 
@@ -544,6 +653,7 @@ function GetStudentFromDB(sql) {
             // Ιf student exists save only its DIFFERENT addresses, days, notes, buses PER daypart.
             let key = row.DayPart + 'Addresses';
             Students[id][key].push({    FullAddress: row.FullAddress,
+                                        StudentID: row.AddressID,
                                         Longitude: row.GPS_X,
                                         Latitude: row.GPS_Y } );
 
@@ -1344,7 +1454,7 @@ function PlotStudents(tab) {
         });
     }
     
-    console.log(plottedAddresses);
+
 }
 
 function PlotSchedules(Students, Schedules) {
@@ -1456,9 +1566,12 @@ function CacheDOM() {
 
 // Loader
 function OnCreateWindow() {
+    // pythondir = "../python/"
+    // datadir = "../data/"
 
     sqlite3 = require('sqlite3').verbose();
-    db = new sqlite3.Database('../data/MMGP_data.db');
+    console.log(datadir + "MMGP_data.db");
+    db = new sqlite3.Database(datadir + "MMGP_data.db");
     
     GenerateBusButtons();
     OnSearchClearStudent();
@@ -1471,6 +1584,6 @@ function OnCreateWindow() {
     document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
-}
 
-// module.exports = {CreateDatabase};
+    console.log(__dirname)
+}

@@ -1,10 +1,10 @@
 const {app, Menu, BrowserWindow, dialog} = require('electron')
-const {BackClick, ForwardClick} = require('./search.js')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
-
+let pythondir = __dirname + "/../../python/"
+let datadir = __dirname + "/../../data/"
 
 function createWindow() {
     // Create the browser window.
@@ -76,7 +76,7 @@ function CreateDatabase() {
     })
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', ["../python/Creation.py", "../data/Credentials.csv", "1"] );
+    var proc = spawn('python', [pythondir + "Creation.py", datadir + "Credentials.csv", "0"] );
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -88,6 +88,7 @@ function CreateDatabase() {
 }
 
 function UpdateStudents() {
+    console.log(__dirname);
     const ProgressBar = require('electron-progressbar');
 
     var progressBar = new ProgressBar({
@@ -106,10 +107,14 @@ function UpdateStudents() {
     })
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', ["../python/UpdateStudents.py", "../data/Credentials.csv", "1"]);
+    var proc = spawn('python', [pythondir + "UpdateStudents.py", datadir + "Credentials.csv", "0"]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
+    })
+
+    proc.stderr.on('data', function(data) {
+        console.log(data.toString());
     })
 }
 
@@ -132,10 +137,14 @@ function UpdateBuses() {
     })
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', ["../python/UpdateBuses.py", "../data/Credentials.csv", "1"]);
+    var proc = spawn('python', [pythondir + "UpdateBuses.py", datadir + "Credentials.csv", "0"]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
+    })
+
+    proc.stderr.on('data', function(data) {
+        console.log(data.toString());
     })
 }
 
@@ -160,7 +169,19 @@ function UpdateDistances() {
 
                 thidistproc[1].setCompleted();
             })
+
+            thidistproc.stderr.on('data', function(data) {
+                console.log(data.toString());
+            })
         })
+
+        secdistproc.stderr.on('data', function(data) {
+            console.log(data.toString());
+        })
+    })
+
+    firstdistproc.stderr.on('data', function(data) {
+        console.log(data.toString());
     })
 }
 
@@ -169,7 +190,7 @@ function DistancesToFile() {
 
     dialog.showOpenDialog((fileNames) => {
         if (!fileNames) {
-            console.log("undefined filename")
+            console.log("undefined filenames")
             return;
         }
         
@@ -178,7 +199,7 @@ function DistancesToFile() {
         let DayParts = ["Study", "Noon", "Morning"]
 
         let firstdistproc = UpdateDayPartDistances(DayParts[0], false, fileName)
-    
+
         firstdistproc[0].on('close', function() {
     
             firstdistproc[1].setCompleted();
@@ -195,7 +216,19 @@ function DistancesToFile() {
     
                     thidistproc[1].setCompleted();
                 })
+    
+                thidistproc.stderr.on('data', function(data) {
+                    console.log(data.toString());
+                })
             })
+    
+            secdistproc.stderr.on('data', function(data) {
+                console.log(data.toString());
+            })
+        })
+    
+        firstdistproc.stderr.on('data', function(data) {
+            console.log(data.toString());
         })
 
     })
@@ -207,12 +240,12 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     var updistproc;
 
     if (direct)
-        updistproc = spawn('python', ["../python/UpdateDistances.py", "../data/Credentials.csv", "1", DayPart, "-d"]);
+        updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, "-d"]);
     else {
         if (fileName)
-            updistproc = spawn('python', ["../python/UpdateDistances.py", "../data/Credentials.csv", "1", DayPart, fileName]);
+            updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, fileName]);
         else
-            updistproc = spawn('python', ["../python/UpdateDistances.py", "../data/Credentials.csv", "1", DayPart]);
+            updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart]);
     }
 
     var progressBar = undefined
@@ -232,8 +265,6 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     
     return [updistproc, progressBar];
 }
-
-
 
 
 // This method will be called when Electron has finished
