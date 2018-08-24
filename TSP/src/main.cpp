@@ -4,11 +4,13 @@
 #include "vector2.hpp"
 #include "manager.hpp"
 #include "tsp.hpp"
+#include "sannealing.hpp"
 #include <unordered_map>
 #include <iostream>
 #include <memory>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 using Cost      = std::unordered_map<const Manager::Student *, double>;
 using Costs     = std::unordered_map<const Manager::Student *, Cost>;
@@ -73,6 +75,34 @@ int main(int argc, char * argv[])
         path.second,
         cost
     );
+
+    path.second = SimulatedAnnealing<std::vector<Manager::Student>>(
+        path.second,
+        [](const std::vector<Manager::Student>& current)
+        {
+            std::vector<Manager::Student> next(current);
+
+            const std::size_t i = 1UL + std::rand() % (next.size() - 2UL);
+            const std::size_t j = 1UL + std::rand() % (next.size() - 2UL);
+
+            std::reverse(next.begin() + i, next.begin() + j);
+
+            return next;
+        },
+        [&cost](const std::vector<Manager::Student>& current)
+        {
+            double total = 0.0;
+            for (std::size_t j = 0; j < current.size() - 1UL; j++)
+                total += cost(current[j], current[j + 1UL]);
+
+            return total;
+        },
+        1000000.0,
+        0.00003,
+        1000000UL
+    );
+
+    path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
     std::cout << path << std::endl;
 }
