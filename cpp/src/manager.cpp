@@ -135,7 +135,7 @@ void Manager::load(
 
     if (failed)
     {
-        std::cerr << "<ERR>: No such table" << std::endl;
+        std::cerr << "<ERR>: No table " << daypart << "Distance" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -240,7 +240,7 @@ void Manager::csv(
     std::ofstream csv(unique(dayPart) + ".csv");
     if (!csv.is_open())
     {
-        std::cerr << "<ERR>: Unable to log bus info" << std::endl;
+        std::cerr << "<ERR>: Unable to save the data in csv format" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -260,14 +260,16 @@ void Manager::csv(
             for (const auto& student : bus._students)
             {
                 csv
-                << sheduleId << ", "
-                << bus._busId << ", "
-                << student._studentId << ", "
+                << sheduleId             << ", "
+                << bus._busId            << ", "
+                << bus._cost             << ", "
+                << student._studentId    << ", "
                 << student._position.x() << ", "
                 << student._position.y() << ", "
                 << student._timespan.x() << ", "
                 << student._timespan.y() << ", "
-                << student._days << std::endl;
+                << student._days
+                << std::endl;
             }
         }
 
@@ -283,7 +285,7 @@ void Manager::json(
     std::ofstream json(unique(dayPart) + ".json");
     if (!json.is_open())
     {
-        std::cerr << "<ERR>: Unable to log bus info" << std::endl;
+        std::cerr << "<ERR>: Unable to save the data in json format" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -305,8 +307,9 @@ void Manager::json(
         {
             json
             << "            {" << std::endl
-            << "                \"busId\": " << "\"" << bus._busId << "\"" << ',' << std::endl
-            << "                \"students\":" << std::endl
+            << "                \"busId\": "   << "\"" << bus._busId << "\"" << ',' << std::endl
+            << "                \"cost\": "    << "\"" << bus._cost  << "\"" << ',' << std::endl
+            << "                \"students\":"                                      << std::endl
             << "                [" << std::endl;
             for (const auto& student : bus._students)
             {
@@ -314,8 +317,8 @@ void Manager::json(
                 << "                    {"
                 << std::endl
                 << "                        \"studentId\": "  << "\"" << student._studentId    << "\"" << ',' << std::endl
-                << "                        \"latitude\": "          << student._position.x()         << ',' << std::endl
-                << "                        \"longitude\": "           << student._position.y()         << ',' << std::endl
+                << "                        \"latitude\": "           << student._position.x()         << ',' << std::endl
+                << "                        \"longitude\": "          << student._position.y()         << ',' << std::endl
                 << "                        \"earliest\": "           << student._timespan.x()         << ',' << std::endl
                 << "                        \"latest\": "             << student._timespan.y()         << ',' << std::endl
                 << "                        \"days\": "       << "\"" << student._days         << "\""        << std::endl
@@ -370,7 +373,7 @@ double Manager::distance(
 
     if (failed)
     {
-        std::cerr << "<ERR>: No such students" << std::endl;
+        std::cerr << "<ERR>: No such student(s) ( " << A << ' ' << B << " )" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 }
