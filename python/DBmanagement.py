@@ -12,14 +12,21 @@ class DBManager:
 
     """ Connects to an sqlite3 database if it exists in current directory, or creates a new one
         Connection = current connection """
-    def __init__(self, fileName, GoogleAPIKey=None, OpenAPIKey=None):
+    def __init__(self, fileName, new=False, GoogleAPIKey=None, OpenAPIKey=None):
         self.Connection = None
         self.Cursor = None
 
-        if not os.path.isfile(fileName):
+        if new:
+            if os.path.isfile(fileName):
+                os.remove(fileName)
+            
             print "Creating new Database..."
             self.CreateDatabase(fileName)
-
+        else:
+            if not os.path.isfile(fileName):
+                print "Creating new Database..."
+                self.CreateDatabase(fileName)
+                
         self.FileName = fileName
         self._GoogleAPIKey = GoogleAPIKey
         self._OpenAPIKey = OpenAPIKey
@@ -401,10 +408,20 @@ class DBManager:
         if not direct:
             if not fileName:
                 "Error: No file was given, writing on \"tempDistances.tsv\""
-                fileName = cwd + "/resources/data/tempDistances.tsv"
+                DatabaseDir = os.path.realpath(os.path.dirname(self.FileName))
 
-            logcsv = open(fileName, "w+")
-            logcsv.write("DayPart\tID1\tID2\tDuration\tDistance\n")
+                fileName = DatabaseDir + "/tempDistances.tsv"
+
+            logcsv = open(fileName, "r")
+
+            if logcsv.readline():
+                logcsv.close()
+                logcsv = open(fileName, "a+")
+            else:
+                logcsv.close()
+                logcsv = open(fileName, "w+")
+                logcsv.write("DayPart\tID1\tID2\tDuration\tDistance\n")
+                
             for id1, id2, duration, distance in Matrix:
                 logcsv.write(DayPart + "\t" + str(id1) + "\t" + str(id2) + "\t" + str(duration) + "\t" + str(distance) + "\n")
             logcsv.close()

@@ -6,8 +6,9 @@ import os
 cwd = os.getcwd()
 
 fileName = sys.argv[1]
+Database = sys.argv[2]
 
-DBManager = DBM(cwd + "/resources/data/MMGP_data.db")
+DBManager = DBM(Database)
 
 with open(fileName, "r") as json_file:
     data = json.load(json_file)
@@ -29,11 +30,14 @@ for i in range(len(students) - 1):
     FullDuration += Duration
     FullDuration += 20
 
-
-Distance, Duration = DBManager.CalculateDistance(students[-1]["addressId"], Depot, students[-1]["dayPart"])
+if students[0]["dayPart"] == "Morning":
+    Distance, Duration = DBManager.CalculateDistance(students[-1]["addressId"], Depot, students[-1]["dayPart"])
+else:
+    Distance, Duration = DBManager.CalculateDistance(Depot, students[0]["addressId"], students[0]["dayPart"])
 
 FullDistance += Distance
 FullDuration += Duration
+
 
 print FullDistance
 print FullDuration

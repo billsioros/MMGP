@@ -5,10 +5,11 @@ const {app, Menu, BrowserWindow, dialog} = require('electron')
 let win
 let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
+let DBFile = datadir + "MMGP_data.db"
 
 function createWindow() {
     // Create the browser window.
-    win = new BrowserWindow({width:1640, height:840})
+    win = new BrowserWindow({width:1640, height:840, title:"MMGP", opacity: 1.0})
     //win.maximize();
 
     // and Load the index.html of the app
@@ -17,7 +18,7 @@ function createWindow() {
 
     var menu = Menu.buildFromTemplate([
         {
-            label: 'Menu',
+            label: 'Main Menu',
             submenu: [
                 {label: 'Run MMGP Algorithm'},        
                 {type: 'separator'},
@@ -25,14 +26,34 @@ function createWindow() {
             ]
         },
         {
-            label: 'Edit',
+            label: 'Database Management',
             submenu: [
                 {label: 'Create Database (overwrite everything)', click() {CreateDatabase();}},
+                {label: 'Backup Database', click() {BackupDatabase();}},
                 {type: 'separator'},
                 {label: 'Update Students', click() {UpdateStudents();}},
                 {label: 'Update Buses', click() {UpdateBuses();}},
-                {label: 'Update Distances (approx. 25min)', click() {UpdateDistances();}},
-                {label: 'Calculate Distances to File (approx. 25min)', click() {DistancesToFile();}}
+                {type: 'separator'},
+
+                {label: 'Update All Distances (approx. 25min)', click() {UpdateAllDistances();}},
+                {label: 'Calculate All Distances to File (approx. 25min)', click() {AllDistancesToFile();}},
+                {label: 'Update All Distances From File', click() {FileToAllDistances();}},
+                {type: 'separator'},
+
+                {label: 'Update Morning Distances (approx. 25min)', click() {UpdateSpecificDistances("Morning");}},
+                {label: 'Calculate Morning Distances to File (approx. 25min)', click() {SpecificDistancesToFile("Morning");}},
+                {label: 'Update Morning Distances From File', click() {FileToSpecificDistances("Morning");}},
+                {type: 'separator'},
+
+                {label: 'Update Noon Distances (approx. 25min)', click() {UpdateSpecificDistances("Noon");}},
+                {label: 'Calculate Noon Distances to File (approx. 25min)', click() {SpecificDistancesToFile("Noon");}},
+                {label: 'Update Noon Distances From File', click() {FileToSpecificDistances("Noon");}},
+                {type: 'separator'},
+
+                {label: 'Update Study Distances (approx. 25min)', click() {UpdateSpecificDistances("Study");}},
+                {label: 'Calculate Study Distances to File (approx. 25min)', click() {SpecificDistancesToFile("Study");}},
+                {label: 'Update Study Distances From File', click() {FileToSpecificDistances("Study");}},
+                {type: 'separator'},
             ]
         },
         {
@@ -76,7 +97,7 @@ function CreateDatabase() {
     })
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "Creation.py", datadir + "Credentials.csv", "0"] );
+    var proc = spawn('python', [pythondir + "Creation.py", datadir + "Credentials.csv", "0", DBFile] );
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -85,6 +106,14 @@ function CreateDatabase() {
     proc.stdout.on('data', function(data) {
         console.log(data.toString());
     })
+
+    proc.stderr.on('data', function(data) {
+        console.log(data.toString());
+    })
+}
+
+function BackupDatabase() {
+    
 }
 
 function UpdateStudents() {
@@ -94,7 +123,7 @@ function UpdateStudents() {
     var progressBar = new ProgressBar({
         title: "Updating Students..",
         text: "Updating Students..",
-        detail: "Please Wait. This will not take long.\nDo not close this application!"
+        detail: "Please Wait. This will not take long.\nDo not close this application! It is highly advised to not use the application right now.."
     });
 
     progressBar.on('completed', function() {
@@ -107,7 +136,7 @@ function UpdateStudents() {
     })
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "UpdateStudents.py", datadir + "Credentials.csv", "0"]);
+    var proc = spawn('python', [pythondir + "UpdateStudents.py", datadir + "Credentials.csv", "0", DBFile]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -124,7 +153,7 @@ function UpdateBuses() {
     var progressBar = new ProgressBar({
         title: "Updating Buses..",
         text: "Updating Buses..",
-        detail: "Please Wait. This will not take long.\nDo not close this application!"
+        detail: "Please Wait. This will not take long.\nDo not close this application! It is highly advised to not use the application right now.."
     });
 
     progressBar.on('completed', function() {
@@ -137,7 +166,7 @@ function UpdateBuses() {
     })
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "UpdateBuses.py", datadir + "Credentials.csv", "0"]);
+    var proc = spawn('python', [pythondir + "UpdateBuses.py", datadir + "Credentials.csv", "0", DBFile]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -148,7 +177,7 @@ function UpdateBuses() {
     })
 }
 
-function UpdateDistances() {
+function UpdateAllDistances() {
     let DayParts = ["Study", "Noon", "Morning"]
 
     let firstdistproc = UpdateDayPartDistances(DayParts[0], true)
@@ -170,23 +199,22 @@ function UpdateDistances() {
                 thidistproc[1].setCompleted();
             })
 
-            thidistproc.stderr.on('data', function(data) {
+            thidistproc[0].stderr.on('data', function(data) {
                 console.log(data.toString());
             })
         })
 
-        secdistproc.stderr.on('data', function(data) {
+        secdistproc[0].stderr.on('data', function(data) {
             console.log(data.toString());
         })
     })
 
-    firstdistproc.stderr.on('data', function(data) {
+    firstdistproc[0].stderr.on('data', function(data) {
         console.log(data.toString());
     })
 }
 
-function DistancesToFile() {
-    const fs = require("fs");
+function AllDistancesToFile() {
 
     dialog.showOpenDialog((fileNames) => {
         if (!fileNames) {
@@ -217,17 +245,17 @@ function DistancesToFile() {
                     thidistproc[1].setCompleted();
                 })
     
-                thidistproc.stderr.on('data', function(data) {
+                thidistproc[0].stderr.on('data', function(data) {
                     console.log(data.toString());
                 })
             })
     
-            secdistproc.stderr.on('data', function(data) {
+            secdistproc[0].stderr.on('data', function(data) {
                 console.log(data.toString());
             })
         })
     
-        firstdistproc.stderr.on('data', function(data) {
+        firstdistproc[0].stderr.on('data', function(data) {
             console.log(data.toString());
         })
 
@@ -235,17 +263,57 @@ function DistancesToFile() {
 
 }
 
+function FileToAllDistances() {
+
+}
+
+function UpdateSpecificDistances(DayPart) {
+    let proc = UpdateDayPartDistances(DayPart, true)
+
+    proc[0].on('close', function() {
+        proc[1].setCompleted()
+        console.log("Updating " + DayPart + " Distances completed.")
+    })
+
+    proc[0].stderr.on('data', function(data) {
+        console.log(data.toString());
+    })
+}
+
+function SpecificDistancesToFile(DayPart) {
+    dialog.showOpenDialog((fileNames) => {
+        if (!fileNames) {
+            console.log("undefined filenames")
+            return;
+        }
+        
+        var fileName = fileNames[0]
+
+        let proc = UpdateDayPartDistances(DayPart, false, fileName)
+
+        proc[0].on('close', function() {
+            proc[1].setCompleted();
+            console.log("Updating " + DayPart + " Distances to file: " + fileName + " completed.")
+        })
+    
+        proc[0].stderr.on('data', function(data) {
+            console.log(data.toString());
+        })
+
+    })
+}
+
 function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     const spawn = require("child_process").spawn;
     var updistproc;
 
     if (direct)
-        updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, "-d"]);
+        updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, DBFile, "-d"]);
     else {
         if (fileName)
-            updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, fileName]);
+            updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, DBFile, fileName]);
         else
-            updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart]);
+            updistproc = spawn('python', [pythondir + "UpdateDistances.py", datadir + "Credentials.csv", "0", DayPart, DBFile]);
     }
 
     var progressBar = undefined
@@ -255,7 +323,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     var progressBar = new ProgressBar({
         title: "Updating " + DayPart + " Distances..",
         text: "Updating " + DayPart + " Distances..",
-        detail: "Please wait. This will take some time.. Do not close this application!"
+        detail: "Please Wait. This will take some time.\nDo not close this application! It is highly advised to not use the application right now.."
     });
 
     progressBar.on('completed', function() {
@@ -265,7 +333,6 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     
     return [updistproc, progressBar];
 }
-
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

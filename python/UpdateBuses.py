@@ -9,6 +9,7 @@ cwd = os.getcwd()
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
+Database = sys.argv[3]
 
 GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
@@ -35,7 +36,7 @@ Buses = cursor.fetchall()
 con.close()
 
 # Create a new Database
-DBManager = DBM(cwd + "/resources/data/MMGP_data.db", GoogleAPI_key, OpenAPI_key)
+DBManager = DBM(Database, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
 
 
 DBManager.InsertBus(Buses)

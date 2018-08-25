@@ -9,6 +9,7 @@ cwd = os.getcwd()
 
 fileName = sys.argv[1]
 rowIndex = sys.argv[2]
+Database = sys.argv[3]
 
 GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
@@ -74,16 +75,15 @@ con.close()
 
 # Create a new Database
 
-if os.path.isfile(cwd + "/resources/data/MMGP_data.db"):
-      os.remove(cwd + "/resources/data/MMGP_data.db")
-
-DBManager = DBM(cwd + "/resources/data/MMGP_data.db", GoogleAPI_key, OpenAPI_key)
+DBManager = DBM(Database, new=True, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
 
 
 DBManager.InsertBus(Buses)
 DBManager.Commit()
 
-GeoFailsFile = open(cwd + "/resources/data/FormatFails.tsv", "w+")
+DatabaseDir = os.path.realpath(os.path.dirname(Database))
+
+GeoFailsFile = open(DatabaseDir + "/FormatFails.tsv", "w+")
 GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()

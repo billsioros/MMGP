@@ -1,6 +1,5 @@
 // External modules
 let sqlite3;
-let db;
 let DOMElementHistory;
 let spawn;
 
@@ -30,6 +29,7 @@ let Markers = ["../images/Markers/blue-dot.png", "../images/Markers/red-dot.png"
 
 let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
+let DBFile
 
 // Bus Searching
 
@@ -216,7 +216,7 @@ function CalculateScheduleDuration() {
         };
     })
     const spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", datadir + "tmpsched.json"]);
+    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", datadir + "tmpsched.json", DBFile]);
 
     proc.on('close', function(code) {
         console.log("Calculating Completed");
@@ -249,7 +249,7 @@ function CalculateScheduleDuration() {
 
 function GetDistanceFromDB(sql) {
     let Distances = [];
-
+    let db = new sqlite3.Database(datadir + "MMGP_data.db");
     db.each(sql, function(err,row) {
         Distances.push({
             AddressID_1: row.AddressID_1,
@@ -265,7 +265,7 @@ function GetDistanceFromDB(sql) {
 function GetDepotFromDB() {
     let sql = "Select * From Depot"
     let Depot = {}
-
+    let db = new sqlite3.Database(datadir + "MMGP_data.db");
     db.each(sql, function(err, row) {
         Depot = {
             AddressID: row.AddressID,
@@ -462,7 +462,7 @@ function GenerateScheduleButtons() {
         selectordropdown.appendChild(option);
 
     if (DayPart === "Study") {
-        
+        let db = new sqlite3.Database(datadir + "MMGP_data.db");
         db.each(sql, function(err, row) {
             let option = document.createElement("option");
             option.className = "ScheduleSelectorOption";
@@ -472,12 +472,6 @@ function GenerateScheduleButtons() {
         })
     }
     else {
-        // let Count;
-        // db.each(sql, function(err, row) {
-        //     Count = row.Count;
-        // })
-
-        // ScheduleCount = Math.floor(Count / 32);
 
         for (let i = 0; i < ScheduleCount; i++) {
             let option = document.createElement("option");
@@ -494,8 +488,12 @@ function GenerateBusButtons() {
     const BusButtons = document.getElementsByClassName("BusButtonsContainer")[0];
 
     let sql = "Select Number From Bus Order By Number";
-
+    let db = new sqlite3.Database(datadir + "MMGP_data.db");
     db.each(sql, function(err, row) {
+        if (err) {
+            console.log(err)
+            return
+        }
         const newButton = document.createElement("button");
         newButton.type = "button";
         newButton.className = "BusButton";
@@ -508,8 +506,12 @@ function GenerateBusButtons() {
 
 function GetBusFromDB(sql) {
     let Students = [];
-
+    let db = new sqlite3.Database(datadir + "MMGP_data.db");
     db.each(sql, function(err, row) {
+        if (err) {
+            console.log(err)
+            return
+        }
         let id = "\"" + row.StudentID + "\"";
 
         let classLevel;
@@ -582,8 +584,12 @@ let CurrentStudents = {};
 
 function GetStudentFromDB(sql) {
     let Students = {};
-
+    let db = new sqlite3.Database(datadir + "MMGP_data.db");
     db.each(sql, function(err, row) {
+        if (err) {
+            console.log(err)
+            return
+        }
         let id = "\"" + row.StudentID + "\"";
         // If student has not already been saved save it
         if (!Students.hasOwnProperty(id)) {
@@ -1570,8 +1576,8 @@ function OnCreateWindow() {
     // datadir = "../data/"
 
     sqlite3 = require('sqlite3').verbose();
-    console.log(datadir + "MMGP_data.db");
-    db = new sqlite3.Database(datadir + "MMGP_data.db");
+    DBFile = datadir + "MMGP_data.db"
+    
     
     GenerateBusButtons();
     OnSearchClearStudent();
