@@ -38,6 +38,7 @@ namespace Manager
         unsigned             _number;
         unsigned             _capacity;
         std::vector<Student> _students;
+        double               _cost;
 
         Bus(const std::string&, unsigned, unsigned);
     };
