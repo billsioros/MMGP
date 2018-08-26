@@ -142,7 +142,7 @@ int main(int argc, char * argv[])
 
         bus._students.erase(bus._students.begin()); bus._students.pop_back();
 
-        std::cout << "<MSG>: Currently processed route duration: "
+        std::cerr << "<MSG>: Currently processed route duration: "
                   << route.first / 60.0
                   << " minutes" << std::endl;
     }
@@ -167,17 +167,9 @@ TSP::path<Manager::Student> optimize(
 {
     TSP::path<Manager::Student> path;
     
-    path = TSP::nearestNeighbor<Manager::Student>(
-        depot,
-        students,
-        cost
-    );
+    path = TSP::nearestNeighbor<Manager::Student>(depot, students, cost);
 
-    path = TSP::opt2<Manager::Student>(
-        path.second.front(),
-        path.second,
-        cost
-    );
+    path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
     path.second = SimulatedAnnealing<std::vector<Manager::Student>>(
         path.second,
