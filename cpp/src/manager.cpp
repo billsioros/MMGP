@@ -5,7 +5,6 @@
 #include <vector>           // std::vector
 #include <bitset>           // std::bitset
 #include <string>           // std::string
-#include <vector>           // std::vector
 #include <fstream>          // std::ostream
 #include <iostream>         // std::cerr
 #include <ctime>            // std::time etc
@@ -196,7 +195,7 @@ void Manager::load(
     }
 }
 
-void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
+void Manager::load(SQLite::Database& database, Buses& buses)
 {
     try
     {

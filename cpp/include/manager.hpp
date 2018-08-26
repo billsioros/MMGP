@@ -43,7 +43,7 @@ namespace Manager
         Bus(const std::string&, unsigned, unsigned);
     };
 
-    using Buses     = std::vector<Manager::Bus>;
+    using Buses     = std::vector<Bus>;
     using Schedules = std::vector<Buses>;
 
     void load(SQLite::Database&, Student&);
