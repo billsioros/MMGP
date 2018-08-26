@@ -136,11 +136,15 @@ int main(int argc, char * argv[])
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
 
-        // TSP::path<Manager::Student> route = optimize(depot, bus._students, cost);
+        TSP::path<Manager::Student> route = optimize(depot, bus._students, cost);
 
-        // bus._students = route.second; bus._cost = route.first;
+        bus._students = route.second; bus._cost = route.first;
 
-        // bus._students.erase(bus._students.begin()); bus._students.pop_back();
+        bus._students.erase(bus._students.begin()); bus._students.pop_back();
+
+        std::cout << "<MSG>: Currently processed route duration: "
+                  << route.first / 60.0
+                  << " minutes" << std::endl;
     }
 
     end = std::chrono::system_clock().now();
@@ -184,7 +188,9 @@ TSP::path<Manager::Student> optimize(
             const std::size_t i = 1UL + std::rand() % (next.size() - 2UL);
             const std::size_t j = 1UL + std::rand() % (next.size() - 2UL);
 
-            std::reverse(next.begin() + i, next.begin() + j);
+            const Manager::Student temp(next[i]);
+            next[i] = next[j];
+            next[j] = temp;
 
             return next;
         },
@@ -197,7 +203,7 @@ TSP::path<Manager::Student> optimize(
             return total;
         },
         1000000.0,
-        0.003,// 0.00003
+        0.00003,
         1000000UL
     );
 
