@@ -6,12 +6,12 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "cd c++; make; cd ..;"
+            "command": "make"
         },
         {
             "label": "Clean",
             "type": "shell",
-            "command": "cd c++; make clean; cd ..;"
+            "command": "make clean"
         }
     ]
 }
