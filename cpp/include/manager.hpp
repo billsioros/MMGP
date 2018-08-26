@@ -12,11 +12,11 @@
 
 namespace Manager
 {
-    using UniqueStudentId = std::pair<std::string, std::string>;
-    using StudentSet = std::unordered_set<UniqueStudentId>;
-
     struct Student
     {
+        using Key = std::pair<std::string, std::string>;
+        using Set = std::unordered_set<Key>;
+
         std::string    _studentId;
         std::string    _addressId;
         std::bitset<5> _days;
@@ -67,9 +67,9 @@ namespace Manager
 
 namespace std
 {
-    template <> struct hash<Manager::UniqueStudentId>
+    template <> struct hash<Manager::Student::Key>
     {
-        std::size_t operator()(const Manager::UniqueStudentId& P) const noexcept
+        std::size_t operator()(const Manager::Student::Key& P) const noexcept
         {
             return std::hash<std::string>{}(P.first + "StudentId" + P.second + "AddressId");
         }

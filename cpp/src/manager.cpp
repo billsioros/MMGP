@@ -145,7 +145,7 @@ void Manager::load(
 
         stmt.bind(1, daypart);
 
-        StudentSet studentSet;
+        Student::Set set;
         while (stmt.executeStep())
         {
             int current = 0;
@@ -153,8 +153,8 @@ void Manager::load(
             std::string _studentId(stmt.getColumn(current++).getText());
             std::string _addressId(stmt.getColumn(current++).getText());
 
-            UniqueStudentId uniqueStudentId(_studentId, _addressId);
-            if (!studentSet.insert(uniqueStudentId).second)
+            Student::Key key(_studentId, _addressId);
+            if (!set.insert(key).second)
                 continue;
 
             std::bitset<5> _days;
