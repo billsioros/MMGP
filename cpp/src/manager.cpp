@@ -11,21 +11,6 @@
 #include <unordered_set>    // std::unordered_set
 #include <limits>           // std::numeric_limits<double>().max()
 
-using Element = std::pair<std::string, std::string>;
-
-namespace std
-{
-    template <> struct hash<Element>
-    {
-        std::size_t operator()(const Element& P) const noexcept
-        {
-            return std::hash<std::string>{}(P.first + "StudentId" + P.second + "AddressId");
-        }
-    };
-}
-
-using Set = std::unordered_set<Element>;
-
 // Student Struct:
 Manager::Student::Student()
 {
@@ -160,7 +145,7 @@ void Manager::load(
 
         stmt.bind(1, daypart);
 
-        Set studentSet;
+        StudentSet studentSet;
         while (stmt.executeStep())
         {
             int current = 0;
@@ -168,8 +153,8 @@ void Manager::load(
             std::string _studentId(stmt.getColumn(current++).getText());
             std::string _addressId(stmt.getColumn(current++).getText());
 
-            Element element(_studentId, _addressId);
-            if (!studentSet.insert(element).second)
+            UniqueStudentId uniqueStudentId(_studentId, _addressId);
+            if (!studentSet.insert(uniqueStudentId).second)
                 continue;
 
             std::bitset<5> _days;

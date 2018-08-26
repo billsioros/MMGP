@@ -3,14 +3,18 @@
 
 #include "vector2.hpp"
 #include "Database.h"
-#include <vector>       // std::vector
-#include <bitset>       // std::bitset
-#include <string>       // std::string
-#include <vector>       // std::vector
-#include <iosfwd>       // std::ostream
+#include <vector>           // std::vector
+#include <bitset>           // std::bitset
+#include <string>           // std::string
+#include <vector>           // std::vector
+#include <unordered_set>    // std::unordered_set
+#include <iosfwd>           // std::ostream
 
 namespace Manager
 {
+    using UniqueStudentId = std::pair<std::string, std::string>;
+    using StudentSet = std::unordered_set<UniqueStudentId>;
+
     struct Student
     {
         std::string    _studentId;
@@ -59,6 +63,17 @@ namespace Manager
         const Student&,
         const std::string&
     );
+}
+
+namespace std
+{
+    template <> struct hash<Manager::UniqueStudentId>
+    {
+        std::size_t operator()(const Manager::UniqueStudentId& P) const noexcept
+        {
+            return std::hash<std::string>{}(P.first + "StudentId" + P.second + "AddressId");
+        }
+    };
 }
 
 Manager::Student operator+(const Manager::Student&, const Manager::Student&);
