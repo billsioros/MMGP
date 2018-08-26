@@ -413,3 +413,8 @@ bool operator==(const Manager::Student& A, const Manager::Student& B)
 {
     return A._studentId == B._studentId && A._addressId == B._addressId;
 }
+
+bool operator!=(const Manager::Student& A, const Manager::Student& B)
+{
+    return !(A == B);
+}
