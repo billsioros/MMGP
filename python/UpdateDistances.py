@@ -2,28 +2,28 @@ from util import GetCredentials
 import sys
 from DBmanagement import DBManager as DBM
 import os
+import json
 
-cwd = os.getcwd()
+fileName = sys.argv[1]
 
-credsFileName = sys.argv[1]
-rowIndex = sys.argv[2]
-DayPart = sys.argv[3]
-Database = sys.argv[4]
 
-direct = False
+with open(fileName, "r") as json_file:
+    data = json.load(json_file)
 
-if "-d" in sys.argv:
-    direct = True
+Credentials = data["Credentials"]
+Database = data["Database"]
+rowIndex = data["rowIndex"]
+DayPart = data["DayPart"]
+direct = data["direct"]
 
-distancesFileName = None
+if data.has_key("fileName"):
+    distancesFileName = data["fileName"]
+else:
+    distancesFileName = None
 
-if not direct:
-    if len(sys.argv) > 5:
-        distancesFileName = sys.argv[5]
-    else:
-        distancesFileName = None
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(credsFileName, rowIndex)
+
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(Credentials, rowIndex)
 
 # Get the Database
 DBManager = DBM(Database, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)

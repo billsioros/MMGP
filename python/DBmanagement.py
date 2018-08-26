@@ -24,8 +24,7 @@ class DBManager:
             self.CreateDatabase(fileName)
         else:
             if not os.path.isfile(fileName):
-                print "Creating new Database..."
-                self.CreateDatabase(fileName)
+               raise IOError(fileName + " does not exist!")
                 
         self.FileName = fileName
         self._GoogleAPIKey = GoogleAPIKey
@@ -166,6 +165,8 @@ class DBManager:
             self.Connection = sqlite3.connect(fileName)
             self.Cursor = self.Connection.cursor()
 
+            self.__InitRowFactory()
+
 
     def Disconnect(self):
         self.Connection.close()
@@ -226,6 +227,7 @@ class DBManager:
             # Insert All Records that already have GPS coordinates
             for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
             BusSchedule, ScheduleOrder, Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
+
                 # print LastName.decode("greek", "strict")
                 # print BusSchedule, ScheduleOrder
                 # Concatenate the Address to a single string and hash it
@@ -348,7 +350,7 @@ class DBManager:
         for Code, Num, Capacity in RowList:
             
             Num = int(Num)                   
-            if Code not in Buses:
+            if not Buses.has_key(Code):
                 ToAdd = [Code, Num, Capacity]   
                 self.Cursor.execute("Insert Into Bus    \
                                         Values (?,?,?)", ToAdd)
@@ -394,17 +396,16 @@ class DBManager:
         Addresses = self.Cursor.fetchall()
 
         Depot = self.GetDepot()
-        Depot = (Depot[0], Depot[1], Depot[2])
+
         Addresses.append(Depot)
 
         Origins = list()
-        for id1, x1, y1 in Addresses:
-            Origins.append((id1, (y1, x1)))
+        for Address in Addresses:
+            Origins.append((Address["AddressID"], (Address["GPS_Y"], Address["GPS_X"])))
 
         self.__InitMapsHandler()
         Matrix = self._MapsHandler.DistanceMatrix(Origins)
-        # print Table
-        
+
         if not direct:
             if not fileName:
                 "Error: No file was given, writing on \"tempDistances.tsv\""
@@ -489,8 +490,8 @@ class DBManager:
         Rows = self.Cursor.fetchall()
 
         Addresses = dict()
-        for ID, X, Y, FullAddress in Rows:
-            Addresses[ID] = (X, Y, FullAddress)
+        for Row in Rows:
+            Addresses[Row["AddressID"]] = Row
         
         return Addresses
 
@@ -500,9 +501,10 @@ class DBManager:
         sql = " Select * From Bus"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
+
         Buses = dict()
-        for ID, Num, Capacity in Rows:
-            Buses[ID] = (Num, Capacity)
+        for Row in Rows:
+            Buses[Row["BusID"]] = Row
 
         return Buses
 
@@ -519,6 +521,7 @@ class DBManager:
         return Students
 
 
+    # Fix this!!
     def GetDistances(self, DayPart):
         self.Connect(self.FileName)
 
@@ -528,6 +531,9 @@ class DBManager:
         sql = "Select * From " + DayPart + "Distance"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
+
+        for Row in Rows:
+            print Row
         
         Distances = {}
         for ID1, ID2, Duration, Distance in Rows:
@@ -560,14 +566,27 @@ class DBManager:
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
 
-        Distance = 0
-        Duration = 0
+        return (Rows[0]["Distance"], Rows[0]["Duration"])
 
-        for Dur, Dis in Rows:
-            Distance = Dis
-            Duration = Dur
+
+    def Execute(self, sql):
         
-        return (Distance, Duration)
+        self.Cursor.execute(sql)
+
+        Rows = self.Cursor.fetchall()
+
+        return Rows
+
+
+    def __InitRowFactory(self):
+        def dict_factory(cursor, row):
+            d = {}
+            for idx, col in enumerate(cursor.description):
+                d[col[0]] = row[idx]
+            return d
+
+        self.Connection.row_factory = dict_factory
+        self.Cursor = self.Connection.cursor()
 
 
     def __InitParser(self):

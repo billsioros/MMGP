@@ -1,7 +1,8 @@
 // External modules
 let sqlite3;
 let DOMElementHistory;
-let spawn;
+let spawn
+let fs
 
 // TabGroups
 let SearchTabGroup;
@@ -31,7 +32,11 @@ let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
 let DBFile
 
+
+
 // Bus Searching
+
+    // Get pressed buttons
 
 function GetActiveDayPart() {
     var buttons = document.getElementsByClassName("DayPartSelectorButton");
@@ -66,22 +71,118 @@ function GetActiveBus() {
     return active
 }
 
+    // Bus Search Button Generation
+function GenerateScheduleButtons() {
+    let selectordropdown = document.getElementById("ScheduleSelectorDropDown");
+    selectordropdown.innerHTML = "";
+
+    let DayPart = GetActiveDayPart().innerHTML;
+    let sql;
+
+    switch(DayPart) {
+        case "Morning":
+            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
+            break;
+        case "Noon":
+            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
+            break;
+        case "Study":
+            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
+            let bus = GetActiveBus();
+            bus.classList.remove("active")
+            break;
+        default: break;
+    }
+
+    let option = document.createElement("option");
+    option.className = "ScheduleSelectorOption";
+    option.value = "";
+    option.innerHTML = "";
+    selectordropdown.appendChild(option);
+
+    let searchobj = ExecuteSQLToProc(sql)
+    searchobj.process.on('close', function() {
+        
+        var json_content;
+        let raw_data = fs.readFileSync(searchobj.json_file);
+        let raw_students = JSON.parse(raw_data)
+        let Rows = raw_students.Rows;
+
+        if (DayPart === "Study") {
+            
+            for (let i = 0; i < Rows.length; i++) {
+                let row = Rows[i];
+                let option = document.createElement("option");
+                option.className = "ScheduleSelectorOption";
+                option.value = row.BusSchedule;
+                option.innerHTML = row.BusSchedule;
+                selectordropdown.appendChild(option);
+            }
+        }
+        else {
+            let distinctSchedules = []
+            for (let i = 0; i < Rows.length; i++) {
+                let row = Rows[i];
+                if (!distinctSchedules.includes(row.BusSchedule[3])) {
+                    distinctSchedules.push(row.BusSchedule[3])
+                }
+            }
+
+            
+            for (let i = 0; i < distinctSchedules.length; i++) {
+                let option = document.createElement("option");
+                option.className = "ScheduleSelectorOption";
+                option.value = i + 1;
+                option.innerHTML = i + 1;
+                selectordropdown.appendChild(option);
+            }
+        }
+    });
+
+    searchobj.process.stderr.on('data', function(data) {
+        console.error(data.toString());
+    });
+}
+
+function GenerateBusButtons() {
+    const BusButtons = document.getElementsByClassName("BusButtonsContainer")[0];
+
+    let sql = "Select Number From Bus Order By Number";
+
+    let searchobj = ExecuteSQLToProc(sql)
+
+    searchobj.process.on('close', function() {
+        
+        var json_content;
+        let raw_data = fs.readFileSync(searchobj.json_file);
+        let raw_students = JSON.parse(raw_data)
+        let Rows = raw_students.Rows;
+
+        for (let i = 0; i < Rows.length; i++) {
+            let row = Rows[i];
+            const newButton = document.createElement("button");
+            newButton.type = "button";
+            newButton.className = "BusButton";
+            newButton.id = row.Number;
+            newButton.innerHTML = row.Number;
+            newButton.onclick = OnBusClick;
+
+            BusButtons.appendChild(newButton);
+        }
+    })
+
+    searchobj.process.stderr.on('data', function(data) {
+        console.error(data.toString());
+    });
+}
+
+    // Click Handlers
 function OnBusClickHandle() {
     var buttons = document.getElementsByClassName("DayPartSelectorButton");
     
     for (let i = 0; i < buttons.length; i++) {
         buttons[i].onclick = OnDayPartClick;
     }
-
-    var busbuttons = document.getElementsByClassName("BusButton");
-    
-
-    setTimeout(() => {
-        for (let i = 0; i < busbuttons.length; i++) {
-            busbuttons[i].onclick = OnBusClick;
-        }
-    }, 20);
-    
 
     var button = document.getElementById("ScheduleSearchButton");
     button.onmouseup = SearchSchedule;
@@ -115,6 +216,26 @@ function OnBusClick() {
         prevActive.classList.remove("active");
     this.classList.add("active");
 }
+
+function CheckDisabledScheduleButton(tab) {
+    if (tab == null) {
+        document.getElementById("AddScheduleButton").disabled = true;
+        document.getElementById("CalculateDurationButton").disabled = true;
+        return;
+    }
+
+    if (tab.type === "Schedule") {
+        document.getElementById("AddScheduleButton").disabled = false;
+        document.getElementById("CalculateDurationButton").disabled = false;
+    }
+    else {
+        document.getElementById("AddScheduleButton").disabled = true;
+        document.getElementById("CalculateDurationButton").disabled = true;
+    }
+    return;
+}
+
+    // Schedule Searching
 
 function GetScheduleSearchCriteria() {
     let activeBus = null;
@@ -160,16 +281,30 @@ function GetScheduleSearchCriteria() {
 }
 
 function SearchSchedule() {
+
+    
+
     let busSchedule = GetScheduleSearchCriteria();
+    if (!busSchedule)
+        return
+
+    let loading = document.getElementById("ScheduleSearchButton").childNodes[1];
+    loading.hidden = false;
+
+    loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
-    let Students = GetBusFromDB(sql);
+    let searchobj = ExecuteSQLToProc(sql);
 
-    let title = busSchedule;
-    let waitTime = 20;
-    let type = "Schedule";
 
-    setTimeout(() => {     
+
+    searchobj.process.on('close', function() {
+        let Students = ScheduleJsonRead(searchobj.json_file)
+
+        let title = busSchedule;
+        let waitTime = 20;
+        let type = "Schedule";  
+
         let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
         newSearchTab.activate(false);
         newSearchTab.activeBuses = [busSchedule];
@@ -177,7 +312,14 @@ function SearchSchedule() {
         // Assign onclick to More Buttons.
         ReassignAllButtons(); 
         CurrentStudents = Students;
-    }, waitTime);
+
+        loading.hidden = true;
+        loading.nextElementSibling.innerHTML = "Search"
+    });
+
+    searchobj.process.stderr.on('data', function(data) {
+        console.error(data.toString());
+    });
 }
  
 function CalculateScheduleDuration() {
@@ -190,7 +332,8 @@ function CalculateScheduleDuration() {
     loading.nextElementSibling.innerHTML = "Calculating"
 
     let toJson = {
-        students: []
+        students: [],
+        Database: DBFile
     }
 
     for (let i = 0; i < Students.length - 1; i++) {
@@ -207,20 +350,33 @@ function CalculateScheduleDuration() {
     }
 
 
-    var fs = require("fs");
-
-    fs.writeFile(datadir + "tmpsched.json", JSON.stringify(toJson), (err) => {
+    fs.writeFile(datadir + "/tmp/sched.json", JSON.stringify(toJson), (err) => {
         if (err) {
             console.error(err);
             return;
         };
     })
-    const spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", datadir + "tmpsched.json", DBFile]);
+
+    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", datadir + "/tmp/sched.json"]);
 
     proc.on('close', function(code) {
         console.log("Calculating Completed");
-        fs.unlink(datadir + "tmpsched.json", (err) => {
+
+        var json_content;
+        let raw_data = fs.readFileSync(datadir + "/tmp/sched.json");
+        let raw_results = JSON.parse(raw_data)
+
+        let Distance = raw_results.Distance;
+        let Duration = raw_results.Duration;
+
+        let Minutes = Math.ceil(Duration / 60)
+        let Seconds = Math.ceil(Duration % 60)
+
+        alert("Distance: " + (Distance / 1000).toString() + "km\nDuration: " + Minutes.toString() + "min " + Seconds.toString() + "sec.");
+        loading.hidden = true;
+        loading.nextElementSibling.innerHTML = "Calculate Duration"
+
+        fs.unlink(datadir + "/tmp/sched.json", (err) => {
             if (err)
                 console.error(err)
         })
@@ -228,17 +384,6 @@ function CalculateScheduleDuration() {
 
     proc.stdout.on('data', function(data) {
         console.log(data.toString());
-        data = data.toString().split('\n');
-        let Distance = data[0];
-        let Duration = data[1];
-
-        let Minutes = Math.ceil(Duration / 60)
-        let Seconds = Math.ceil(Duration % 60)
-
-        alert("Distance: " + (Distance / 1000).toString() + "km\nDuration: " + Minutes.toString() + "min " + Seconds.toString() + "sec.");
-        loading.hidden = true;
-
-        loading.nextElementSibling.innerHTML = "Calculate Duration"
     })
 
     proc.stderr.on('data', function(data) {
@@ -247,36 +392,6 @@ function CalculateScheduleDuration() {
 
 }
 
-function GetDistanceFromDB(sql) {
-    let Distances = [];
-    let db = new sqlite3.Database(datadir + "MMGP_data.db");
-    db.each(sql, function(err,row) {
-        Distances.push({
-            AddressID_1: row.AddressID_1,
-            AddressID_2: row.AddressID_2,
-            Distance: row.Distance,
-            Duration: row.Duration
-        })
-    })
-
-    return Distances
-}
-
-function GetDepotFromDB() {
-    let sql = "Select * From Depot"
-    let Depot = {}
-    let db = new sqlite3.Database(datadir + "MMGP_data.db");
-    db.each(sql, function(err, row) {
-        Depot = {
-            AddressID: row.AddressID,
-            FullAddress: row.FullAddress,
-            Longitude: row.GPS_X,
-            Latitude: row.GPS_Y
-        }
-    })
-
-    return Depot
-}
 
 function AddSchedule() {
     let activeTab = SearchTabGroup.activeTab()
@@ -298,15 +413,21 @@ function AddSchedule() {
         }
     }
 
+    let loading = document.getElementById("AddScheduleButton").childNodes[1];
+    loading.hidden = false;
+
+    loading.nextElementSibling.innerHTML = "Adding"
+
     let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
-    let Students = GetBusFromDB(sql);
+    let searchobj = ExecuteSQLToProc(sql);
 
+    searchobj.process.on('close', function() {
+        let Students = ScheduleJsonRead(searchobj.json_file)
 
-    let title = activeTab.title + ", " + busSchedule;
-    let type = "Schedule";
-    let waitTime = 20;
+        let title = activeTab.title + ", " + busSchedule;
+        let type = "Schedule";
+        let waitTime = 20;
 
-    setTimeout(() => {
         Students.push.apply(Students, activeTab.students)
         let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
 
@@ -320,8 +441,17 @@ function AddSchedule() {
         // Assign onclick to More Buttons.
         ReassignAllButtons(); 
         CurrentStudents = Students;
-    }, waitTime);
+
+        loading.hidden = true;
+        loading.nextElementSibling.innerHTML = "Add Schedule"
+    });
+
+    searchobj.process.stderr.on('data', function(data) {
+        console.error(data.toString());
+    });
 }
+
+    // Display Bus
 
 function DisplayBusTable(Students) {
     var table = document.createElement("div")
@@ -342,6 +472,13 @@ function DisplayBusTable(Students) {
     }
 
     table.appendChild(firstRow);
+
+    if (Students.length === 0) {
+        let p = document.createElement("p");
+        p.className = "RowData";
+        p.innerHTML = "-";
+        table.appendChild(p);
+    }
 
     for (var i = 0; i < Students.length; i++) {
         let student = Students[i];
@@ -432,164 +569,45 @@ function DisplayBusMap(Students) {
     return studentsToPlot;
 }
 
-function GenerateScheduleButtons() {
-    let selectordropdown = document.getElementById("ScheduleSelectorDropDown");
-    selectordropdown.innerHTML = "";
 
-    let DayPart = GetActiveDayPart().innerHTML;
-    let sql;
-    let ScheduleCount;
+// DB Retrievals
+// This returns python process. on.close is not handled
+function ExecuteSQLToProc(sql) {
 
-    switch(DayPart) {
-        case "Morning":
-            ScheduleCount = 2;
-            sql = "Select Count(distinct(BusSchedule)) as Count From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
-            break;
-        case "Noon":
-            ScheduleCount = 3;
-            sql = "Select Count(distinct(BusSchedule)) as Count From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
-            break;
-        case "Study":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
-            break;
-        default: break;
+    let toJson = {
+        Database: DBFile,
+        sql: sql
     }
 
-    let option = document.createElement("option");
-        option.className = "ScheduleSelectorOption";
-        option.value = "";
-        option.innerHTML = "";
-        selectordropdown.appendChild(option);
-
-    if (DayPart === "Study") {
-        let db = new sqlite3.Database(datadir + "MMGP_data.db");
-        db.each(sql, function(err, row) {
-            let option = document.createElement("option");
-            option.className = "ScheduleSelectorOption";
-            option.value = row.BusSchedule;
-            option.innerHTML = row.BusSchedule;
-            selectordropdown.appendChild(option);
-        })
-    }
-    else {
-
-        for (let i = 0; i < ScheduleCount; i++) {
-            let option = document.createElement("option");
-            option.className = "ScheduleSelectorOption";
-            option.value = i + 1;
-            option.innerHTML = i + 1;
-            selectordropdown.appendChild(option);
-        }
-    }
-    
-}
-
-function GenerateBusButtons() {
-    const BusButtons = document.getElementsByClassName("BusButtonsContainer")[0];
-
-    let sql = "Select Number From Bus Order By Number";
-    let db = new sqlite3.Database(datadir + "MMGP_data.db");
-    db.each(sql, function(err, row) {
+    fs.writeFile(datadir + "/tmp/sql.json", JSON.stringify(toJson), (err) => {
         if (err) {
-            console.log(err)
-            return
-        }
-        const newButton = document.createElement("button");
-        newButton.type = "button";
-        newButton.className = "BusButton";
-        newButton.id = row.Number;
-        newButton.innerHTML = row.Number;
-
-        BusButtons.appendChild(newButton);
-    });
-}
-
-function GetBusFromDB(sql) {
-    let Students = [];
-    let db = new sqlite3.Database(datadir + "MMGP_data.db");
-    db.each(sql, function(err, row) {
-        if (err) {
-            console.log(err)
-            return
-        }
-        let id = "\"" + row.StudentID + "\"";
-
-        let classLevel;
-        if (!row.Class)
-            classLevel = row.Level;
-        else 
-            classLevel = row.Class + " - " + row.Level + "Y";
-
-        student = {
-            ID: row.StudentID,
-            Name: row.LastName + " " + row.FirstName,
-            ClassLevel: classLevel,
-            FirstName: row.FirstName,
-            LastName: row.LastName,
-
-            Phone: row.Phone,
-            Mobile: row.Mobile,
-            OtherPhone1: row.OtherPhone1,
-            OtherPhone2: row.OtherPhone2,
-
-            DayPart: row.DayPart,
-
-            Address: {
-                FullAddress: row.FullAddress,
-                AddressID: row.AddressID,
-                Longitude: row.GPS_X,
-                Latitude: row.GPS_Y
-            },
-
-            Days: {
-                Monday: row.Monday,
-                Tuesday: row.Tuesday,
-                Wednesday: row.Wednesday,
-                Thursday: row.Thursday,
-                Friday: row.Friday
-            },
-
-            Notes: row.FullNote,
-            BusSchedule: row.BusSchedule,
-            ScheduleOrder: row.ScheduleOrder
-        }
-
-        Students.push(student);
+            console.error(err);
+            return;
+        };
     })
 
-    return Students
+
+
+    let proc = spawn('python', [pythondir + "SQLHandler.py", datadir + "tmp/sql.json"])
+
+    return {
+        process: proc,
+        json_file: datadir + "/tmp/sql.json"
+    }
 }
 
-function CheckDisabledScheduleButton(tab) {
-    if (tab == null) {
-        document.getElementById("AddScheduleButton").disabled = true;
-        document.getElementById("CalculateDurationButton").disabled = true;
-        return;
-    }
+function StudentJsonRead(json_file) {
 
-    if (tab.type === "Schedule") {
-        document.getElementById("AddScheduleButton").disabled = false;
-        document.getElementById("CalculateDurationButton").disabled = false;
-    }
-    else {
-        document.getElementById("AddScheduleButton").disabled = true;
-        document.getElementById("CalculateDurationButton").disabled = true;
-    }
-    return;
-}
+    var json_content;
+    let raw_data = fs.readFileSync(json_file);
+    let raw_students = JSON.parse(raw_data)
+    let Rows = raw_students.Rows;
 
-// Student Searching
-
-let CurrentStudents = {};
-
-function GetStudentFromDB(sql) {
     let Students = {};
-    let db = new sqlite3.Database(datadir + "MMGP_data.db");
-    db.each(sql, function(err, row) {
-        if (err) {
-            console.log(err)
-            return
-        }
+
+    for (let i = 0; i < Rows.length; i++) {
+        let row = Rows[i];
+
         let id = "\"" + row.StudentID + "\"";
         // If student has not already been saved save it
         if (!Students.hasOwnProperty(id)) {
@@ -676,10 +694,84 @@ function GetStudentFromDB(sql) {
             key = row.DayPart + 'Buses';
             Students[id][key].push(row.BusSchedule)
         }
-    });
+    }
+
+    fs.unlink(json_file, (err) => {
+        if (err)
+            console.error(err)
+    })
 
     return Students;
 }
+
+function ScheduleJsonRead(json_file) {
+    var json_content;
+    let raw_data = fs.readFileSync(json_file);
+    let raw_students = JSON.parse(raw_data)
+    let Rows = raw_students.Rows;
+
+    let Students = [];
+
+    for (let i = 0; i < Rows.length; i++) {
+        let row = Rows[i];
+
+        let id = "\"" + row.StudentID + "\"";
+
+        let classLevel;
+        if (!row.Class)
+            classLevel = row.Level;
+        else 
+            classLevel = row.Class + " - " + row.Level + "Y";
+
+        student = {
+            ID: row.StudentID,
+            Name: row.LastName + " " + row.FirstName,
+            ClassLevel: classLevel,
+            FirstName: row.FirstName,
+            LastName: row.LastName,
+
+            Phone: row.Phone,
+            Mobile: row.Mobile,
+            OtherPhone1: row.OtherPhone1,
+            OtherPhone2: row.OtherPhone2,
+
+            DayPart: row.DayPart,
+
+            Address: {
+                FullAddress: row.FullAddress,
+                AddressID: row.AddressID,
+                Longitude: row.GPS_X,
+                Latitude: row.GPS_Y
+            },
+
+            Days: {
+                Monday: row.Monday,
+                Tuesday: row.Tuesday,
+                Wednesday: row.Wednesday,
+                Thursday: row.Thursday,
+                Friday: row.Friday
+            },
+
+            Notes: row.FullNote,
+            BusSchedule: row.BusSchedule,
+            ScheduleOrder: row.ScheduleOrder
+        }
+
+        Students.push(student);
+    }
+
+    fs.unlink(json_file, (err) => {
+        if (err)
+            console.error(err)
+    })
+
+    return Students;
+}
+
+// Student Searching
+
+let CurrentStudents = {};
+
 
 
 function DisplayStudentSearchTable(Students) {
@@ -703,8 +795,15 @@ function DisplayStudentSearchTable(Students) {
 
     table.appendChild(firstRow);
 
-    // Basically for student in Students:
+    
     StudentKeys = Object.keys(Students);
+    if (StudentKeys.length === 0) {
+        let p = document.createElement("p");
+        p.className = "RowData";
+        p.innerHTML = "-";
+        table.appendChild(p);
+    }
+    // Basically for student in Students:
     for (let i = 0; i < StudentKeys.length; i++) {
         key = StudentKeys[i];
         var row = document.createElement("div");
@@ -802,39 +901,41 @@ function OnMorePress() {
     var student;
     var CurrentStudents = SearchTabGroup.activeTab().students;
 
-    let exists = false;
     // If students exist in active tab's students get it from those.
     if (CurrentStudents.hasOwnProperty(id)) {
         student = CurrentStudents[id];
-        exists = true;
+
+        let title = student.LastName + " " + student.FirstName;
+        let type = "StudentCard"
+        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentCard, DisplayStudentMap, student);
+        newSearchTab.activate(false);
     }
     // else get a new one
     else {
         id = children[0].innerHTML;
+
         let sql = "Select * From Student, Address\
         Where Student.AddressID = Address.AddressID and\
         Student.StudentID = \"" + id + "\"";
 
         id = "\"" + id + "\"";
         
-        student = GetStudentFromDB(sql);
+        searchobj = ExecuteSQLToProc(sql);
+
+        searchobj.process.on('close', function() {
+            CurrentStudents  = StudentJsonRead(searchobj.json_file)
+            let student = CurrentStudents[id]
+
+            let title = student.LastName + " " + student.FirstName;
+            let type = "StudentCard"
+            let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentCard, DisplayStudentMap, student);
+            newSearchTab.activate(false);
+        })
+
+        searchobj.process.stderr.on('data', function(data) {
+            console.error(data.toString());
+        })
     }
-
-    setTimeout(() => {     
-        if (!exists) {
-            student = student[id];
-        }
-
-        // Open a new search tab holding the specific student's info and Addressmap.
-        let title = student.LastName + " " + student.FirstName;
-        let type = "StudentCard"
-        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentCard, DisplayStudentMap, student);
-        newSearchTab.activate(false);
-
-    }, 5);
-    
-    
-
 }
 
     // Filters handler and Tab Creator
@@ -878,38 +979,46 @@ function SearchStudents() {
 
     DayParts = ['Morning', 'Noon', 'Study'];
     
-    
+    let loading = document.getElementById("StudentSearchButton").childNodes[1];
+    loading.hidden = false;
+
+    loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
             From Student, Address " + toSearch + " Order By Student.LastName";
 
     // Execute query and get Students
-    let Students = GetStudentFromDB(sql);
+    let searchobj = ExecuteSQLToProc(sql);
 
-    // Apparently Students object has no values at this point.
-    // If window waits for 10 MILLIseconds everything is fine. for some reason...
+    searchobj.process.on('close', function() {
+        let Students = StudentJsonRead(searchobj.json_file)
 
-    // Open a new SearchTab, which displays Students as a Table and Map Tabs.
-    let title;
-    let waitTime;
-    if (empty) {
-        title = "All Students";
-        waitTime = 50;
-    }
-    else {
-        // Student Search : 
-        title = "\"" + FirstName + " " + LastName + " " + Class + " " + Level + " " + Street + " " + Number + " " + Municipal + " " + ZipCode + "\"";
-        waitTime = 20;
-    }
-    let type = "Student"
-    setTimeout(() => {     
+        let title;
+
+        if (empty) {
+            title = "All Students";
+        }
+        else {
+            // Student Search : 
+            title = "\"" + FirstName + " " + LastName + " " + Class + " " + Level + " " + Street + " " + Number + " " + Municipal + " " + ZipCode + "\"";
+        }
+        // Open a new SearchTab, which displays Students as a Table and Map Tabs.
+        let type = "Student"
         let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
         newSearchTab.activate(false);
 
         // Assign onclick to More Buttons.
         ReassignAllButtons(); 
         CurrentStudents = Students;
-    }, waitTime);
+
+        loading.hidden = true;
+        loading.nextElementSibling.innerHTML = "Search"
+    });
+
+    searchobj.process.stderr.on('data', function(data) {
+        console.error(data.toString());
+    });
+
 }
 
 // Clear search bars click handler
@@ -1096,6 +1205,7 @@ function DisplayStudentCard(student) {
             let Orders = dayPart + 'Order';
             
             // If dayPart does not exist in students create a "p" with nothing in it
+            console.log(student[Addresses])
             if (student[Addresses].length === 0) {
                 var p = document.createElement("p");
                 p.className = "RowData";
@@ -1572,11 +1682,9 @@ function CacheDOM() {
 
 // Loader
 function OnCreateWindow() {
-    // pythondir = "../python/"
-    // datadir = "../data/"
-
-    sqlite3 = require('sqlite3').verbose();
     DBFile = datadir + "MMGP_data.db"
+    spawn = require('child_process').spawn
+    fs = require('fs')
     
     
     GenerateBusButtons();
@@ -1590,6 +1698,4 @@ function OnCreateWindow() {
     document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
-
-    console.log(__dirname)
 }

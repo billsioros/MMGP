@@ -4,12 +4,17 @@ import sys
 from itertools import izip
 from DBmanagement import DBManager as DBM
 import os
-
-cwd = os.getcwd()
+import json
 
 fileName = sys.argv[1]
-rowIndex = sys.argv[2]
-Database = sys.argv[3]
+
+
+with open(fileName, "r") as json_file:
+    data = json.load(json_file)
+
+Credentials = data["Credentials"]
+Database = data["Database"]
+rowIndex = data["rowIndex"]
 
 GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
 
