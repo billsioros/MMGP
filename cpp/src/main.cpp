@@ -11,15 +11,12 @@
 #include <unordered_map>
 #include <chrono>
 
-using Group     = Cluster<Manager::Student>;
+using Group = Cluster<Manager::Student>;
 
-using Cost      = std::unordered_map<const Manager::Student *, double>;
-using Costs     = std::unordered_map<const Manager::Student *, Cost>;
+using DVector = std::unordered_map<Manager::Student, double>;
+using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
-using Buses     = std::vector<Manager::Bus>;
-using Schedules = std::vector<Buses>;
-
-TSP::path<Manager::Student> optimize(
+TSP::path<Manager::Student> tsp(
     const Manager::Student&,
     const std::vector<Manager::Student>&,
     const std::function<double(const Manager::Student&, const Manager::Student&)>&
@@ -68,7 +65,7 @@ int main(int argc, char * argv[])
     std::vector<Manager::Student> students;
     Manager::load(*database, students, args["-dp"]);
 
-    Buses buses;
+    Manager::Buses buses;
     Manager::load(*database, buses);
 
     Manager::Student depot;
@@ -107,21 +104,9 @@ int main(int argc, char * argv[])
     << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
     << " seconds (Student Clustering)" << std::endl;
 
-    auto cost = [&](const Manager::Student& A, const Manager::Student& B)
-    {
-        static Costs costs;
-    
-        Costs::const_iterator it1; Cost::const_iterator it2;
-        if ((it1 = costs.find(&A)) != costs.end())
-            if ((it2 = it1->second.find(&B)) != it1->second.end())
-                return it2->second;
-
-        return (costs[&A][&B] = Manager::distance(*database, A, B, args["-dp"]));
-    };
-
     beg = std::chrono::system_clock().now();
 
-    Schedules schedules;
+    Manager::Schedules schedules;
 
     std::size_t busId = std::numeric_limits<std::size_t>().max();
     for (const auto& group : *groups)
@@ -136,7 +121,23 @@ int main(int argc, char * argv[])
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
 
-        TSP::path<Manager::Student> route = optimize(depot, bus._students, cost);
+        TSP::path<Manager::Student> route = tsp(
+            depot,
+            bus._students,
+            [&](const Manager::Student& A, const Manager::Student& B)
+            {
+                static DMatrix dmatrix;
+
+                DMatrix::const_iterator mit;
+                DVector::const_iterator vit;
+
+                if ((mit = dmatrix.find(A)) != dmatrix.end())
+                    if ((vit = mit->second.find(B)) != mit->second.end())
+                        return vit->second;
+
+                return (dmatrix[A][B] = Manager::distance(*database, A, B, args["-dp"]));
+            }
+        );
 
         bus._students = route.second; bus._cost = route.first;
 
@@ -159,7 +160,7 @@ int main(int argc, char * argv[])
     return 0;
 }
 
-TSP::path<Manager::Student> optimize(
+TSP::path<Manager::Student> tsp(
     const Manager::Student& depot,
     const std::vector<Manager::Student>& students,
     const std::function<double(const Manager::Student&, const Manager::Student&)>& cost
@@ -184,8 +185,7 @@ TSP::path<Manager::Student> optimize(
             next.second[i] = next.second[j];
             next.second[j] = temp;
 
-            for (std::size_t j = 0; j < next.second.size() - 1UL; j++)
-                next.first += cost(next.second[j], next.second[j + 1UL]);
+            next.first = TSP::totalCost<Manager::Student>(next.second, cost);
 
             return next;
         },

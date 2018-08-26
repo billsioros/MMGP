@@ -145,7 +145,7 @@ void Manager::load(
 
         stmt.bind(1, daypart);
 
-        Student::Set set;
+        std::unordered_set<Student> set;
         while (stmt.executeStep())
         {
             int current = 0;
@@ -153,8 +153,9 @@ void Manager::load(
             std::string _studentId(stmt.getColumn(current++).getText());
             std::string _addressId(stmt.getColumn(current++).getText());
 
-            Student::Key key(_studentId, _addressId);
-            if (!set.insert(key).second)
+            Student student;
+            student._studentId = _studentId; student._addressId = _addressId;
+            if (!set.insert(student).second)
                 continue;
 
             std::bitset<5> _days;
@@ -392,14 +393,4 @@ std::ostream& operator<<(std::ostream& os, const Manager::Student& student)
     os << "[ " << student._studentId << ' ' << student._addressId << " ]";
     
     return os;
-}
-
-bool operator==(const Manager::Student& A, const Manager::Student& B)
-{
-    return A._studentId == B._studentId && A._addressId == B._addressId;
-}
-
-bool operator!=(const Manager::Student& A, const Manager::Student& B)
-{
-    return !(A == B);
 }
