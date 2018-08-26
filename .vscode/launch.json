@@ -15,7 +15,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/MMGP",
-            "args": ["./MMGP_Data.db", "Morning", "0.25", "0.25"],
+            "args": ["-db", "./MMGP_Data.db", "-dp", "Morning"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}/data/",
             "environment": [],
@@ -27,7 +27,8 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask": "Build"
         }
     ]
 }

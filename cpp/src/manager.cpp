@@ -5,27 +5,11 @@
 #include <vector>           // std::vector
 #include <bitset>           // std::bitset
 #include <string>           // std::string
-#include <vector>           // std::vector
 #include <fstream>          // std::ostream
 #include <iostream>         // std::cerr
 #include <ctime>            // std::time etc
 #include <unordered_set>    // std::unordered_set
 #include <limits>           // std::numeric_limits<double>().max()
-
-using Element = std::pair<std::string, std::string>;
-
-namespace std
-{
-    template <> struct hash<Element>
-    {
-        std::size_t operator()(const Element& P) const noexcept
-        {
-            return std::hash<std::string>{}(P.first + "StudentId" + P.second + "AddressId");
-        }
-    };
-}
-
-using Set = std::unordered_set<Element>;
 
 // Student Struct:
 Manager::Student::Student()
@@ -161,7 +145,7 @@ void Manager::load(
 
         stmt.bind(1, daypart);
 
-        Set studentSet;
+        std::unordered_set<Student> set;
         while (stmt.executeStep())
         {
             int current = 0;
@@ -169,8 +153,9 @@ void Manager::load(
             std::string _studentId(stmt.getColumn(current++).getText());
             std::string _addressId(stmt.getColumn(current++).getText());
 
-            Element element(_studentId, _addressId);
-            if (!studentSet.insert(element).second)
+            Student student;
+            student._studentId = _studentId; student._addressId = _addressId;
+            if (!set.insert(student).second)
                 continue;
 
             std::bitset<5> _days;
@@ -196,7 +181,7 @@ void Manager::load(
     }
 }
 
-void Manager::load(SQLite::Database& database, std::vector<Bus>& buses)
+void Manager::load(SQLite::Database& database, Buses& buses)
 {
     try
     {
@@ -408,9 +393,4 @@ std::ostream& operator<<(std::ostream& os, const Manager::Student& student)
     os << "[ " << student._studentId << ' ' << student._addressId << " ]";
     
     return os;
-}
-
-bool operator==(const Manager::Student& A, const Manager::Student& B)
-{
-    return A._studentId == B._studentId;
 }

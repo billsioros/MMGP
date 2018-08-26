@@ -3,11 +3,11 @@
 
 #include "vector2.hpp"
 #include "Database.h"
-#include <vector>       // std::vector
-#include <bitset>       // std::bitset
-#include <string>       // std::string
-#include <vector>       // std::vector
-#include <iosfwd>       // std::ostream
+#include <vector>           // std::vector
+#include <bitset>           // std::bitset
+#include <string>           // std::string
+#include <vector>           // std::vector
+#include <iosfwd>           // std::ostream
 
 namespace Manager
 {
@@ -30,6 +30,16 @@ namespace Manager
         );
 
         Student& operator=(const Student&);
+
+        friend bool operator==(const Student& A, const Student& B)
+        {
+            return A._studentId == B._studentId && A._addressId == B._addressId;
+        }
+
+        friend bool operator!=(const Student& A, const Student& B)
+        {
+            return !(A == B);
+        }
     };
 
     struct Bus
@@ -43,7 +53,7 @@ namespace Manager
         Bus(const std::string&, unsigned, unsigned);
     };
 
-    using Buses     = std::vector<Manager::Bus>;
+    using Buses     = std::vector<Bus>;
     using Schedules = std::vector<Buses>;
 
     void load(SQLite::Database&, Student&);
@@ -63,5 +73,16 @@ namespace Manager
 
 Manager::Student operator+(const Manager::Student&, const Manager::Student&);
 Manager::Student operator/(const Manager::Student&, double);
+
 std::ostream& operator<<(std::ostream&, const Manager::Student&);
-bool operator==(const Manager::Student&, const Manager::Student&);
+
+namespace std
+{
+    template <> struct hash<Manager::Student>
+    {
+        std::size_t operator()(const Manager::Student& P) const noexcept
+        {
+            return std::hash<std::string>{}("SID" + P._studentId + "AID" + P._addressId);
+        }
+    };
+}
