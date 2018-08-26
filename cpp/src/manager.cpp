@@ -10,6 +10,7 @@
 #include <iostream>         // std::cerr
 #include <ctime>            // std::time etc
 #include <unordered_set>    // std::unordered_set
+#include <limits>           // std::numeric_limits<double>().max()
 
 using Element = std::pair<std::string, std::string>;
 
@@ -76,7 +77,8 @@ Manager::Bus::Bus(
 :
 _busId(_busId),
 _number(_number),
-_capacity(_capacity)
+_capacity(_capacity),
+_cost(std::numeric_limits<double>().max())
 {
 }
 
