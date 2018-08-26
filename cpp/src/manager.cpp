@@ -411,5 +411,5 @@ std::ostream& operator<<(std::ostream& os, const Manager::Student& student)
 
 bool operator==(const Manager::Student& A, const Manager::Student& B)
 {
-    return A._studentId == B._studentId;
+    return A._studentId == B._studentId && A._addressId == B._addressId;
 }
