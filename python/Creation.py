@@ -16,15 +16,20 @@ Credentials = data["Credentials"]
 Database = data["Database"]
 rowIndex = data["rowIndex"]
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(Credentials, rowIndex)
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Credentials, rowIndex)
 
-con = pyodbc.connect(DRIVER=ServerType,
-                 SERVER=ServerName,
-                 DATABASE=DatabaseName,
-                 Trusted_Connection='yes', autocommit=True)
+
+constr = "Driver=" + ServerType + ";" + \
+"Server=" + ServerName + ";" + \
+"Database=" + DatabaseName + ";" + \
+"UID=" + Username + ";" + \
+"PWD=" + Password + ";"
+
+con = pyodbc.connect(constr)
 
 con.setdecoding(pyodbc.SQL_CHAR, encoding='greek')
 con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
+
 
 # Select All Morning Students
 

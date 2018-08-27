@@ -483,6 +483,8 @@ def GetCredentials(fileName, rowIndex):
     ServerType = None
     ServerName = None
     DatabaseName = None
+    Username = None
+    Password = None
     with open(fileName) as credentials:
         readCSV = csv.DictReader(credentials, delimiter=',')
         i = 0
@@ -493,9 +495,11 @@ def GetCredentials(fileName, rowIndex):
                 ServerType = row["ServerType"]
                 ServerName = row["ServerName"]
                 DatabaseName = row["DatabaseName"]
+                Username = row["Username"]
+                Password = row["Password"]
                 break
             i += 1
-    return [GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName]
+    return [GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName, Username, Password]
 
 
 
