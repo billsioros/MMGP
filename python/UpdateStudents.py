@@ -23,7 +23,7 @@ constr =    "Driver=" + ServerType + ";" + \
             "Server=" + ServerName + ";" + \
             "Database=" + DatabaseName + ";"
 
-if ActiveCon == "Native":
+if ActiveCon == "Native" or ActiveCon == "Native-Laptop":
       con = pyodbc.connect(   DRIVER=ServerType,
                               SERVER=ServerName,
                               Database=DatabaseName,
