@@ -29,7 +29,9 @@ function createWindow() {
         {
             label: "Connection",
             submenu: [
-                {label: 'Change connection type (Native / Network)', click() {setActiveConnection();}}
+                {label: 'Connect to Native Client', click() {setActiveConnection("Native");}},
+                {label: 'Connect to Native-Laptop Client', click() {setActiveConnection("Native-Laptop");}},
+                {label: 'Connect to Network Client', click() {setActiveConnection("Network");}}
             ]
         },
         {
@@ -125,6 +127,10 @@ function CreateDatabase() {
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
+        fs.unlink(jsonfile, (err) => {
+            if (err)
+                console.error(err)
+        })
     })
 
     proc.stdout.on('data', function(data) {
@@ -466,7 +472,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     return {process: updistproc, progressBar: progressBar};
 }
 
-function setActiveConnection() {
+function setActiveConnection(con) {
     let fs = require("fs");
 
     var json_content;
@@ -474,12 +480,7 @@ function setActiveConnection() {
     let data = JSON.parse(raw_data)
 
     let toJson = data
-    if (data.Connection.Active === "Native") {
-        data.Connection.Active = "Network"
-    }
-    else {
-        data.Connection.Active = "Native"
-    }
+    data.Connection.Active = con
 
     fs.writeFile(settings, JSON.stringify(data), (err) => {
         if (err) {
