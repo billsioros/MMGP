@@ -13,19 +13,36 @@ fileName = sys.argv[1]
 with open(fileName, "r") as json_file:
     data = json.load(json_file)
 
-Credentials = data["Credentials"]
+Settings = data["Settings"]
 Database = data["Database"]
-rowIndex = data["rowIndex"]
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Credentials, rowIndex)
+ActiveCon, GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
-constr = "Driver=" + ServerType + ";" + \
-"Server=" + ServerName + ";" + \
-"Database=" + DatabaseName + ";" + \
-"UID=" + Username + ";" + \
-"PWD=" + Password + ";"
 
-con = pyodbc.connect(constr)
+constr =    "Driver=" + ServerType + ";" + \
+            "Server=" + ServerName + ";" + \
+            "Database=" + DatabaseName + ";"
+
+if ActiveCon == "Native":
+      con = pyodbc.connect(   DRIVER=ServerType,
+                              SERVER=ServerName,
+                              Database=DatabaseName,
+                              Trusted_Connection = 'yes',
+                              autocommit=True)
+else:
+      if Username and Password:
+            constr +=   ("UID=" + Username + ";" + \
+                        "PWD=" + Password + ";")
+      else:
+            print "Error: wrong username/password"
+      con = pyodbc.connect(constr, autocommit=True, timeout=120)
+
+
+
+
+
+
+
 # Select All Morning Students
 
 cursor = con.cursor()

@@ -4,6 +4,7 @@ from openrouteservice import distance_matrix as od, geocoding as ogeo, client as
 import time
 import sys
 import csv
+import json
 
 class GreekDecoder:
 
@@ -477,7 +478,7 @@ def SecondsToMinutes(duration):
     return (Minutes, Seconds)
     
 
-def GetCredentials(fileName, rowIndex):
+def GetCredentials(SettingsFile):
     GoogleAPI_key = None
     OpenAPI_key = None
     ServerType = None
@@ -485,21 +486,26 @@ def GetCredentials(fileName, rowIndex):
     DatabaseName = None
     Username = None
     Password = None
-    with open(fileName) as credentials:
-        readCSV = csv.DictReader(credentials, delimiter=',')
-        i = 0
-        for row in readCSV:
-            if int(rowIndex) == i:
-                GoogleAPI_key = row["GoogleAPI_key"]
-                OpenAPI_key = row["OpenAPI_key"]
-                ServerType = row["ServerType"]
-                ServerName = row["ServerName"]
-                DatabaseName = row["DatabaseName"]
-                Username = row["Username"]
-                Password = row["Password"]
-                break
-            i += 1
-    return [GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName, Username, Password]
+
+    with open(SettingsFile, "r") as json_file:
+        Settings = json.load(json_file)
+
+    activeConnection = str(Settings["Connection"]["Active"])
+
+    GoogleAPI_key = Settings["GoogleAPI_Key"]
+    OpenAPI_key = Settings["OpenAPI_Key"]
+
+    ServerType = Settings["Connection"][activeConnection]["Driver"]
+    ServerName = Settings["Connection"][activeConnection]["Server"]
+    DatabaseName = Settings["Connection"][activeConnection]["Database"]
+    Username = Settings["Connection"][activeConnection]["Username"]
+    Password = Settings["Connection"][activeConnection]["Password"]
+
+    if not Username or not Password:
+        Username = None
+        Password = None
+
+    return [activeConnection, GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName, Username, Password]
 
 
 

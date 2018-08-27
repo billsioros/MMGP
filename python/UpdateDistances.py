@@ -10,9 +10,8 @@ fileName = sys.argv[1]
 with open(fileName, "r") as json_file:
     data = json.load(json_file)
 
-Credentials = data["Credentials"]
+Settings = data["Settings"]
 Database = data["Database"]
-rowIndex = data["rowIndex"]
 DayPart = data["DayPart"]
 direct = data["direct"]
 
@@ -23,7 +22,7 @@ else:
 
 
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(Credentials, rowIndex)
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
 # Get the Database
 DBManager = DBM(Database, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)

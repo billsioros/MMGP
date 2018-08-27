@@ -5,6 +5,7 @@ const {app, Menu, BrowserWindow, dialog} = require('electron')
 let win
 let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
+let settings = datadir + "MMGP_settings.json"
 let DBFile = datadir + "MMGP_data.db"
 
 function createWindow() {
@@ -23,6 +24,12 @@ function createWindow() {
                 {label: 'Run MMGP Algorithm'},        
                 {type: 'separator'},
                 {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {app.quit()}}
+            ]
+        },
+        {
+            label: "Connection",
+            submenu: [
+                {label: 'Change connection type (Native / Network)', click() {setActiveConnection();}}
             ]
         },
         {
@@ -102,8 +109,7 @@ function CreateDatabase() {
     jsonfile = datadir + "tmp/createdatabase.json"
 
     let toJson = {
-        Credentials: datadir + "Credentials.csv",
-        rowIndex: "0",
+        Settings: settings,
         Database: DBFile
     }
 
@@ -158,8 +164,7 @@ function UpdateStudents() {
     jsonfile = datadir + "tmp/updatestudents.json"
 
     let toJson = {
-        Credentials: datadir + "Credentials.csv",
-        rowIndex: "0",
+        Settings: settings,
         Database: DBFile
     }
 
@@ -209,8 +214,7 @@ function UpdateBuses() {
     jsonfile = datadir + "tmp/updatebuses.json"
 
     let toJson = {
-        Credentials: datadir + "Credentials.csv",
-        rowIndex: "0",
+        Settings: settings,
         Database: DBFile
     }
     fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
@@ -425,8 +429,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     jsonfile = datadir + "tmp/update" + DayPart + "distances.json"
 
     let toJson = {
-        Credentials: datadir + "Credentials.csv",
-        rowIndex: "0",
+        Settings: settings,
         Database: DBFile,
         DayPart: DayPart,
         direct: direct,
@@ -463,6 +466,28 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     return {process: updistproc, progressBar: progressBar};
 }
 
+function setActiveConnection() {
+    let fs = require("fs");
+
+    var json_content;
+    let raw_data = fs.readFileSync(settings);
+    let data = JSON.parse(raw_data)
+
+    let toJson = data
+    if (data.Connection.Active === "Native") {
+        data.Connection.Active = "Network"
+    }
+    else {
+        data.Connection.Active = "Native"
+    }
+
+    fs.writeFile(settings, JSON.stringify(data), (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        };
+    });
+}
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

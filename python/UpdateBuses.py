@@ -12,19 +12,29 @@ fileName = sys.argv[1]
 with open(fileName, "r") as json_file:
     data = json.load(json_file)
 
-Credentials = data["Credentials"]
+Settings = data["Settings"]
 Database = data["Database"]
-rowIndex = data["rowIndex"]
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
-con = pyodbc.connect(DRIVER=ServerType,
-                 SERVER=ServerName,
-                 DATABASE=DatabaseName,
-                 Trusted_Connection='yes', autocommit=True)
 
-con.setdecoding(pyodbc.SQL_CHAR, encoding='greek')
-con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
+constr =    "Driver=" + ServerType + ";" + \
+            "Server=" + ServerName + ";" + \
+            "Database=" + DatabaseName + ";"
+
+if Username and Password:
+      constr +=   ("UID=" + Username + ";" + \
+                  "PWD=" + Password + ";")
+
+
+# con = pyodbc.connect(constr, autocommit=True, timeout=120)
+
+con = pyodbc.connect(   DRIVER=ServerType,
+                        SERVER=ServerName,
+                        Database=DatabaseName,
+                        Trusted_Connection = 'yes',
+                        autocommit=True)
+
 
 # Select All Morning Students
 
