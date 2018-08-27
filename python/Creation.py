@@ -4,14 +4,19 @@ import sys
 import os
 from itertools import izip
 from DBmanagement import DBManager as DBM
-
-cwd = os.getcwd()
+import json
 
 fileName = sys.argv[1]
-rowIndex = sys.argv[2]
-Database = sys.argv[3]
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(fileName, rowIndex)
+
+with open(fileName, "r") as json_file:
+    data = json.load(json_file)
+
+Credentials = data["Credentials"]
+Database = data["Database"]
+rowIndex = data["rowIndex"]
+
+GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName = GetCredentials(Credentials, rowIndex)
 
 con = pyodbc.connect(DRIVER=ServerType,
                  SERVER=ServerName,

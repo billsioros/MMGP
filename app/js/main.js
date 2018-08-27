@@ -96,8 +96,26 @@ function CreateDatabase() {
         progressBar.detail = "Canceling.."
     })
 
+
+    let fs = require("fs");
+
+    jsonfile = datadir + "tmp/createdatabase.json"
+
+    let toJson = {
+        Credentials: datadir + "Credentials.csv",
+        rowIndex: "0",
+        Database: DBFile
+    }
+
+    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        };
+    });
+
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "Creation.py", datadir + "Credentials.csv", "0", DBFile] );
+    var proc = spawn('python', [pythondir + "Creation.py", jsonfile]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
