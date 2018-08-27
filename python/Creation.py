@@ -8,32 +8,32 @@ import json
 
 fileName = sys.argv[1]
 
-
 with open(fileName, "r") as json_file:
     data = json.load(json_file)
 
 Settings = data["Settings"]
 Database = data["Database"]
 
-GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
+ActiveCon, GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
 
 constr =    "Driver=" + ServerType + ";" + \
             "Server=" + ServerName + ";" + \
             "Database=" + DatabaseName + ";"
 
-if Username and Password:
-      constr +=   ("UID=" + Username + ";" + \
-                  "PWD=" + Password + ";")
-
-
-# con = pyodbc.connect(constr, autocommit=True, timeout=120)
-
-con = pyodbc.connect(   DRIVER=ServerType,
-                        SERVER=ServerName,
-                        Database=DatabaseName,
-                        Trusted_Connection = 'yes',
-                        autocommit=True)
+if ActiveCon == "Native":
+      con = pyodbc.connect(   DRIVER=ServerType,
+                              SERVER=ServerName,
+                              Database=DatabaseName,
+                              Trusted_Connection = 'yes',
+                              autocommit=True)
+else:
+      if Username and Password:
+            constr +=   ("UID=" + Username + ";" + \
+                        "PWD=" + Password + ";")
+      else:
+            print "Error: wrong username/password"
+      con = pyodbc.connect(constr, autocommit=True, timeout=120)
 
 con.setdecoding(pyodbc.SQL_CHAR, encoding='greek')
 con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
