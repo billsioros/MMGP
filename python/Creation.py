@@ -33,8 +33,10 @@ else:
                         "PWD=" + Password + ";")
       else:
             print "Error: wrong username/password"
+      print constr
       con = pyodbc.connect(constr, autocommit=True, timeout=120)
 
+print "Connected."
 con.setdecoding(pyodbc.SQL_CHAR, encoding='greek')
 con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
 
@@ -42,9 +44,15 @@ con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
 
 cursor = con.cursor()
 
-ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
-          "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
-RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
+ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Noon_Students_NewYear",
+          "dbo.SRP_Study_Students_NewYear"]
+
+# ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
+      #     "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
+
+RowListKeys = ["Morning_NewYear", "Noon_NewYear", "Study_NewYear"]
+
+# RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
 RowLists = dict()
 
 for tableName, key in izip(ogDbTables, RowListKeys):
@@ -94,14 +102,15 @@ con.close()
 
 DBManager = DBM(Database, new=True, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
 
-
+print "Inserting Buses"
 DBManager.InsertBus(Buses)
 DBManager.Commit()
+print "Buses Inserted"
 
 DatabaseDir = os.path.realpath(os.path.dirname(Database))
 
 GeoFailsFile = open(DatabaseDir + "/FormatFails.tsv", "w+")
-GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
+GeoFailsFile.write("StudentID\tLastName\tFirstName\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()
 
@@ -110,15 +119,18 @@ for key in RowLists.keys():
       DayPart = DayPart.replace("_OldYear", "")
       Tables.append((RowLists[key], DayPart))
 
-
+print "Inserting Students"
 DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
+print "Students Inserted"
 
 DBManager.InsertDepot([["ERECHTHIOU", "6", "17455", "ATTIKIS", "ALIMOY", None]])
 DBManager.Commit()
 
 for DayPart in ["Morning", "Noon", "Study"]:
+      print "Inserting " + DayPart + " Distances"
       DBManager.InsertDistances(DayPart, direct=True)
+      print DayPart + " Distances Inserted"
 
 
 DBManager.Commit()

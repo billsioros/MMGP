@@ -954,7 +954,8 @@ function SearchStudents() {
 
     const SearchValues = [FirstName, LastName, Class, Level, Street, Number, Municipal, ZipCode];
     const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
-    let toSearch = "Where Student.AddressID = Address.AddressID";
+    let toSearch = "Where (not exists (Select * From Address Where Address.AddressID = Student.AddressID) or \
+    Student.AddressID = ad.AddressID)";
 
     // Check if no filters are given.
     let empty = true;
@@ -985,7 +986,8 @@ function SearchStudents() {
     loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
-            From Student, Address " + toSearch + " Order By Student.LastName";
+            From Student, Address as ad " + toSearch + " Order By Student.LastName";
+    
 
     // Execute query and get Students
     let searchobj = ExecuteSQLToProc(sql);
@@ -1205,7 +1207,6 @@ function DisplayStudentCard(student) {
             let Orders = dayPart + 'Order';
             
             // If dayPart does not exist in students create a "p" with nothing in it
-            console.log(student[Addresses])
             if (student[Addresses].length === 0) {
                 var p = document.createElement("p");
                 p.className = "RowData";

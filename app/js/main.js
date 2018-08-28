@@ -195,6 +195,10 @@ function UpdateStudents() {
     proc.stderr.on('data', function(data) {
         console.error(data.toString());
     })
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
+    })
 }
 
 function UpdateBuses() {

@@ -251,7 +251,7 @@ class DBManager:
                 # all other addresses have been inserted. This way if an address is already in the database
                 # we do not have to geocode it. (Trying to reduce geocoding requests)
                 else:
-                    NoGPS.append((HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress))
+                    NoGPS.append((ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress))
 
                 # Add student to the database
                 # Format Some Values
@@ -311,7 +311,7 @@ class DBManager:
             # Insert All Records that do not have GPS coordinates
             i = 0 # Geocoding per sec
           
-            for HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress in NoGPS:
+            for ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress in NoGPS:
 
                 if not FullAddress:
                     continue
@@ -334,14 +334,16 @@ class DBManager:
                         Addresses[HashAddress] = (GPSX, GPSY)
                     
                         # Find Error and Log it into a csv of your choosing
-                        valid = self.__LogGeocodingError(ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile)
-                    
-                    if valid:
-                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
-                        FullAddress, FormattedAddress]
+                        valid = self.__LogGeocodingError(ID, LastName, FirstName, FormattedAddress, FullAddress, DayPart, GeoFailsFile)
+                    else:
+                        valid = False
+                        
+                    # if valid:
+                    AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
+                    FullAddress, FormattedAddress]
 
-                        self.Cursor.execute("Insert Into Address    \
-                                            Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                    self.Cursor.execute("Insert Into Address    \
+                                        Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
         self.__DiscardAddresses()
 
 
@@ -566,7 +568,11 @@ class DBManager:
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
 
-        return (Rows[0]["Distance"], Rows[0]["Duration"])
+        if Rows:
+            return (Rows[0]["Distance"], Rows[0]["Duration"])
+        else:
+            print AddressID_1 + " -> " + AddressID_2 + " does not exist!"
+            return []
 
 
     def Execute(self, sql):
@@ -616,12 +622,16 @@ class DBManager:
         return sha1(Address).hexdigest()
 
 
-    def __LogGeocodingError(self, ID, FormattedAddress, FullAddress, DayPart, GeoFailsFile):
+    def __LogGeocodingError(self, ID, LastName, FirstName, FormattedAddress, FullAddress, DayPart, GeoFailsFile):
         valid = True 
         if util.CountNumbers(FormattedAddress) <= 5:
             if "&" not in FormattedAddress and " KAI " not in FormattedAddress:
                 valid = False
+                print FullAddress
+                print FormattedAddress
                 if GeoFailsFile:
-                    GeoFailsFile.write(str(ID) + "\t" + FormattedAddress + "\t"\
+                    LN = util.TranslateAddress(LastName)
+                    FN = util.TranslateAddress(FirstName)
+                    GeoFailsFile.write(str(ID) + "\t" + LN + "\t" + FN + "\t" + FormattedAddress + "\t"\
                     + FullAddress + "\t" + DayPart + "\n")
         return valid

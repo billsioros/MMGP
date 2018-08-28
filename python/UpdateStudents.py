@@ -39,18 +39,19 @@ else:
 
 
 
-
-
-
-
 # Select All Morning Students
 
 cursor = con.cursor()
 
-ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
-          "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
+ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Noon_Students_NewYear",
+          "dbo.SRP_Study_Students_NewYear"]
 
-RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
+# ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
+      #     "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
+
+RowListKeys = ["Morning_NewYear", "Noon_NewYear", "Study_NewYear"]
+
+# RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
 RowLists = dict()
 
 for tableName, key in izip(ogDbTables, RowListKeys):

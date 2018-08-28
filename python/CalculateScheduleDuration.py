@@ -25,16 +25,31 @@ for i in range(len(students) - 1):
     student1 = students[i]
     student2 = students[i + 1]
 
-    Distance, Duration = DBManager.CalculateDistance(student1["addressId"], student2["addressId"], student1["dayPart"])
+    results = DBManager.CalculateDistance(student1["addressId"], student2["addressId"], student1["dayPart"])
 
+
+    if results:
+        Distance = results[0]
+        Duration = results[1]
+    else:
+        Distance = 0
+        Duration = 0
+        
     FullDistance += Distance
     FullDuration += Duration
     FullDuration += 20
 
 if students[0]["dayPart"] == "Morning":
-    Distance, Duration = DBManager.CalculateDistance(students[-1]["addressId"], Depot["AddressID"], students[-1]["dayPart"])
+    results = DBManager.CalculateDistance(students[-1]["addressId"], Depot["AddressID"], students[-1]["dayPart"])
 else:
-    Distance, Duration = DBManager.CalculateDistance(Depot["AddressID"], students[0]["addressId"], students[0]["dayPart"])
+    results = DBManager.CalculateDistance(Depot["AddressID"], students[0]["addressId"], students[0]["dayPart"])
+
+if results:
+    Distance = results[0]
+    Duration = results[1]
+else:
+    Distance = 0
+    Duration = 0
 
 FullDistance += Distance
 FullDuration += Duration

@@ -10,8 +10,9 @@ class GreekDecoder:
 
     def __init__(self):
         self.LetterDictionary = dict()
-        EngLetters = ['A', 'V', 'G', 'D', 'E', 'Z', 'I', 'TH', 'K', 'L', 'M', 'N', 'KS', 'O', 'P', 'R', 'S', 'T', 'Y', 'F', 'CH', 'PS']
+        EngLetters = ["'", 'A', 'V', 'G', 'D', 'E', 'Z', 'I', 'TH', 'K', 'L', 'M', 'N', 'KS', 'O', 'P', 'R', 'S', 'T', 'Y', 'F', 'CH', 'PS']
         GrLetters = [\
+            [u'\u0384'],\
             ['\x80', u'\u0391', u'\u0386'],\
             ['\x81', u'\u0392'],\
             ['\x82', u'\u0393'],\
@@ -72,7 +73,9 @@ class GreekMunicipalConverter:
         "VOYLAS": "VOYLA",
         "ELLINIKOY" : "ELLINIKO",
         "TAYROY" : "TAYROS",
-        "ATHINAION" : "ATHINA"}
+        "ATHINAION" : "ATHINA",
+        "KALYVION THORIKOY": "KALYVIA",
+        "VOYLIAGMENIS": "VOYLIAGMENI"}
 
     def Convert(self, Municipal):
         return self.Municipals[Municipal]
@@ -95,6 +98,7 @@ class MapsHandler:
 
 
     def Geocode(self, Address):
+
         results = ggeo.geocode(self.GoogleClient, address=Address, region="GR")
 
 
@@ -114,7 +118,7 @@ class MapsHandler:
                     print "Third Error"
                     print Address
                     print results
-                    return
+                    return [None, None, None]
 
         address = results[0]["formatted_address"]
         return (address, locationData["lng"], locationData["lat"])
@@ -386,7 +390,7 @@ def ConvertGenitive(Genitive):
     
 
 def ConcatenateAddress(Road, Num, ZipCode, Municipal, Area, Prefecture, Country):
-
+    # print (Road, Num, ZipCode, Municipal, Area, Prefecture, Country)
     ResultAddress = ""
     if not Road:
         return ResultAddress
@@ -507,6 +511,15 @@ def GetCredentials(SettingsFile):
 
     return [activeConnection, GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName, Username, Password]
 
+def GetSetting(SettingsFile, Keys) {
 
+    with open(SettingsFile, "r") as json_file:
+        Settings = json.load(json_file)
+
+    SettingsToReturn = []
+    
+    for key in Keys:
+
+}
 
 
