@@ -137,6 +137,12 @@ function GenerateScheduleButtons() {
                 selectordropdown.appendChild(option);
             }
         }
+
+        fs.unlink(searchobj.json_file, (err) => {
+            if (err)
+                console.error(err)
+        })
+
     });
 
     searchobj.process.stderr.on('data', function(data) {
@@ -163,12 +169,20 @@ function GenerateBusButtons() {
             const newButton = document.createElement("button");
             newButton.type = "button";
             newButton.className = "BusButton";
+            if (row.Number.toString().length < 2) {
+                row.Number = "0" + row.Number.toString();
+            }
             newButton.id = row.Number;
             newButton.innerHTML = row.Number;
             newButton.onclick = OnBusClick;
 
             BusButtons.appendChild(newButton);
         }
+
+        fs.unlink(searchobj.json_file, (err) => {
+            if (err)
+                console.error(err)
+        })
     })
 
     searchobj.process.stderr.on('data', function(data) {
@@ -349,6 +363,7 @@ function CalculateScheduleDuration() {
         })
     }
 
+    reqrespfile = datadir + "/tmp/sched.json";
 
     fs.writeFile(datadir + "/tmp/sched.json", JSON.stringify(toJson), (err) => {
         if (err) {
@@ -357,7 +372,7 @@ function CalculateScheduleDuration() {
         };
     })
 
-    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", datadir + "/tmp/sched.json"]);
+    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", reqrespfile]);
 
     proc.on('close', function(code) {
         console.log("Calculating Completed");
@@ -376,7 +391,7 @@ function CalculateScheduleDuration() {
         loading.hidden = true;
         loading.nextElementSibling.innerHTML = "Calculate Duration"
 
-        fs.unlink(datadir + "/tmp/sched.json", (err) => {
+        fs.unlink(reqrespfile, (err) => {
             if (err)
                 console.error(err)
         })

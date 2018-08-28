@@ -27,11 +27,15 @@ function createWindow() {
             ]
         },
         {
-            label: "Connection",
+            label: "Connection - Year",
             submenu: [
                 {label: 'Connect to Native Client', click() {setActiveConnection("Native");}},
                 {label: 'Connect to Native-Laptop Client', click() {setActiveConnection("Native-Laptop");}},
-                {label: 'Connect to Network Client', click() {setActiveConnection("Network");}}
+                {label: 'Connect to Network Client', click() {setActiveConnection("Network");}},
+                {type:"separator"},
+                {label: 'Change to "Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents();}},
+                {label: 'Change to "New" Year', click() {setActiveCurrentYear("New"); UpdateStudents();}},
+                {label: 'Change to show Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents();}}
             ]
         },
         {
@@ -485,6 +489,24 @@ function setActiveConnection(con) {
 
     let toJson = data
     data.Connection.Active = con
+
+    fs.writeFile(settings, JSON.stringify(data), (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        };
+    });
+}
+
+function setActiveCurrentYear(cur) {
+    let fs = require("fs");
+
+    var json_content;
+    let raw_data = fs.readFileSync(settings);
+    let data = JSON.parse(raw_data)
+
+    let toJson = data
+    data.Current_Year.Active = cur
 
     fs.writeFile(settings, JSON.stringify(data), (err) => {
         if (err) {

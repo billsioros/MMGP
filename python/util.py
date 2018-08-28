@@ -511,15 +511,33 @@ def GetCredentials(SettingsFile):
 
     return [activeConnection, GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName, Username, Password]
 
-def GetSetting(SettingsFile, Keys) {
+
+def GetSetting(SettingsFile, Keys):
 
     with open(SettingsFile, "r") as json_file:
         Settings = json.load(json_file)
 
     SettingsToReturn = []
     
-    for key in Keys:
+    if isinstance(Keys, list):
+        for key in Keys:
+            settingToReturn = dict()
+            if isinstance(key, list):
+                keylist = key
+                settingToReturn = Settings[keylist[0]]
+                keylist = keylist[1:]
+                
 
-}
+                for subkey in keylist:
+                    settingToReturn = settingToReturn[subkey]
+            else:
+                settingToReturn = Settings[key]
+
+            SettingsToReturn.append(settingToReturn)
+    else:
+        SettingsToReturn.append(Settings[Keys])
+
+    return SettingsToReturn
+
 
 

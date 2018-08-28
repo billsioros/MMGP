@@ -6,11 +6,18 @@
     "configurations": [
 
     {
-        "name": "Python: Current File",
+        "name": "Creation",
         "type": "python",
         "request": "launch",
         "program": "${file}",
         "args": ["${workspaceFolder}/data/Credentials.csv", "1"]
+    },
+    {
+        "name": "Python: Current File",
+        "type": "python",
+        "request": "launch",
+        "program": "${file}",
+        "args": []
     },
     {
         "name": "(gdb) Launch",

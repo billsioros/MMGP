@@ -1,5 +1,5 @@
 import pyodbc
-from util import GetCredentials
+from util import GetCredentials, GetSetting
 import sys
 import os
 from itertools import izip
@@ -14,6 +14,10 @@ with open(fileName, "r") as json_file:
 Settings = data["Settings"]
 Database = data["Database"]
 
+Active = GetSetting(Settings, [["Current_Year", "Active"]])
+Active = Active[0]
+TableNames = GetSetting(Settings, [["Current_Year", Active, "Table_Names"]])
+TableNames = TableNames[0]
 ActiveCon, GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
 
@@ -33,7 +37,6 @@ else:
                         "PWD=" + Password + ";")
       else:
             print "Error: wrong username/password"
-      print constr
       con = pyodbc.connect(constr, autocommit=True, timeout=120)
 
 print "Connected."
@@ -44,18 +47,16 @@ con.setdecoding(pyodbc.SQL_WCHAR, encoding='greek')
 
 cursor = con.cursor()
 
-ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Noon_Students_NewYear",
-          "dbo.SRP_Study_Students_NewYear"]
 
-# ogDbTables = ["dbo.SRP_Morning_Students_NewYear", "dbo.SRP_Morning_Students_OldYear", "dbo.SRP_Noon_Students_NewYear",
-      #     "dbo.SRP_Noon_Students_OldYear", "dbo.SRP_Study_Students_NewYear", "dbo.SRP_Study_Students_OldYear"]
+RowListKeys = []
+for tableName in TableNames:
+      name = tableName.replace("dbo.SRP_", "")
+      name = name.replace("Students_", "")
+      RowListKeys.append(name)
 
-RowListKeys = ["Morning_NewYear", "Noon_NewYear", "Study_NewYear"]
-
-# RowListKeys = ["Morning_NewYear", "Morning_OldYear", "Noon_NewYear", "Noon_OldYear", "Study_NewYear", "Study_OldYear"]
 RowLists = dict()
 
-for tableName, key in izip(ogDbTables, RowListKeys):
+for tableName, key in izip(TableNames, RowListKeys):
       sql = "Select                             \
                   sched.StCode,                 \
                   sched.StLastName,             \
@@ -83,7 +84,8 @@ for tableName, key in izip(ogDbTables, RowListKeys):
                   stud.StOtherPhone1,           \
                   stud.StOtherPhone2            \
             From " + tableName + " as sched, dbo.Student as stud     \
-            Where stud.StCode = sched.StCode"
+            Where stud.StCode = sched.StCode \
+            Order By sched.StLastName"
 
       cursor.execute(sql)
       RowLists[key] = cursor.fetchall()
