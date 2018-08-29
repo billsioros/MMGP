@@ -331,7 +331,7 @@ class DBManager:
                     FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
                     i += 1
 
-                    valid = True
+                    valid = False
                     if FormattedAddress:
                         Addresses[HashAddress] = (GPSX, GPSY)
                     
@@ -340,12 +340,12 @@ class DBManager:
                     else:
                         valid = False
                         
-                    # if valid:
-                    AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
-                    FullAddress, FormattedAddress]
+                    if valid:
+                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
+                        FullAddress, FormattedAddress]
 
-                    self.Cursor.execute("Insert Into Address    \
-                                        Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                        self.Cursor.execute("Insert Into Address    \
+                                            Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
         self.__DiscardAddresses()
 
 
@@ -578,7 +578,7 @@ class DBManager:
 
 
     def Execute(self, sql):
-        
+
         self.Cursor.execute(sql)
 
         Rows = self.Cursor.fetchall()

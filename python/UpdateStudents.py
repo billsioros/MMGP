@@ -93,7 +93,6 @@ for tableName, key in izip(TableNames, RowListKeys):
 
       cursor.execute(sql)
       RowLists[key] = cursor.fetchall()
-      
 # Select All Buses
 
 con.close()

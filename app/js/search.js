@@ -89,7 +89,8 @@ function GenerateScheduleButtons() {
         case "Study":
             sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
             let bus = GetActiveBus();
-            bus.classList.remove("active")
+            if (bus)
+                bus.classList.remove("active")
             break;
         default: break;
     }
@@ -477,7 +478,7 @@ function DisplayBusTable(Students) {
     var firstRow = document.createElement("div")
     firstRow.className = "BusTableRow TableRow"
 
-    var Headers = [' ', 'Bus Schedule', 'Schedule Order', 'Last Name', 'First Name', 'Class - Level', 'Address', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
+    var Headers = [' ', 'Bus Schedule', 'Index', 'Schedule Order', 'Last Name', 'First Name', 'Class - Level', 'Address', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
 
     for (var i = 0; i < Headers.length; i++) {
         var p = document.createElement("p")
@@ -495,8 +496,14 @@ function DisplayBusTable(Students) {
         table.appendChild(p);
     }
 
+    let index = 1
+    let currentBusSchedule = null
     for (var i = 0; i < Students.length; i++) {
         let student = Students[i];
+        if (currentBusSchedule !== student.BusSchedule) {
+            currentBusSchedule = student.BusSchedule
+            index = 0
+        }
         var row = document.createElement("div")
         row.className = "BusTableRow TableRow"; 
 
@@ -521,6 +528,12 @@ function DisplayBusTable(Students) {
         p.className = "RowData"
         p.innerHTML = student.BusSchedule;
         row.appendChild(p)
+
+        p = document.createElement("p")
+        p.className = "RowData"
+        p.innerHTML = index
+        row.appendChild(p)
+        index++;
 
         p = document.createElement("p")
         p.className = "RowData"
@@ -968,9 +981,11 @@ function SearchStudents() {
     const ZipCode = document.getElementById("ZipCodeBar").value;
 
     const SearchValues = [FirstName, LastName, Class, Level, Street, Number, Municipal, ZipCode];
-    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
-    let toSearch = "Where (not exists (Select * From Address Where Address.AddressID = Student.AddressID) or \
-    Student.AddressID = ad.AddressID)";
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "ad.Road", "ad.Number", "ad.Municipal", "ad.ZipCode"];
+    // let toSearch = "Where (not exists (Select * From Address Where Address.AddressID = Student.AddressID) or \
+    // Student.AddressID = ad.AddressID)";
+
+    let toSearch = "Where  Student.AddressID = ad.AddressID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1044,6 +1059,10 @@ function ClearSearchBars() {
     document.getElementById("LastNameBar").value = "";
     document.getElementById("ClassBar").value = "";
     document.getElementById("LevelBar").value = "";
+    document.getElementById("StreetBar").value = "";
+    document.getElementById("NumberBar").value = "";
+    document.getElementById("MunicipalBar").value = "";
+    document.getElementById("ZipCodeBar").value = "";
 }
 
 // Onclick assignment
@@ -1561,7 +1580,7 @@ function PlotStudents(tab) {
         let toMark = plottedAddresses[plottedAddressKeys[i]];
 
         let icon
-        if (toMark.order === "")
+        if (toMark.order === "" || toMark.order > 32)
             icon = defaultIcon;
         else {
             icon = {
