@@ -170,7 +170,15 @@ TSP::path<Manager::Student> tsp(
     
     path = TSP::nearestNeighbor<Manager::Student>(depot, students, cost);
 
+    #ifdef __TEST_TSP__
+    std::cout << "NN: " << path.first << std::endl;
+    #endif
+
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
+
+    #ifdef __TEST_TSP__
+    std::cout << "OPT2: " << path.first << std::endl;
+    #endif
 
     path = SimulatedAnnealing<TSP::path<Manager::Student>>(
         path,
@@ -199,6 +207,10 @@ TSP::path<Manager::Student> tsp(
     );
 
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
+
+    #ifdef __TEST_TSP__
+    std::cout << "SA: " << path.first << std::endl;
+    #endif
 
     return path;
 }
