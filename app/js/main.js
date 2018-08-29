@@ -32,9 +32,9 @@ function createWindow() {
                 {label: 'Connect to Native-Laptop Client', click() {setActiveConnection("Native-Laptop");}},
                 {label: 'Connect to Network Client', click() {setActiveConnection("Network");}},
                 {type:"separator"},
-                {label: 'Change to "Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents();}},
-                {label: 'Change to "New" Year', click() {setActiveCurrentYear("New"); UpdateStudents();}},
-                {label: 'Change to show Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents();}}
+                {label: 'Change to "Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents(true);}},
+                {label: 'Change to "New" Year', click() {setActiveCurrentYear("New"); UpdateStudents(true);}},
+                {label: 'Change to show Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents(true);}}
             ]
         },
         {
