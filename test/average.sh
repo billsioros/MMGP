@@ -2,11 +2,14 @@
 
 if [ "$#" -lt 4 ]
 then
-    echo "<MSG>: "$0" <executable> <delimeter> <iterations> <output> <recreate>"
+    echo "<MSG>: "$0" <delimeter> <create> <output> <executable>"
     exit 1
 fi
 
-executable="$1"; delimeter="$2"; iterations="$3"; output="$4"
+delimeter="$1";
+create="$(echo "$2" | tr [:upper:] [:lower:])";
+output="$3";
+executable="$4"; shift 4;
 
 if [ ! -x "$executable" ]
 then
@@ -14,20 +17,9 @@ then
     exit 2
 fi
 
-if ! [[ "$iterations" =~ ^[0-9]+$ ]] || [ "$iterations" -le 0 ]
+if [ "$create" = "yes" ]
 then
-    echo "<ERR>: The number of iterations must be a positive integer"
-    exit 4
-fi
-
-if [ "$#" -ge 5 ]
-then
-    touch "$output"; rm "$output"; touch "$output"
-
-    for ((i = 0; i < "$iterations"; i++))
-    do
-        "$executable" >> "$output"
-    done
+    "$executable" "$@" >> "$output"
 fi
 
 if [ ! -w "$output" ]

@@ -1,5 +1,13 @@
 #!/bin/bash
 
-./average.sh ../bin/MMGP "NN: "   1 results.txt 1
-./average.sh ../bin/MMGP "OPT2: " 1 results.txt
-./average.sh ../bin/MMGP "SA: "   1 results.txt
+./average.sh "NN: "   YES results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Morning
+./average.sh "OPT2: " NO  results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Morning
+./average.sh "SA: "   NO  results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Morning
+
+./average.sh "NN: "   YES results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Noon
+./average.sh "OPT2: " NO  results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Noon
+./average.sh "SA: "   NO  results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Noon
+
+./average.sh "NN: "   YES results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Study
+./average.sh "OPT2: " NO  results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Study
+./average.sh "SA: "   NO  results.txt ../bin/MMGP -db /home/massiva/Documents/Projects/MMGP/data/MMGP_Data.db -dp Study
