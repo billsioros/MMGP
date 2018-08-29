@@ -63,6 +63,7 @@ class DBManager:
                     Comment         text,               \
                     BusSchedule     varchar(255),       \
                     ScheduleOrder   int,                \
+                    ScheduleTime    varchar(255),       \
                     Phone           varchar(255),       \
                     Mobile          varchar(255),       \
                     OtherPhone1     varchar(255),       \
@@ -177,33 +178,6 @@ class DBManager:
         self.GoogleAPIKey = None
         self.OpenAPIKey = None
 
-    """ RowList Components:
-    StCode
-    StLastName
-    StFirstName
-    SchAddress
-    SchAddressNumber
-    SchZipCode
-    PrefectureDescription
-    MunicipalDescription
-    AreaDescription
-    SchNotes
-    LevelDescription
-    ClassDescription
-    SchMonday
-    SchTuesday
-    SchWednesday
-    SchThursday
-    SchFriday
-    ScheduleName
-    SchStudentOrder
-    SchGPS_X
-    SchGPS_Y
-    StContactPhone
-    StContactMobile
-    StOtherPhone1
-    StOtherPhone2    
-    """
 
     """ Note To Self:
         Be sure to make Tables a double iterable of type (RowList, DayPart)"""
@@ -228,7 +202,7 @@ class DBManager:
 
             # Insert All Records that already have GPS coordinates
             for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
-            BusSchedule, ScheduleOrder, Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
+            BusSchedule, ScheduleOrder, ScheduleTime, Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
 
                 # print LastName.decode("greek", "strict")
                 # print BusSchedule, ScheduleOrder
@@ -303,11 +277,11 @@ class DBManager:
                         OtherPhone2 = None
 
                 StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,
-                Notes, EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule, ScheduleOrder,
+                Notes, EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule, ScheduleOrder, ScheduleTime,
                 Phone, Mobile, OtherPhone1, OtherPhone2]
                 
                 self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
 
 
             # Insert All Records that do not have GPS coordinates

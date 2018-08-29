@@ -53,13 +53,13 @@ function createWindow() {
                 {label: 'Update All Distances From File', click() {FileToAllDistances();}},
                 {type: 'separator'},
 
-                {label: 'Update Morning Distances (approx. 25min)', click() {UpdateSpecificDistances("Morning");}},
-                {label: 'Calculate Morning Distances to File (approx. 25min)', click() {SpecificDistancesToFile("Morning");}},
+                {label: 'Update Morning Distances (approx. 10min)', click() {UpdateSpecificDistances("Morning");}},
+                {label: 'Calculate Morning Distances to File (approx. 10min)', click() {SpecificDistancesToFile("Morning");}},
                 {label: 'Update Morning Distances From File', click() {FileToSpecificDistances("Morning");}},
                 {type: 'separator'},
 
-                {label: 'Update Noon Distances (approx. 25min)', click() {UpdateSpecificDistances("Noon");}},
-                {label: 'Calculate Noon Distances to File (approx. 25min)', click() {SpecificDistancesToFile("Noon");}},
+                {label: 'Update Noon Distances (approx. 10min)', click() {UpdateSpecificDistances("Noon");}},
+                {label: 'Calculate Noon Distances to File (approx. 10min)', click() {SpecificDistancesToFile("Noon");}},
                 {label: 'Update Noon Distances From File', click() {FileToSpecificDistances("Noon");}},
                 {type: 'separator'},
 
@@ -151,7 +151,59 @@ function CreateDatabase() {
 }
 
 function BackupDatabase() {
-    
+    spawn = require("child_process").spawn;
+
+    const ProgressBar = require('electron-progressbar');
+
+    var progressBar = new ProgressBar({
+        title: "Backing up Database..",
+        text: "Backing up Database..",
+        detail: "Please Wait. This will not take long.\nDo not close this application!"
+    });
+
+    progressBar.on('completed', function() {
+        console.log("Successfully backed database.");
+        progressBar.detail = "Backing up completed..";
+    });
+    progressBar.on('aborted', function() {
+        console.log("Backing up Database canceled.")
+        progressBar.detail = "Canceling.."
+    })
+
+
+    let fs = require('fs')
+    jsonfile = datadir + "tmp/backupdatabase.json"
+
+    let toJson = {
+        Settings: settings,
+        Database: DBFile
+    }
+
+    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        };
+    });
+
+    spawn = require("child_process").spawn;
+    var proc = spawn('python', [pythondir + "BackupDatabase.py", jsonfile]);
+
+    proc.on('close', function(code) {
+        progressBar.setCompleted();
+        fs.unlink(jsonfile, (err) => {
+            if (err)
+                console.error(err)
+        })
+    })
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
+    })
+
+    proc.stderr.on('data', function(data) {
+        console.error(data.toString());
+    })
 }
 
 function UpdateStudents(overwrite=false) {
@@ -279,7 +331,7 @@ function UpdateAllDistances() {
             thidistproc.process.on('close', function() {
 
                 thidistproc.progressBar.setCompleted();
-                let jsonfile = datadir + "tmp/update" + DayPart[2] + "distances.json"
+                let jsonfile = datadir + "tmp/update" + DayParts[2] + "distances.json"
                 fs.unlink(jsonfile, (err) => {
                     if (err)
                         console.error(err)
@@ -290,7 +342,7 @@ function UpdateAllDistances() {
                 console.error(data.toString());
             })
 
-            let jsonfile = datadir + "tmp/update" + DayPart[1] + "distances.json"
+            let jsonfile = datadir + "tmp/update" + DayParts[1] + "distances.json"
             fs.unlink(jsonfile, (err) => {
                 if (err)
                     console.error(err)
@@ -301,7 +353,7 @@ function UpdateAllDistances() {
             console.error(data.toString());
         })
 
-        let jsonfile = datadir + "tmp/update" + DayPart[0] + "distances.json"
+        let jsonfile = datadir + "tmp/update" + DayParts[0] + "distances.json"
         fs.unlink(jsonfile, (err) => {
             if (err)
                 console.error(err)
@@ -343,7 +395,7 @@ function AllDistancesToFile() {
                 thidistproc.process.on('close', function() {
     
                     thidistproc.progressBar.setCompleted();
-                    let jsonfile = datadir + "tmp/update" + DayPart[2] + "distances.json"
+                    let jsonfile = datadir + "tmp/update" + DayParts[2] + "distances.json"
                     fs.unlink(jsonfile, (err) => {
                         if (err)
                             console.error(err)
@@ -354,7 +406,7 @@ function AllDistancesToFile() {
                     console.error(data.toString());
                 })
 
-                let jsonfile = datadir + "tmp/update" + DayPart[1] + "distances.json"
+                let jsonfile = datadir + "tmp/update" + DayParts[1] + "distances.json"
                 fs.unlink(jsonfile, (err) => {
                     if (err)
                         console.error(err)
@@ -365,7 +417,7 @@ function AllDistancesToFile() {
                 console.error(data.toString());
             })
 
-            let jsonfile = datadir + "tmp/update" + DayPart[0] + "distances.json"
+            let jsonfile = datadir + "tmp/update" + DayParts[0] + "distances.json"
             fs.unlink(jsonfile, (err) => {
                 if (err)
                     console.error(err)
@@ -502,7 +554,7 @@ function setActiveConnection(con) {
     });
 }
 
-function setActiveCurrentYear(cur) {
+function setActiveCurrentYear(year) {
     let fs = require("fs");
 
     var json_content;
@@ -510,7 +562,7 @@ function setActiveCurrentYear(cur) {
     let data = JSON.parse(raw_data)
 
     let toJson = data
-    data.Current_Year.Active = cur
+    data.Current_Year.Active = year
 
     fs.writeFile(settings, JSON.stringify(data), (err) => {
         if (err) {

@@ -478,7 +478,7 @@ function DisplayBusTable(Students) {
     var firstRow = document.createElement("div")
     firstRow.className = "BusTableRow TableRow"
 
-    var Headers = [' ', 'Bus Schedule', 'Index', 'Schedule Order', 'Last Name', 'First Name', 'Class - Level', 'Address', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
+    var Headers = [' ', 'Schedule', 'Index', 'Order', 'Time', 'Last Name', 'First Name', 'Class - Level', 'Address', 'Note', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri']
 
     for (var i = 0; i < Headers.length; i++) {
         var p = document.createElement("p")
@@ -539,6 +539,11 @@ function DisplayBusTable(Students) {
         p.className = "RowData"
         p.innerHTML = student.ScheduleOrder;
         row.appendChild(p)
+
+        p = document.createElement("p")
+        p.className = "RowData"
+        p.innerHTML = student.ScheduleTime;
+        row.appendChild(p)
         
         p = document.createElement("p")
         p.className = "RowData"
@@ -558,6 +563,11 @@ function DisplayBusTable(Students) {
         p = document.createElement("p")
         p.className = "RowData"
         p.innerHTML = student.Address.FullAddress
+        row.appendChild(p)
+
+        p = document.createElement("p")
+        p.className = "RowData"
+        p.innerHTML = student.Notes;
         row.appendChild(p)
 
         // Days
@@ -663,18 +673,21 @@ function StudentJsonRead(json_file) {
                 MorningNotes: [],
                 MorningBuses: [],
                 MorningOrder: [],
+                MorningTime: [],
 
                 NoonAddresses: [],
                 NoonDays: [],
                 NoonNotes: [],
                 NoonBuses: [],
                 NoonOrder: [],
+                NoonTime: [],
 
                 StudyAddresses: [],                   
                 StudyDays: [],
                 StudyNotes: [],
                 StudyBuses: [],
-                StudyOrder: []
+                StudyOrder: [],
+                StudyTime: []
             };
             
             let key = row.DayPart + 'Addresses';
@@ -698,6 +711,9 @@ function StudentJsonRead(json_file) {
             
             key = row.DayPart + "Order";
             student[key].push(row.ScheduleOrder);
+
+            key = row.DayPart + "Time";
+            student[key].push(row.ScheduleTime)
 
             Students[id] = student;
         }
@@ -782,6 +798,7 @@ function ScheduleJsonRead(json_file) {
 
             Notes: row.FullNote,
             BusSchedule: row.BusSchedule,
+            ScheduleTime: row.ScheduleTime,
             ScheduleOrder: row.ScheduleOrder
         }
 
@@ -1222,7 +1239,7 @@ function DisplayStudentCard(student) {
             var firstRow = document.createElement("div");
             firstRow.className = "SchedulesTableRow TableRow";
             
-            var Headers = ['Bus Number', 'Pickup Order', 'Address', 'Note', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri'];
+            var Headers = ['Schedule', 'Order', 'Time', 'Address', 'Note', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri'];
 
             for (var i = 0; i < Headers.length; i++) {
                 var p = document.createElement("p");
@@ -1239,6 +1256,7 @@ function DisplayStudentCard(student) {
             let Days = dayPart + 'Days';
             let Buses = dayPart + 'Buses';
             let Orders = dayPart + 'Order';
+            let Times = dayPart + 'Time';
             
             // If dayPart does not exist in students create a "p" with nothing in it
             if (student[Addresses].length === 0) {
@@ -1267,6 +1285,14 @@ function DisplayStudentCard(student) {
                 p.className = "RowData";
                 if (student[Orders][i])
                     p.innerHTML = student[Orders][i];
+                else 
+                    p.innerHTML = "-"
+                row.appendChild(p);
+
+                p = document.createElement("p");
+                p.className = "RowData";
+                if (student[Times][i])
+                    p.innerHTML = student[Times][i];
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p);

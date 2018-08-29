@@ -72,6 +72,7 @@ for tableName, key in izip(TableNames, RowListKeys):
                   sched.ClassDescription,       \
                   sched.ScheduleName,           \
                   sched.SchStudentOrder,        \
+                  sched.SchStudentTime,         \
                   sched.SchMonday,              \
                   sched.SchTuesday,             \
                   sched.SchWednesday,           \
