@@ -11,7 +11,6 @@ let DBFile = datadir + "MMGP_data.db"
 function createWindow() {
     // Create the browser window.
     win = new BrowserWindow({width:1640, height:840, title:"MMGP", opacity: 1.0})
-    //win.maximize();
 
     // and Load the index.html of the app
     win.loadFile("html/index.html")
@@ -44,8 +43,9 @@ function createWindow() {
                 {label: 'Create Database (overwrite everything)', click() {CreateDatabase();}},
                 {label: 'Backup Database', click() {BackupDatabase();}},
                 {type: 'separator'},
-                {label: 'Update Students', click() {UpdateStudents();}},
-                {label: 'Update Buses', click() {UpdateBuses();}},
+                {label: 'Update Students', click() {UpdateStudents(false);}},
+                {label: 'Update Students (overwrite current addresses)', click() {UpdateStudents(true);}},
+                {label: 'Update Buses', click() {UpdateBuses(); win.reload();}},
                 {type: 'separator'},
 
                 {label: 'Update All Distances (approx. 25min)', click() {UpdateAllDistances();}},
@@ -111,6 +111,10 @@ function CreateDatabase() {
 
 
     let fs = require("fs");
+    fs.unlink(DBFile, (err) => {
+        if (err)
+            console.error(err)
+    })
 
     jsonfile = datadir + "tmp/createdatabase.json"
 
@@ -150,8 +154,7 @@ function BackupDatabase() {
     
 }
 
-function UpdateStudents() {
-    console.log(__dirname);
+function UpdateStudents(overwrite=false) {
     const ProgressBar = require('electron-progressbar');
 
     var progressBar = new ProgressBar({
@@ -175,7 +178,8 @@ function UpdateStudents() {
 
     let toJson = {
         Settings: settings,
-        Database: DBFile
+        Database: DBFile,
+        Overwrite: overwrite
     }
 
     fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {

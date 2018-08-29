@@ -122,7 +122,7 @@ for key in RowLists.keys():
       Tables.append((RowLists[key], DayPart))
 
 print "Inserting Students"
-DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
+DBManager.InsertStudent(Tables, overwrite=True, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
 print "Students Inserted"
 

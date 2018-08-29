@@ -14,6 +14,8 @@ with open(fileName, "r") as json_file:
 
 Settings = data["Settings"]
 Database = data["Database"]
+Overwrite = data["Overwrite"]
+
 
 Active = GetSetting(Settings, [["Current_Year", "Active"]])
 Active = Active[0]
@@ -112,7 +114,7 @@ for key in RowLists.keys():
       Tables.append((RowLists[key], DayPart))
 
 
-DBManager.InsertStudent(Tables, GeoFailsFile=GeoFailsFile)
+DBManager.InsertStudent(Tables, overwrite=Overwrite, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
 
 DBManager.Disconnect()

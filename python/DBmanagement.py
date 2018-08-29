@@ -207,7 +207,7 @@ class DBManager:
 
     """ Note To Self:
         Be sure to make Tables a double iterable of type (RowList, DayPart)"""
-    def InsertStudent(self, Tables, GeoFailsFile=None):
+    def InsertStudent(self, Tables, overwrite=False, GeoFailsFile=None):
         requests = 0
         # Pull Addresses from Database
         Addresses = self.GetAddresses()
@@ -219,6 +219,8 @@ class DBManager:
         # Delete any address that is not connected to a student after the new entries finish being inserted - [Update]
 
         self.Cursor.execute("Delete From Student")
+        if overwrite:
+            self.Cursor.execute("Delete From Address")
 
         # Tables is list of lists of Rows of Data
         for RowList, DayPart in Tables:
@@ -614,8 +616,9 @@ class DBManager:
                                 Where Student.AddressID = Address.AddressID)")
         
         Addresses = self.Cursor.fetchall()
-        for ID in Addresses:
-            self.Cursor.execute("Delete From Address Where AddressID = ?", ID)
+
+        for Address in Addresses:
+            self.Cursor.execute("Delete From Address Where AddressID = ?", [Address["AddressID"]])
 
 
     def __Hash(self, Address):
