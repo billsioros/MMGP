@@ -2,4 +2,5 @@
 python/*.pyc
 bin/
 data/
+cpp/SQLiteCpp/
 app/node_modules
