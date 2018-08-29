@@ -19,7 +19,7 @@ fi
 
 if [ "$create" = "yes" ]
 then
-    "$executable" "$@" >> "$output"
+    "$executable" "$@" > "$output"
 fi
 
 if [ ! -w "$output" ]
