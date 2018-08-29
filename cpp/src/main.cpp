@@ -17,9 +17,10 @@ using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
 TSP::path<Manager::Student> tsp(
+    SQLite::Database&,
+    const std::string&,
     const Manager::Student&,
-    const std::vector<Manager::Student>&,
-    const std::function<double(const Manager::Student&, const Manager::Student&)>&
+    const std::vector<Manager::Student>&
 );
 
 int main(int argc, char * argv[])
@@ -121,22 +122,12 @@ int main(int argc, char * argv[])
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
 
-        TSP::path<Manager::Student> route = tsp(
+        TSP::path<Manager::Student> route = tsp
+        (
+            *database,
+            args["-dp"],
             depot,
-            bus._students,
-            [&](const Manager::Student& A, const Manager::Student& B)
-            {
-                static DMatrix dmatrix;
-
-                DMatrix::const_iterator mit;
-                DVector::const_iterator vit;
-
-                if ((mit = dmatrix.find(A)) != dmatrix.end())
-                    if ((vit = mit->second.find(B)) != mit->second.end())
-                        return vit->second;
-
-                return (dmatrix[A][B] = Manager::distance(*database, A, B, args["-dp"]));
-            }
+            bus._students
         );
 
         bus._students = route.second; bus._cost = route.first;
@@ -161,16 +152,38 @@ int main(int argc, char * argv[])
 }
 
 TSP::path<Manager::Student> tsp(
+    SQLite::Database& database,
+    const std::string& daypart,
     const Manager::Student& depot,
-    const std::vector<Manager::Student>& students,
-    const std::function<double(const Manager::Student&, const Manager::Student&)>& cost
+    const std::vector<Manager::Student>& students
 )
 {
+    DMatrix dmatrix;
+    auto cost = [&](const Manager::Student& A, const Manager::Student& B)
+    {
+        DMatrix::const_iterator mit;
+        DVector::const_iterator vit;
+
+        if ((mit = dmatrix.find(A)) != dmatrix.end())
+            if ((vit = mit->second.find(B)) != mit->second.end())
+                return vit->second;
+
+        return (dmatrix[A][B] = Manager::distance(database, A, B, daypart));
+    };
+
     TSP::path<Manager::Student> path;
     
     path = TSP::nearestNeighbor<Manager::Student>(depot, students, cost);
 
+    #ifdef __TEST_TSP__
+    std::cout << "NN: " << path.first << std::endl;
+    #endif
+
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
+
+    #ifdef __TEST_TSP__
+    std::cout << "OPT2: " << path.first << std::endl;
+    #endif
 
     path = SimulatedAnnealing<TSP::path<Manager::Student>>(
         path,
@@ -193,12 +206,16 @@ TSP::path<Manager::Student> tsp(
         {
             return path.first;
         },
-        1000000.0,
-        0.00003,
+        100000000.0,
+        0.003,
         1000000UL
     );
 
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
+
+    #ifdef __TEST_TSP__
+    std::cout << "SA: " << path.first << std::endl;
+    #endif
 
     return path;
 }
