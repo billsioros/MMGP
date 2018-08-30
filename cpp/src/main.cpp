@@ -108,6 +108,8 @@ int main(int argc, char * argv[])
 
     beg = std::chrono::system_clock().now();
 
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
     Manager::Schedules schedules;
 
     std::size_t busId = std::numeric_limits<std::size_t>().max();
@@ -136,8 +138,10 @@ int main(int argc, char * argv[])
         bus._students.erase(bus._students.begin()); bus._students.pop_back();
 
         std::cerr << "<MSG>: Duration of route "
-                  << schedules.size() << '.'
-                  << std::setw(2) << std::setfill('0') << busId << ": "
+                  << std::setw(2) << std::setfill('0') << schedules.size()
+                  << '.'
+                  << std::setw(2) << std::setfill('0') << busId
+                  << ": "
                   << std::fixed << std::setprecision(4) << route.first / 60.00
                   << " minutes" << std::endl;
     }
