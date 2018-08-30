@@ -14,7 +14,5 @@ clean:
 discard:
 	@echo "\n*** Purging data files ***"
 	@echo "***"
-	find ../ -name "Morning*.json" -delete
-	find ../ -name "Noon*.json"    -delete
-	find ../ -name "Study*.json"   -delete
+	find . -name "*[0-9].json" -delete
 	@echo "***"
