@@ -10,6 +10,7 @@
 #include <memory>
 #include <unordered_map>
 #include <chrono>
+#include <iomanip>
 
 using Group = Cluster<Manager::Student>;
 
@@ -134,8 +135,10 @@ int main(int argc, char * argv[])
 
         bus._students.erase(bus._students.begin()); bus._students.pop_back();
 
-        std::cerr << "<MSG>: Currently processed route duration: "
-                  << route.first / 60.0
+        std::cerr << "<MSG>: Duration of route "
+                  << schedules.size() << '.'
+                  << std::setw(2) << std::setfill('0') << busId << ": "
+                  << std::fixed << std::setprecision(4) << route.first / 60.00
                   << " minutes" << std::endl;
     }
 
@@ -211,10 +214,14 @@ TSP::path<Manager::Student> tsp(
         1000000UL
     );
 
+    #ifdef __TEST_TSP__
+    std::cout << "SA: " << path.first << std::endl;
+    #endif
+
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
     #ifdef __TEST_TSP__
-    std::cout << "SA: " << path.first << std::endl;
+    std::cout << "OPT2-SA: " << path.first << std::endl;
     #endif
 
     return path;
