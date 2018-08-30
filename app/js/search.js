@@ -220,6 +220,9 @@ function OnDayPartClick() {
     var prevActive = GetActiveDayPart();
     if (prevActive)
         prevActive.classList.remove("active");
+    
+    if (prevActive === this)
+        return;
     this.classList.add("active");
     GenerateScheduleButtons();
 }
@@ -235,6 +238,8 @@ function OnBusClick() {
     var prevActive = GetActiveBus();
     if (prevActive)
         prevActive.classList.remove("active");
+    if (prevActive === this)
+        return;
     this.classList.add("active");
 }
 
@@ -511,6 +516,7 @@ function DisplayBusTable(Students) {
 
     let index = 1
     let currentBusSchedule = null
+    let odd = false;
     for (var i = 0; i < Students.length; i++) {
         let student = Students[i];
         if (currentBusSchedule !== student.BusSchedule) {
@@ -518,7 +524,9 @@ function DisplayBusTable(Students) {
             index = 1
         }
         var row = document.createElement("div")
-        row.className = "BusTableRow TableRow"; 
+        row.className = "BusTableRow TableRow";
+        
+        
 
         // Keep the ID in html level but hidden,
         // so it can be retrieved afterwards for the "More" button
@@ -531,6 +539,8 @@ function DisplayBusTable(Students) {
         let button = document.createElement("button")
         button.type =  "button";
         button.className = "RowData MoreButton"
+        if (odd)
+            button.classList.add("OddRowData")
         let searchimg = document.createElement("img");
         searchimg.src = "../images/General/more.png";
         searchimg.className = "MoreButtonImage"
@@ -539,47 +549,65 @@ function DisplayBusTable(Students) {
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.BusSchedule;
         row.appendChild(p)
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = index
         row.appendChild(p)
         index++;
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.ScheduleOrder;
         row.appendChild(p)
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.ScheduleTime;
         row.appendChild(p)
         
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.LastName
         row.appendChild(p)
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.FirstName
         row.appendChild(p)
 
         p = document.createElement("p");
         p.className = "RowData";
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.ClassLevel;
         row.appendChild(p);
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = student.Address.FullAddress
         row.appendChild(p)
 
         p = document.createElement("p")
         p.className = "RowData"
+        if (odd)
+            p.classList.add("OddRowData")
         if (student.Notes)
             p.innerHTML = student.Notes;
         else
@@ -592,6 +620,8 @@ function DisplayBusTable(Students) {
         for (let j = 0; j < WeekDays.length; j++) {
             p = document.createElement("p");
             p.className = "RowData";
+            if (odd)
+                p.classList.add("OddRowData")
 
             if (student.Days[WeekDays[j]] === 1)
                 p.className += " OnDay";
@@ -602,6 +632,7 @@ function DisplayBusTable(Students) {
         }
 
         table.appendChild(row);
+        odd = !odd
     }
     MainInfo.appendChild(table);
 }
@@ -871,6 +902,7 @@ function DisplayStudentSearchTable(Students) {
         table.appendChild(p);
     }
     // Basically for student in Students:
+    let odd = false
     for (let i = 0; i < StudentKeys.length; i++) {
         key = StudentKeys[i];
         var row = document.createElement("div");
@@ -880,6 +912,8 @@ function DisplayStudentSearchTable(Students) {
         // so it can be retrieved afterwards for the "More" button
         let p = document.createElement("p");
         p.className = "RowData";
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = Students[key].ID;
         p.hidden = true;
         row.appendChild(p);
@@ -889,6 +923,8 @@ function DisplayStudentSearchTable(Students) {
         button.type =  "button";
         button.classList.add("RowData");
         button.classList.add("MoreButton");
+        if (odd)
+            button.classList.add("OddRowData")
         button.onclick = OnMorePress;
         let searchimg = document.createElement("img");
         searchimg.src = "../images/General/more.png";
@@ -899,28 +935,37 @@ function DisplayStudentSearchTable(Students) {
         // Index
         p = document.createElement("p");
         p.className = "RowData";
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = i + 1;
         row.appendChild(p);
       
         // Last Name
         p = document.createElement("p");
         p.className = "RowData";
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = Students[key].LastName;
         row.appendChild(p);
 
         // First Name
         p = document.createElement("p");
         p.className = "RowData";
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = Students[key].FirstName;
         row.appendChild(p);
 
         // Class - Level
         p = document.createElement("p");
         p.className = "RowData";
+        if (odd)
+            p.classList.add("OddRowData")
         p.innerHTML = Students[key].ClassLevel;
         row.appendChild(p);
 
         table.appendChild(row);
+        odd = !odd;
     }
         
     MainInfo.appendChild(table)
@@ -963,6 +1008,14 @@ function DisplayStudentSearchMap(Students) {
     }
 
     return studentsToPlot;
+}
+
+function DisplayStudentDayPartTable(Students) {
+
+}
+
+function DisplayStudentDayPartMap(Students) {
+    
 }
 
     // More Button Click Handler
@@ -1025,9 +1078,10 @@ function SearchStudents() {
     const Number = document.getElementById("NumberBar").value;
     const Municipal = document.getElementById("MunicipalBar").value;
     const ZipCode = document.getElementById("ZipCodeBar").value;
+    const DayPart = document.getElementById("DayPartBar").value;
 
-    const SearchValues = [FirstName, LastName, Class, Level, Street, Number, Municipal, ZipCode];
-    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "ad.Road", "ad.Number", "ad.Municipal", "ad.ZipCode"];
+    const SearchValues = [FirstName, LastName, Class, Level, DayPart, Street, Number, Municipal, ZipCode];
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Student.DayPart", "ad.Road", "ad.Number", "ad.Municipal", "ad.ZipCode"];
     // let toSearch = "Where (not exists (Select * From Address Where Address.AddressID = Student.AddressID) or \
     // Student.AddressID = ad.AddressID)";
 
@@ -1069,8 +1123,6 @@ function SearchStudents() {
     let searchobj = ExecuteSQLToProc(sql);
 
     searchobj.process.on('close', function() {
-        let Students = StudentJsonRead(searchobj.json_file)
-
         let title;
 
         if (empty) {
@@ -1078,16 +1130,28 @@ function SearchStudents() {
         }
         else {
             // Student Search : 
-            title = "\"" + FirstName + " " + LastName + " " + Class + " " + Level + " " + Street + " " + Number + " " + Municipal + " " + ZipCode + "\"";
+            title = "\"" + FirstName + " " + LastName + " " + Class + " " + Level + " " + DayPart + " " +
+             Street + " " + Number + " " + Municipal + " " + ZipCode + "\"";
         }
-        // Open a new SearchTab, which displays Students as a Table and Map Tabs.
-        let type = "Student"
-        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
+
+        let newSearchTab
+        if (!DayPart) {
+            let Students = StudentJsonRead(searchobj.json_file)
+        
+            // Open a new SearchTab, which displays Students as a Table and Map Tabs.
+            let type = "Student"
+            newSearchTab = OpenSearchTab(docmain, title, type, DisplayStudentSearchTable, DisplayStudentSearchMap, Students);
+        }
+        else {
+            let Students = ScheduleJsonRead(searchobj.json_file)
+            let type = "Schedule"
+            newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
+        }
+
         newSearchTab.activate(false);
 
         // Assign onclick to More Buttons.
         ReassignAllButtons(); 
-        CurrentStudents = Students;
 
         loading.hidden = true;
         loading.nextElementSibling.innerHTML = "Search"

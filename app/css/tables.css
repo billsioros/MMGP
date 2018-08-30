@@ -48,6 +48,16 @@
     margin: 1px;
 }
 
+.OddRowData {
+    font-size: 13px;
+
+    background-color: rgb(68, 67, 67);
+
+    border:none;
+    padding: 10px 5%;
+    margin: 1px;
+}
+
 .OnDay {
     background-color: rgb(185, 185, 185);
 

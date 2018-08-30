@@ -17,8 +17,8 @@ function createWindow() {
 
     printwin = new BrowserWindow({width:1640, height:840, title:"MMGP_Print", opacity: 1.0});
     printwin.loadFile("html/printer.html")
-    printwin.hide();
     printwin.maximize();
+    printwin.hide();
     // printwin.webContents.openDevTools();
     printwin.on("closed", () => {
         printwin = undefined;
@@ -59,7 +59,7 @@ function createWindow() {
                 {type: 'separator'},
                 {label: 'Update Students', click() {UpdateStudents(false);}},
                 {label: 'Update Students (overwrite current addresses)', click() {UpdateStudents(true);}},
-                {label: 'Update Buses', click() {UpdateBuses(); win.reload();}},
+                {label: 'Update Buses', click() {UpdateBuses(); win.reload(); printwin.reload();}},
                 {type: 'separator'},
 
                 {label: 'Update All Distances (approx. 25min)', click() {UpdateAllDistances();}},
@@ -86,8 +86,8 @@ function createWindow() {
         {
             label: 'Window',
             submenu: [
-                {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {win.reload();}},
-                {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools();}},
+                {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {win.reload(); printwin.reload();}},
+                {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools(); printwin.webContents.toggleDevTools();}},
             ]
         }
     ])
@@ -100,7 +100,8 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
-        printwin = null
+        printwin.close()
+        printwin = null    
     })
 }
 
@@ -684,9 +685,9 @@ app.on('ready', createWindow)
 app.on('window-all-closed', () => {
 
     // On macOS it is common for applications and their menu bar
-    // to saty active until the used quits explicitly with Cmd + Q
+    // to stay active until the used quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
-        app.quit
+        app.quit()
     }
 })
 

@@ -71,7 +71,7 @@ body {
     font-weight: 700;
     font-size: 11px;
 
-    background-color: rgb(212, 212, 212);
+    background-color: rgb(172, 171, 171);
     /* border: 1px solid black; */
 
     padding: 5px 5%;
@@ -88,8 +88,18 @@ body {
     margin: 1px;
 }
 
+.OddRowData {
+    font-size: 13px;
+
+    background-color: rgb(255, 255, 255);
+
+    border:none;
+    padding: 10px 5%;
+    margin: 1px;
+}
+
 .OnDay {
-    background-color: rgb(31, 42, 107);
+    background-color: rgb(170, 183, 255);
     
 
     padding: 7px;
@@ -130,7 +140,7 @@ body {
     font-weight: 700;
     font-size: 23px;
 
-    background-color: rgb(212, 212, 212);
+    background-color: rgb(172, 171, 171);
 
     border: none;
     padding: 1%;
