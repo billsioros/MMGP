@@ -23,15 +23,6 @@ body {
     word-break: break-word;
 }
 
-/* header { 
-    background-color: #252526;
-    
-    grid-column: 2 / 3;
-
-    display: grid;
-    grid-template-columns: 13fr 1fr
-} */
-
 
 main {
     background-color: #3b3b3b;
@@ -60,7 +51,7 @@ main {
     background-color: #252526;
 
     display: grid;
-    grid-template-columns: 13fr 1fr
+    grid-template-columns: 12fr 1fr 1fr
 }
 
 /* Main Section */
@@ -254,31 +245,32 @@ main {
     width: 45%;
 }
 
-.SearchButton:disabled, #CalculateDurationButton:disabled {
+.SearchButton:disabled, #CalculateDurationButton:disabled, #PrintButton:disabled {
     cursor: default;
     opacity: 0.5;
 }
 
-.SearchButton:hover:not([disabled]), #ClearTabsButton:hover, #CalculateDurationButton:hover:not([disabled]) {
+.SearchButton:hover:not([disabled]), #ClearTabsButton:hover, #CalculateDurationButton:hover:not([disabled]), #PrintButton:hover:not([disabled]) {
     background-color: rgb(146, 146, 146);
 }
 
-.SearchButton:active, #ClearTabsButton:active, #CalculateDurationButton:active {
+.SearchButton:active, #ClearTabsButton:active, #CalculateDurationButton:active, #PrintButton:active {
     background-color: rgb(39, 39, 39);
 }
 
 
-#ClearTabsButton, #CalculateDurationButton {
+#ClearTabsButton, #CalculateDurationButton, #PrintButton {
     font-size: 15px;
 
     background-color: rgb(56, 56, 56);
 
     border: none;  
+    margin: 1px;
 
     height: 100%;
 
     cursor: pointer;
-    /* float: right; */
+    
 }
 
 #CalculateDurationButton .loadingGif {

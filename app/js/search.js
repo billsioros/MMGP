@@ -140,13 +140,16 @@ function GenerateScheduleButtons() {
         }
 
         fs.unlink(searchobj.json_file, (err) => {
-            if (err)
+            if (err) {
+                alert(err);
                 console.error(err)
+            }
         })
 
     });
 
     searchobj.process.stderr.on('data', function(data) {
+        alert(data.toString());
         console.error(data.toString());
     });
 }
@@ -181,12 +184,15 @@ function GenerateBusButtons() {
         }
 
         fs.unlink(searchobj.json_file, (err) => {
-            if (err)
+            if (err) {
+                alert(err);
                 console.error(err)
+            }
         })
     })
 
     searchobj.process.stderr.on('data', function(data) {
+        alert(data.toString());
         console.error(data.toString());
     });
 }
@@ -236,16 +242,19 @@ function CheckDisabledScheduleButton(tab) {
     if (tab == null) {
         document.getElementById("AddScheduleButton").disabled = true;
         document.getElementById("CalculateDurationButton").disabled = true;
+        document.getElementById("PrintButton").disabled = true;
         return;
     }
 
     if (tab.type === "Schedule") {
         document.getElementById("AddScheduleButton").disabled = false;
         document.getElementById("CalculateDurationButton").disabled = false;
+        document.getElementById("PrintButton").disabled = false;
     }
     else {
         document.getElementById("AddScheduleButton").disabled = true;
         document.getElementById("CalculateDurationButton").disabled = true;
+        document.getElementById("PrintButton").disabled = false;
     }
     return;
 }
@@ -297,8 +306,6 @@ function GetScheduleSearchCriteria() {
 
 function SearchSchedule() {
 
-    
-
     let busSchedule = GetScheduleSearchCriteria();
     if (!busSchedule)
         return
@@ -333,6 +340,7 @@ function SearchSchedule() {
     });
 
     searchobj.process.stderr.on('data', function(data) {
+        alert(data.toString());
         console.error(data.toString());
     });
 }
@@ -368,6 +376,7 @@ function CalculateScheduleDuration() {
 
     fs.writeFile(datadir + "/tmp/sched.json", JSON.stringify(toJson), (err) => {
         if (err) {
+            alert(err);
             console.error(err);
             return;
         };
@@ -393,8 +402,10 @@ function CalculateScheduleDuration() {
         loading.nextElementSibling.innerHTML = "Calculate Duration"
 
         fs.unlink(reqrespfile, (err) => {
-            if (err)
+            if (err) {
+                alert(err);
                 console.error(err)
+            }
         })
     })
 
@@ -403,6 +414,7 @@ function CalculateScheduleDuration() {
     })
 
     proc.stderr.on('data', function(data) {
+        alert(data.toString());
         console.error(data.toString());
     }) 
 
@@ -463,6 +475,7 @@ function AddSchedule() {
     });
 
     searchobj.process.stderr.on('data', function(data) {
+        alert(data.toString())
         console.error(data.toString());
     });
 }
@@ -502,7 +515,7 @@ function DisplayBusTable(Students) {
         let student = Students[i];
         if (currentBusSchedule !== student.BusSchedule) {
             currentBusSchedule = student.BusSchedule
-            index = 0
+            index = 1
         }
         var row = document.createElement("div")
         row.className = "BusTableRow TableRow"; 
@@ -567,7 +580,10 @@ function DisplayBusTable(Students) {
 
         p = document.createElement("p")
         p.className = "RowData"
-        p.innerHTML = student.Notes;
+        if (student.Notes)
+            p.innerHTML = student.Notes;
+        else
+            p.innerHTML = "-";
         row.appendChild(p)
 
         // Days
@@ -600,6 +616,7 @@ function DisplayBusMap(Students) {
             Name: student.Name,
             Addresses: [student.Address],
             Order: (i + 1).toString(),
+            Times: [student.ScheduleTime],
             Schedules: [student.BusSchedule]
         })
     }
@@ -619,6 +636,7 @@ function ExecuteSQLToProc(sql) {
 
     fs.writeFile(datadir + "/tmp/sql.json", JSON.stringify(toJson), (err) => {
         if (err) {
+            alert(err)
             console.error(err);
             return;
         };
@@ -741,8 +759,10 @@ function StudentJsonRead(json_file) {
     }
 
     fs.unlink(json_file, (err) => {
-        if (err)
+        if (err) {
+            alert(err);
             console.error(err)
+        }
     })
 
     return Students;
@@ -806,8 +826,10 @@ function ScheduleJsonRead(json_file) {
     }
 
     fs.unlink(json_file, (err) => {
-        if (err)
+        if (err) {
+            alert(err);
             console.error(err)
+        }
     })
 
     return Students;
@@ -926,10 +948,16 @@ function DisplayStudentSearchMap(Students) {
         Schedules.push.apply(Schedules, student.NoonBuses);
         Schedules.push.apply(Schedules, student.StudyBuses);
 
+        let Times = [];
+        Times.push.apply(Times, student.MorningTimes);
+        Times.push.apply(Times, student.NoonTimes);
+        Times.push.apply(Times, student.StudyTimes);
+
         studentsToPlot.push({
             Name: student.LastName + ' ' + student.FirstName,
             Addresses: Addresses,
             Schedules: Schedules,
+            Times: Times,
             Order: ""
          });
     }
@@ -978,6 +1006,7 @@ function OnMorePress() {
         })
 
         searchobj.process.stderr.on('data', function(data) {
+            alert(data.toString())
             console.error(data.toString());
         })
     }
@@ -1065,6 +1094,7 @@ function SearchStudents() {
     });
 
     searchobj.process.stderr.on('data', function(data) {
+        alert(data.toString());
         console.error(data.toString());
     });
 
@@ -1360,10 +1390,16 @@ function DisplayStudentMap(student) {
     Schedules.push.apply(Schedules, student.NoonBuses);
     Schedules.push.apply(Schedules, student.StudyBuses);
 
+    let Times = [];
+    Times.push.apply(Times, student.MorningTimes);
+    Times.push.apply(Times, student.NoonTimes);
+    Times.push.apply(Times, student.StudyTimes);
+
     studentsToPlot.push( {
         Name: student.LastName + ' ' + student.FirstName,
         Addresses: Addresses,
         Schedules: Schedules,
+        Times: Times,
         Order: ""
      });
 
@@ -1566,6 +1602,7 @@ function PlotStudents(tab) {
         for (let j = 0; j < student.Addresses.length; j++) {
             let address = student.Addresses[j];
             let schedule = student.Schedules[j];
+            let time = student.Times[j];
             let key = address.Latitude + "," + address.Longitude;
             let found = false;
 
@@ -1584,18 +1621,20 @@ function PlotStudents(tab) {
 
                 title += (index + ") " + studentName + "\n");
                 title += address.FullAddress + "\n";
-                title += schedule;
+                title += "Schedule: " + schedule + "\n";
+                title += "Time: " + time;
                 plottedAddresses[key].names.push(studentName)
                 plottedAddresses[key].title = title;              
 
             }
             else {
                 plottedAddresses[key] = {
-                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule,
+                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + "Schedule: " + schedule + "\n" + "Time: " + time,
                     names: [studentName],
                     address: address,
                     schedule: schedule,
-                    order: student.Order
+                    order: student.Order,
+                    time: time
                 };
             }
         }
@@ -1688,11 +1727,12 @@ function PlotSchedules(Students, Schedules) {
             }
             else {
                 plottedAddresses[key] = {
-                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule,
+                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule + "\n" + student.Times[j],
                     names: [studentName],
                     address: address,
                     schedule: schedule,
-                    order: student.Order
+                    order: student.Order,
+                    time: student.Time
                 };
             }
         }
@@ -1741,16 +1781,33 @@ function CacheDOM() {
     MainInfo = document.getElementsByClassName("MainInfo")[0];
 }
 
+// Printer
+function PrintHandler() {
+    
+    const ipcRenderer= require('electron').ipcRenderer;
+
+    function sendCommandToPrinter(content, title, type) {
+        ipcRenderer.send("printPDF", content, title, type);
+    }
+
+    document.getElementById("PrintButton").addEventListener("click", () => {
+        // send whatever you like
+        let title = SearchTabGroup.activeTab().title;
+        let type = SearchTabGroup.activeTab().type;
+        sendCommandToPrinter(MainInfo.innerHTML, title, type);
+    });
+}
+
 // Loader
 function OnCreateWindow() {
-    DBFile = datadir + "MMGP_data.db"
-    spawn = require('child_process').spawn
-    fs = require('fs')
+    DBFile = datadir + "MMGP_data.db";
+    spawn = require('child_process').spawn;
+    fs = require('fs');
     
     
     GenerateBusButtons();
     OnSearchClearStudent();
-
+    PrintHandler();
     CacheDOM();
 
     // Create a SearchTabGroup and hold it to a global variable for use.

@@ -1,8 +1,9 @@
-const {app, Menu, BrowserWindow, dialog} = require('electron')
+const {app, Menu, BrowserWindow, dialog, ipcMain, shell, os} = require('electron')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
+let printwin
 let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
 let settings = datadir + "MMGP_settings.json"
@@ -11,17 +12,29 @@ let DBFile = datadir + "MMGP_data.db"
 function createWindow() {
     // Create the browser window.
     win = new BrowserWindow({width:1640, height:840, title:"MMGP", opacity: 1.0})
+    win.maximize();
+
+
+    printwin = new BrowserWindow({width:1640, height:840, title:"MMGP_Print", opacity: 1.0});
+    printwin.loadFile("html/printer.html")
+    printwin.hide();
+    printwin.maximize();
+    // printwin.webContents.openDevTools();
+    printwin.on("closed", () => {
+        printwin = undefined;
+    });
+
 
     // and Load the index.html of the app
     win.loadFile("html/index.html")
-    let search = require("../js/search.js");
-
+    
     var menu = Menu.buildFromTemplate([
         {
             label: 'Main Menu',
             submenu: [
                 {label: 'Run MMGP Algorithm'},        
                 {type: 'separator'},
+                {label: 'Hide Print Window', click() {printwin.hide()}},
                 {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {app.quit()}}
             ]
         },
@@ -42,6 +55,7 @@ function createWindow() {
             submenu: [
                 {label: 'Create Database (overwrite everything)', click() {CreateDatabase();}},
                 {label: 'Backup Database', click() {BackupDatabase();}},
+                {label: 'Restore Database', click() {RestoreDatabase();}},
                 {type: 'separator'},
                 {label: 'Update Students', click() {UpdateStudents(false);}},
                 {label: 'Update Students (overwrite current addresses)', click() {UpdateStudents(true);}},
@@ -86,6 +100,7 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
+        printwin = null
     })
 }
 
@@ -146,6 +161,7 @@ function CreateDatabase() {
     })
 
     proc.stderr.on('data', function(data) {
+        dialog.showErrorBox("Creation Error", data.toString());
         console.error(data.toString());
     })
 }
@@ -202,7 +218,76 @@ function BackupDatabase() {
     })
 
     proc.stderr.on('data', function(data) {
+        dialog.showErrorBox("Backup Error", data.toString());
         console.error(data.toString());
+    })
+}
+
+function RestoreDatabase() {
+    let fs = require('fs');
+
+    dialog.showOpenDialog({
+        defaultPath: datadir, 
+        filters: [
+            {name: 'Databases', extensions: ['db']}
+        ]}, (fileNames) => {
+        if (!fileNames) {
+            dialog.showErrorBox("Error", "Undefined Filename!")
+            return;
+        }
+
+        spawn = require("child_process").spawn;
+
+        const ProgressBar = require('electron-progressbar');
+
+        var progressBar = new ProgressBar({
+            title: "Restoring Database..",
+            text: "Restoring Database..",
+            detail: "Please Wait. This will not take long.\nDo not close this application!"
+        });
+
+        progressBar.on('completed', function() {
+            console.log("Successfully restored database.");
+            progressBar.detail = "Restoring completed..";
+        });
+        progressBar.on('aborted', function() {
+            console.log("Restoring Database canceled.")
+            progressBar.detail = "Canceling.."
+        })
+
+        jsonfile = datadir + "tmp/backupdatabase.json"
+
+        let toJson = {
+            Settings: settings,
+            Database: DBFile,
+            Backup: fileNames[0]
+        }
+
+        fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
+            if (err) {
+                console.error(err);
+                return;
+            };
+        });
+
+        spawn = require("child_process").spawn;
+        var proc = spawn('python', [pythondir + "RestoreDatabase.py", jsonfile]);
+
+        proc.on('close', function(code) {
+            progressBar.setCompleted();
+            fs.unlink(jsonfile, (err) => {
+                if (err)
+                    console.error(err)
+            })
+        })
+
+        proc.stdout.on('data', function(data) {
+            console.log(data.toString());
+        })
+
+        proc.stderr.on('data', function(data) {
+            dialog.showErrorBox("Restoring Error", data.toString());
+        })
     })
 }
 
@@ -257,6 +342,7 @@ function UpdateStudents(overwrite=false) {
     })
 
     proc.stdout.on('data', function(data) {
+        dialog.showErrorBox("Student Update Error", data.toString());
         console.log(data.toString());
     })
 }
@@ -306,6 +392,7 @@ function UpdateBuses() {
     })
 
     proc.stderr.on('data', function(data) {
+        dialog.showErrorBox("Buses Update Error", data.toString());
         console.error(data.toString());
     })
 }
@@ -339,17 +426,21 @@ function UpdateAllDistances() {
             })
 
             thidistproc.process.stderr.on('data', function(data) {
+                dialog.showErrorBox(DayParts[2] + "Distances Error", data.toString());
                 console.error(data.toString());
             })
 
             let jsonfile = datadir + "tmp/update" + DayParts[1] + "distances.json"
             fs.unlink(jsonfile, (err) => {
-                if (err)
+                if (err) {
+                    dialog.showErrorBox(DayParts[0] + "File System Error", err);
                     console.error(err)
+                }
             })
         })
 
         secdistproc.process.stderr.on('data', function(data) {
+            dialog.showErrorBox(DayParts[1] + "Distances Error", data.toString());
             console.error(data.toString());
         })
 
@@ -361,6 +452,7 @@ function UpdateAllDistances() {
     })
 
     firstdistproc.process.stderr.on('data', function(data) {
+        dialog.showErrorBox(DayParts[0] + "Distances Error", data.toString());
         console.error(data.toString());
     })
 
@@ -403,17 +495,21 @@ function AllDistancesToFile() {
                 })
     
                 thidistproc.process.stderr.on('data', function(data) {
+                    dialog.showErrorBox(DayParts[2] + "Distances Error", data.toString());
                     console.error(data.toString());
                 })
 
                 let jsonfile = datadir + "tmp/update" + DayParts[1] + "distances.json"
                 fs.unlink(jsonfile, (err) => {
-                    if (err)
+                    if (err) {
+                        dialog.showErrorBox(DayParts[0] + "File System Error", err);
                         console.error(err)
+                    }
                 })
             })
     
             secdistproc.process.stderr.on('data', function(data) {
+                dialog.showErrorBox(DayParts[1] + "Distances Error", data.toString());
                 console.error(data.toString());
             })
 
@@ -425,6 +521,7 @@ function AllDistancesToFile() {
         })
     
         firstdistproc.process.stderr.on('data', function(data) {
+            dialog.showErrorBox(DayParts[1] + "Distances Error", data.toString());
             console.error(data.toString());
         })
 
@@ -455,6 +552,7 @@ function UpdateSpecificDistances(DayPart) {
     })
 
     proc.process.stdout.on('data', function(data) {
+        dialog.showErrorBox(DayPart + "Distances Error", data.toString());
         console.log(data.toString());
     })
 
@@ -478,12 +576,15 @@ function SpecificDistancesToFile(DayPart) {
             console.log("Updating " + DayPart + " Distances to file: " + fileName + " completed.")
             let jsonfile = datadir + "tmp/update" + DayPart + "distances.json"
             fs.unlink(jsonfile, (err) => {
-                if (err)
+                if (err) {
+                    dialog.showErrorBox("File System Error", err);
                     console.error(err)
+                }
             })
         })
     
         proc.process.stderr.on('data', function(data) {
+            dialog.showErrorBox(DayPart + "Distances Error", data.toString());
             console.error(data.toString());
         })
 
@@ -511,6 +612,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
 
     fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
         if (err) {
+            dialog.showErrorBox("File System Error", err);
             console.error(err);
             return;
         };
@@ -548,6 +650,7 @@ function setActiveConnection(con) {
 
     fs.writeFile(settings, JSON.stringify(data), (err) => {
         if (err) {
+            dialog.showErrorBox("File System Error", err);
             console.error(err);
             return;
         };
@@ -566,6 +669,7 @@ function setActiveCurrentYear(year) {
 
     fs.writeFile(settings, JSON.stringify(data), (err) => {
         if (err) {
+            dialog.showErrorBox("File System Error", err);
             console.error(err);
             return;
         };
@@ -594,5 +698,50 @@ app.on('activate', () => {
     }
 })
 
+// retransmit it to printwin
+ipcMain.on("printPDF", (event, content, title, type) => {
+    printwin.show();
+    printwin.webContents.send("printPDF", content, title, type);
+});
+
+// when worker window is ready
+ipcMain.on("readyToPrintPDF", (event, title, type) => {
+
+    dialog.showOpenDialog({
+            defaultPath: datadir, 
+            buttonLabel: "Select Folder",
+            properties: [
+                'openDirectory',
+                'promptToCreate',
+            ]
+        }, 
+        (fileNames) => {
+            if (!fileNames) {
+                printwin.hide();
+                dialog.showErrorBox("Error", "Undefined Filename!")
+                return;
+            }
+
+            const pdfPath = fileNames[0] + "/" + title + ".pdf"
+
+            printwin.webContents.print({printBackground: true}, function (success) {
+                if (!success) {
+                    dialog.showErrorBox("Printing failed or canceled.")
+                    printwin.hide();
+                    return
+                } 
+
+                event.sender.send('wrote-pdf', pdfPath)
+                printwin.hide();
+            })
+            printwin.hide();
+        });
+        
+});
+
+ipcMain.on("CanceledPrinting", (event) => {
+    printwin.hide();
+    event.sender.send('canceled-printing')
+})
 
 
