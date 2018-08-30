@@ -213,8 +213,8 @@ TSP::path<Manager::Student> tsp(
         {
             return path.first;
         },
-        100000000.0,
-        0.003,
+        1000000000.0,
+        0.0015,
         1000000UL
     );
 
