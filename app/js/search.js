@@ -1725,7 +1725,7 @@ function PlotStudents(tab) {
             icon = defaultIcon;
         else {
             icon = {
-                url: MarkerURL + toMark.order + "|" + MarkerColors[0].toUpperCase() + "|000000",
+                url: MarkerURL + toMark.order + MarkerColors[0],
                 size: {width: 26, height: 32},
                 origin: {x: 0, y: 0},
                 anchor: {
@@ -1827,7 +1827,7 @@ function PlotSchedules(Students, Schedules) {
             address: toMark.address,
             schedule: toMark.schedule,
             icon: {
-                url: MarkerURL + toMark.order + "|" + MarkerColors[SchedulesIcons[toMark.schedule].MarkerIndex] + "|000000",
+                url: MarkerURL + toMark.order + MarkerColors[SchedulesIcons[toMark.schedule].MarkerIndex],
                 size: {width: 26, height: 32},
                 origin: {x: 0, y: 0},
                 anchor: {
