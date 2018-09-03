@@ -339,11 +339,10 @@ function UpdateStudents(overwrite=false) {
     })
 
     proc.stderr.on('data', function(data) {
-        console.error(data.toString());
+        dialog.showErrorBox("Student Update Error", data.toString());
     })
 
     proc.stdout.on('data', function(data) {
-        dialog.showErrorBox("Student Update Error", data.toString());
         console.log(data.toString());
     })
 }
@@ -395,6 +394,10 @@ function UpdateBuses() {
     proc.stderr.on('data', function(data) {
         dialog.showErrorBox("Buses Update Error", data.toString());
         console.error(data.toString());
+    })
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
     })
 }
 
@@ -549,11 +552,10 @@ function UpdateSpecificDistances(DayPart) {
     })
 
     proc.process.stderr.on('data', function(data) {
-        console.error(data.toString());
+        dialog.showErrorBox(DayPart + "Distances Error", data.toString());
     })
 
     proc.process.stdout.on('data', function(data) {
-        dialog.showErrorBox(DayPart + "Distances Error", data.toString());
         console.log(data.toString());
     })
 
