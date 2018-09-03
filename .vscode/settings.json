@@ -55,7 +55,8 @@
         "cstddef": "cpp",
         "cinttypes": "cpp",
         "*.ipp": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "stack": "cpp"
     },
     "python.pythonPath": "C:\\Python27\\python.exe"
 }

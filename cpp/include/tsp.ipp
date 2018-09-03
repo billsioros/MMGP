@@ -7,6 +7,7 @@
 #include <utility>          // std::pair
 #include <fstream>          // std::ostream
 #include <unordered_map>    // std::unordered_map
+#include <algorithm>        // std::reverse
 
 template <typename T>
 TSP::path<T> TSP::nearestNeighbor(
@@ -33,11 +34,11 @@ TSP::path<T> TSP::nearestNeighbor(
         }
 
         path.second.push_back(*nearest); vertices.erase(nearest);
-        path.first += minCost;
     }
 
-    path.first += cost(path.second.back(), depot);
     path.second.push_back(depot);
+
+    path.first = totalCost<T>(path.second, cost);
 
     return path;
 }
@@ -130,39 +131,22 @@ TSP::path<T> TSP::opt2(
     const std::vector<T>& initial,
     const std::function<double(const T&, const T&)>& cost)
 {
-    auto totalCost =
-    [&cost](const std::vector<T>& path)
-    {
-        double total = 0.0;
-        for (std::size_t j = 0; j < path.size() - 1UL; j++)
-            total += cost(path[j], path[j + 1UL]);
-
-        return total;
-    };
-
     auto opt2swap =
-    [&totalCost](const path<T>& old, std::size_t i, std::size_t k)
+    [&cost](const path<T>& old, std::size_t i, std::size_t k)
     {
-        path<T> current(0.0, std::vector<T>(old.second.size(), T()));
-
         // 1. take route[0] to route[i-1] and add them in order to new_route
-        for (std::size_t j = 0UL; j < i; j++)
-            current.second[j] = old.second[j];
-
         // 2. take route[i] to route[k] and add them in reverse order to new_route
-        for (std::size_t j = i; j <= k; j++)
-            current.second[j] = old.second[old.second.size() - 1UL - j];
-
         // 3. take route[k+1] to end and add them in order to new_route
-        for (std::size_t j = k + 1UL; j < old.second.size(); j++)
-            current.second[j] = old.second[j];
+        path<T> current(0.0, old.second);
 
-        current.first = totalCost(current.second);
+        std::reverse(current.second.begin() + i, current.second.begin() + k);
+
+        current.first = totalCost<T>(current.second, cost);
 
         return current;
     };
 
-    path<T> best(totalCost(initial), initial);
+    path<T> best(totalCost(initial, cost), initial);
     for (std::size_t i = 0; i < best.second.size() - 1; i++)
     {
         for (std::size_t k = i + 1UL; k < best.second.size(); k++)
@@ -180,10 +164,24 @@ TSP::path<T> TSP::opt2(
 }
 
 template <typename T>
+double TSP::totalCost(
+    const std::vector<T>& path,
+    const std::function<double(const T&, const T&)>& cost
+)
+{
+    double tcost = 0.0;
+    for (std::size_t j = 0; j < path.size() - 1UL; j++)
+        tcost += cost(path[j], path[j + 1UL]);
+
+    return tcost;
+}
+
+template <typename T>
 std::ostream& operator<<(std::ostream& os, const TSP::path<T>& path)
 {
+    std::size_t id = 0UL;
     for (const auto& step : path.second)
-        os << step << (&step != &path.second.back() ? " -> " : "");
+        os << ++id << ". " << step << std::endl;
 
     os << "\nTotal cost: " << path.first;
 

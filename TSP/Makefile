@@ -1,18 +1,18 @@
 
-CCNAME = MMGP
+CCNAME = TSP
 CC = g++
 CCFLAGS = -W -g3 -std=c++14
 
-PATH_SRC = ./src
-PATH_INC = ./include
-PATH_BIN = ./../bin
+PATH_SRC = ../cpp/src
+PATH_INC = ../cpp/include
+PATH_BIN = ./bin
 
-PATH_SQL_INC = ./SQLiteCpp/include
-PATH_SQL_SRC = ./SQLiteCpp/src
+PATH_SQL_INC = ../cpp/SQLiteCpp/include
+PATH_SQL_SRC = ../cpp/SQLiteCpp/src
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
 MNGR_DEP = $(PATH_SQL_INC)/Database.h $(addprefix $(PATH_INC)/, vector2.hpp manager.hpp) $(PATH_SRC)/manager.cpp
-MAIN_DEP = $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp sannealing.hpp) $(PATH_SRC)/main.cpp
+MAIN_DEP = $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(PATH_INC)/manager.hpp $(PATH_SRC)/main.cpp
 
 BACK_DEP = $(addprefix $(PATH_SQL_INC)/, Backup.h Exception.h) $(PATH_SQL_SRC)/Backup.cpp
 CLMN_DEP = $(PATH_SQL_INC)/Column.h $(PATH_SQL_SRC)/Column.cpp
@@ -27,11 +27,18 @@ NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o manager.o main.o Backup.o Column.
 all:
 	@echo "\n*** Compiling executable "$(CCNAME)" ***"
 	@echo "***"
-	mkdir -p $(PATH_BIN)/debug
+	mkdir -p $(PATH_BIN)
 	make $(PATH_BIN)/$(CCNAME)
 	@echo "***\n"
 
-# MMGP:
+.PHONY: clean
+clean:
+	@echo "\n*** Purging "./bin" ***"
+	@echo "***"
+	rm -rvf $(PATH_BIN)
+	@echo "***\n"
+
+# TSP:
 
 $(PATH_BIN)/$(CCNAME): $(NAME_DEP)
 	$(CC) $(DEFLAGS) $(CCFLAGS) $(NAME_DEP) -lsqlite3 -o $(PATH_BIN)/$(CCNAME)
@@ -43,7 +50,7 @@ $(PATH_BIN)/manager.o: $(MNGR_DEP)
 	$(CC) -I $(PATH_INC) -I $(PATH_SQL_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/manager.cpp -c -o $(PATH_BIN)/manager.o
 
 $(PATH_BIN)/main.o: $(MAIN_DEP)
-	$(CC) -I $(PATH_INC) -I $(PATH_SQL_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o
+	$(CC) -I $(PATH_INC) -I $(PATH_SQL_INC) $(DEFLAGS) $(CCFLAGS) ./src/main.cpp -c -o $(PATH_BIN)/main.o
 
 # SQLite3 Wrapper:
 

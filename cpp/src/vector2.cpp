@@ -94,23 +94,23 @@ Vector2& Vector2::operator/=(double lambda)
     return *this;
 }
 
-inline bool operator< (const Vector2& A, const Vector2& B)
+bool operator< (const Vector2& A, const Vector2& B)
 {
     return (A._x < B._x) ||
            (A._x == B._x && A._y < B._y);
 }
 
-inline bool operator> (const Vector2& A, const Vector2& B)
+bool operator> (const Vector2& A, const Vector2& B)
 {
     return B < A;
 }
 
-inline bool operator==(const Vector2& A, const Vector2& B)
+bool operator==(const Vector2& A, const Vector2& B)
 {
     return !(A < B) && !(B < A);
 }
 
-inline bool operator!=(const Vector2& A, const Vector2& B)
+bool operator!=(const Vector2& A, const Vector2& B)
 {
     return !(A == B);
 }

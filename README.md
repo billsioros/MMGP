@@ -1,8 +1,8 @@
 # Multiagent Multitarget Geospatial Pathfinding
 
-#### Version Control
-* Clustering 1.13
-* TSP 0.4
+## TODO
+* JSON parser (generally a means of IO between front and back end)
+* Time window modelling
 
-#### Third Party Code
+## Third Party Code
 * [SQLite3 Wrapper](https://github.com/SRombauts/SQLiteCpp) (MIT License)

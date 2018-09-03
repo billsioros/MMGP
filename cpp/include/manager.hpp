@@ -3,11 +3,11 @@
 
 #include "vector2.hpp"
 #include "Database.h"
-#include <vector>       // std::vector
-#include <bitset>       // std::bitset
-#include <string>       // std::string
-#include <list>         // std::list
-#include <iosfwd>       // std::ostream
+#include <vector>           // std::vector
+#include <bitset>           // std::bitset
+#include <string>           // std::string
+#include <vector>           // std::vector
+#include <iosfwd>           // std::ostream
 
 namespace Manager
 {
@@ -19,35 +19,70 @@ namespace Manager
         Vector2        _position;
         Vector2        _timespan;
 
-        Student() {}
-        Student(const char * _studentId, const char * _addressId, const bool _days[], const double _p[], const double _t[])
-        :
-        _studentId(_studentId), _addressId(_addressId), _position(_p[0], _p[1]), _timespan(_t[0], _t[1])
+        Student();
+        Student(const Student&);
+        Student(
+            const std::string&,
+            const std::string&,
+            const std::bitset<5>&,
+            const Vector2&,
+            const Vector2&
+        );
+
+        Student& operator=(const Student&);
+
+        friend bool operator==(const Student& A, const Student& B)
         {
-            for (std::size_t i = 0UL; i < 5UL; i++)
-                this->_days.set(i, _days[i]);
+            return A._studentId == B._studentId && A._addressId == B._addressId;
+        }
+
+        friend bool operator!=(const Student& A, const Student& B)
+        {
+            return !(A == B);
         }
     };
 
     struct Bus
     {
-        std::string        _busId;
-        unsigned           _number;
-        unsigned           _capacity;
-        std::list<Student> _students;
+        std::string          _busId;
+        unsigned             _number;
+        unsigned             _capacity;
+        std::vector<Student> _students;
+        double               _cost;
 
-        Bus(const char * _busId, unsigned _number, unsigned _capacity)
-        :
-        _busId(_busId), _number(_number), _capacity(_capacity)
-        {
-        }
+        Bus(const std::string&, unsigned, unsigned);
     };
 
-    void load(SQLite::Database&, std::list<Student>&, const std::string&);
+    using Buses     = std::vector<Bus>;
+    using Schedules = std::vector<Buses>;
+
+    void load(SQLite::Database&, Student&);
+    void load(SQLite::Database&, std::vector<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void csv(const char *, const std::list<std::vector<Bus>>&);
-    void json(const char *, const std::list<std::vector<Bus>>&);
+    void csv(const std::string&, const Schedules&);
+    void json(const std::string&, const Schedules&);
 
-    double distance(SQLite::Database&, const Student&, const Student&, const std::string&);
+    double distance(
+        SQLite::Database&,
+        const Student&,
+        const Student&,
+        const std::string&
+    );
+}
+
+Manager::Student operator+(const Manager::Student&, const Manager::Student&);
+Manager::Student operator/(const Manager::Student&, double);
+
+std::ostream& operator<<(std::ostream&, const Manager::Student&);
+
+namespace std
+{
+    template <> struct hash<Manager::Student>
+    {
+        std::size_t operator()(const Manager::Student& P) const noexcept
+        {
+            return std::hash<std::string>{}("SID" + P._studentId + "AID" + P._addressId);
+        }
+    };
 }
