@@ -4,7 +4,7 @@
 
     <!-- Style -->
     <link rel="stylesheet" type="text/css" href="../css/printer.css">
-
+    <script type="text/javascript" src="../js/khtml_all.js"></script>
 </head>
 <body>
     <script>
@@ -34,13 +34,13 @@
             title = title.replace(/"/gi, "");
             title = title.replace(/ /gi, "");
             
-            setTimeout(() => {
-                if (confirm("Printing. Are you sure?"))
-                    ipcRenderer.send("readyToPrintPDF", title);
-                else {
-                    ipcRenderer.send("CanceledPrinting", title);
-                }
-            }, 1000)
+            // setTimeout(() => {
+            //     if (confirm("Printing. Are you sure?"))
+            //         ipcRenderer.send("readyToPrintPDF", title);
+            //     else {
+            //         ipcRenderer.send("CanceledPrinting", title);
+            //     }
+            // }, 1000)
             
         });
     </script>

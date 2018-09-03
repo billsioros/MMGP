@@ -32,6 +32,9 @@ let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
 let DBFile
 
+let MarkerColors;
+let MarkerURL;
+
 
 
 // Bus Searching
@@ -436,8 +439,8 @@ function AddSchedule() {
     let busSchedule = GetScheduleSearchCriteria();
 
     if (activeTab.hasOwnProperty("activeBuses")) {
-        if (activeTab.activeBuses.length >= Markers.length) {
-            alert("Can't have more than 7 open schedules at once.");
+        if (activeTab.activeBuses.length >= MarkerColors.length) {
+            alert("Can't have more than " + MarkerColors.length + " open schedules at once.");
             return;
         }
         if (activeTab.activeBuses.includes(busSchedule)) {
@@ -638,18 +641,27 @@ function DisplayBusTable(Students) {
 }
 
 function DisplayBusMap(Students) {
+    let index = 1
+    let currentBusSchedule = null
     let studentsToPlot = [];
 
     for (let i = 0; i < Students.length; i++) {
         let student = Students[i];
 
+        if (currentBusSchedule !== student.BusSchedule) {
+            currentBusSchedule = student.BusSchedule
+            index = 1
+        }
+
         studentsToPlot.push({
             Name: student.Name,
             Addresses: [student.Address],
-            Order: (i + 1).toString(),
+            Order: index.toString(),
             Times: [student.ScheduleTime],
             Schedules: [student.BusSchedule]
         })
+
+        index++;
     }
 
     return studentsToPlot;
@@ -1709,11 +1721,11 @@ function PlotStudents(tab) {
         let toMark = plottedAddresses[plottedAddressKeys[i]];
 
         let icon
-        if (toMark.order === "" || toMark.order > 32)
+        if (toMark.order === "")
             icon = defaultIcon;
         else {
             icon = {
-                url: "../images/NumberedMarkers/marker" + toMark.order + ".png",
+                url: MarkerURL + toMark.order + MarkerColors[0],
                 size: {width: 26, height: 32},
                 origin: {x: 0, y: 0},
                 anchor: {
@@ -1722,6 +1734,7 @@ function PlotStudents(tab) {
                 }
             }
         }
+
 
         var marker = new khtml.maplib.overlay.Marker({
             position: new khtml.maplib.LatLng(toMark.address.Latitude, toMark.address.Longitude), 
@@ -1753,7 +1766,7 @@ function PlotSchedules(Students, Schedules) {
 
         SchedulesIcons[Schedules[i]] = {
             Schedule: Schedules[i],
-            Icon: icon
+            MarkerIndex: i
         }
     }
     // For each student add a marker to the current open map, depending on student's schedule
@@ -1813,7 +1826,16 @@ function PlotSchedules(Students, Schedules) {
             names: toMark.names,
             address: toMark.address,
             schedule: toMark.schedule,
-            icon: SchedulesIcons[toMark.schedule].Icon
+            icon: {
+                url: MarkerURL + toMark.order + MarkerColors[SchedulesIcons[toMark.schedule].MarkerIndex],
+                size: {width: 26, height: 32},
+                origin: {x: 0, y: 0},
+                anchor: {
+                    x: "-16px",
+                    y: "-32px"
+                }
+            }
+            // icon: SchedulesIcons[toMark.schedule].Icon
         });
     }
 }
@@ -1867,7 +1889,12 @@ function OnCreateWindow() {
     DBFile = datadir + "MMGP_data.db";
     spawn = require('child_process').spawn;
     fs = require('fs');
-    
+
+    let raw_data = fs.readFileSync("./images/colors.json");
+    let data = JSON.parse(raw_data)
+
+    MarkerColors = data.colors;
+    MarkerURL = data.url;
     
     GenerateBusButtons();
     OnSearchClearStudent();
