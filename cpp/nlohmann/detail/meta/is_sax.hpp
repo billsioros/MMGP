@@ -3,8 +3,8 @@
 #include <cstdint> // size_t
 #include <utility> // declval
 
-#include <nlohmann/detail/meta/detected.hpp>
-#include <nlohmann/detail/meta/type_traits.hpp>
+#include <detail/meta/detected.hpp>
+#include <detail/meta/type_traits.hpp>
 
 namespace nlohmann
 {

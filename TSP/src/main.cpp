@@ -5,7 +5,7 @@
 #include "manager.hpp"
 #include "tsp.hpp"
 #include "sannealing.hpp"
-#include "../../cpp/nlohmann/json.hpp"
+#include "json.hpp"
 #include <unordered_map>
 #include <iostream>
 #include <memory>
@@ -27,7 +27,7 @@ void load(
     Manager::Student&,
     v8::Isolate *);
 
-void tsp(const v8::FunctionCallbackInfo<Value>& args)
+void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * isolate = args.GetIsolate();
 
@@ -65,9 +65,14 @@ void tsp(const v8::FunctionCallbackInfo<Value>& args)
         return;
     }
 
-    std::string dbname(argv[0]->str()),
-                BusScheduleId(argv[1]->str() + parse(argv[2]->str(), isolate) + argv[3]->str()),
-                DayPart(argv[2]->str());
+    v8::String::Utf8Value v8_dbname(args[0]->ToString());
+    v8::String::Utf8Value v8_busId(args[1]->ToString());
+    v8::String::Utf8Value v8_daypart(args[2]->ToString());
+    v8::String::Utf8Value v8_scheduleId(args[3]->ToString());
+
+    std::string dbname(*v8_dbname),
+                BusScheduleId(*v8_busId + parse(*v8_daypart, isolate) + *v8_scheduleId),
+                DayPart(*v8_daypart);
 
     std::unique_ptr<SQLite::Database> database;
     try
@@ -83,7 +88,7 @@ void tsp(const v8::FunctionCallbackInfo<Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "<ERR>: Exception ( " + e.what() + " )"
+                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
@@ -149,11 +154,11 @@ void tsp(const v8::FunctionCallbackInfo<Value>& args)
 
     nlohmann::json json;
     for (const auto& element : path.second)
-        json["students"].append(element._studentId);
+        json["students"].push_back(element._studentId);
 
     json["cost"] = path.first;
     
-    v8::Local<v8::String> rv = v8::String::NewFromUtf8(isolate, json.to_string());
+    v8::Local<v8::String> rv = v8::String::NewFromUtf8(isolate, json.dump().c_str());
 
     args.GetReturnValue().Set(rv);
 }
@@ -222,10 +227,10 @@ void load(
 
             const std::string _studentId(stmt.getColumn(current++).getText());
             const std::string _addressId(stmt.getColumn(current++).getText());
-            const Vector2 _position(
-                stmt.getColumn(current++).getDouble(),
-                stmt.getColumn(current++).getDouble()
-            );
+
+            const double x = stmt.getColumn(current++).getDouble();
+            const double y = stmt.getColumn(current++).getDouble();
+            const Vector2 _position(x, y);
 
             Manager::Student student;
             student._studentId = _studentId;
@@ -244,7 +249,7 @@ void load(
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "<ERR>: Exception ( " + e.what() + " )"
+                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
@@ -262,10 +267,10 @@ void load(
         {
             int current = 0;
             const std::string _addressId(stmt.getColumn(current++).getText());
-            const Vector2 _position(
-                stmt.getColumn(current++).getDouble(),
-                stmt.getColumn(current++).getDouble()
-            );
+            
+            const double x = stmt.getColumn(current++).getDouble();
+            const double y = stmt.getColumn(current++).getDouble();
+            const Vector2 _position(x, y);
 
             depot._addressId = _addressId;
             depot._position  = _position;
@@ -280,7 +285,7 @@ void load(
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "<ERR>: Exception ( " + e.what() + " )"
+                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );

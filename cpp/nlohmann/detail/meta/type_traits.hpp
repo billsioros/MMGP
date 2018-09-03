@@ -5,9 +5,9 @@
 #include <type_traits> // false_type, is_constructible, is_integral, is_same, true_type
 #include <utility> // declval
 
-#include <nlohmann/json_fwd.hpp>
-#include <nlohmann/detail/meta/cpp_future.hpp>
-#include <nlohmann/detail/macro_scope.hpp>
+#include <json_fwd.hpp>
+#include <detail/meta/cpp_future.hpp>
+#include <detail/macro_scope.hpp>
 
 namespace nlohmann
 {
