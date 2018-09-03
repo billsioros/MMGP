@@ -6,3 +6,4 @@
 
 ## Third Party Code
 * [SQLite3 Wrapper](https://github.com/SRombauts/SQLiteCpp) (MIT License)
+* [JSON](https://github.com/nlohmann/json) (MIT License)

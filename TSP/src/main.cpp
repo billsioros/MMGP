@@ -5,7 +5,7 @@
 #include "manager.hpp"
 #include "tsp.hpp"
 #include "sannealing.hpp"
-#include "../../data/nlohmann/json.hpp"
+#include "../../cpp/nlohmann/json.hpp"
 #include <unordered_map>
 #include <iostream>
 #include <memory>
