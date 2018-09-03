@@ -13,12 +13,12 @@
 #include <string> // string
 #include <type_traits> // is_same
 
-#include <nlohmann/detail/exceptions.hpp>
-#include <nlohmann/detail/conversions/to_chars.hpp>
-#include <nlohmann/detail/macro_scope.hpp>
-#include <nlohmann/detail/meta/cpp_future.hpp>
-#include <nlohmann/detail/output/output_adapters.hpp>
-#include <nlohmann/detail/value_t.hpp>
+#include <detail/exceptions.hpp>
+#include <detail/conversions/to_chars.hpp>
+#include <detail/macro_scope.hpp>
+#include <detail/meta/cpp_future.hpp>
+#include <detail/output/output_adapters.hpp>
+#include <detail/value_t.hpp>
 
 namespace nlohmann
 {

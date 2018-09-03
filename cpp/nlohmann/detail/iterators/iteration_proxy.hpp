@@ -4,7 +4,7 @@
 #include <string> // string, to_string
 #include <iterator> // input_iterator_tag
 
-#include <nlohmann/detail/value_t.hpp>
+#include <detail/value_t.hpp>
 
 namespace nlohmann
 {
