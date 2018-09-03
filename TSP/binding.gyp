@@ -22,7 +22,12 @@
             "cflags!": [ "-fno-exceptions" ],
             "cflags": [ "-W", "-g3", "-std=c++14" ],
             "cflags_cc!": [ "-fno-exceptions" ],
-            "cflags_cc": [ "-W", "-g3", "-std=c++14" ]
+            "cflags_cc": [ "-W", "-g3", "-std=c++14" ],
+            'link_settings': {
+                'libraries': [
+                    '-lsqlite3'
+                ]
+            }
         }
     ]
 }
