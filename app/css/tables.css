@@ -1,0 +1,71 @@
+.Table {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-row-gap: 0px;
+
+    margin-bottom: 20px;
+}
+
+.TableRow {
+    display: grid;
+
+    margin: 0px;
+}
+
+.BusTableRow {
+    grid-template-columns: 0.8fr 0.7fr 0.7fr 0.7fr 0.7fr 2fr 2fr 2fr 4.5fr 4.5fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr;
+}
+
+.StudentTableRow {
+    grid-template-columns: 0.3fr 0.5fr 2fr 2fr 2fr;
+}
+
+.SchedulesTableRow {
+    grid-template-columns: 1fr 1fr 1fr 3fr 3fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr;
+}
+
+.Table p {
+    margin: 1px;
+}
+
+.RowHeader {
+    font-weight: 700;
+    font-size: 13.5px;
+
+    background-color: rgb(30, 30, 30);
+
+    padding: 10px 5%;
+    margin: 1px;
+}
+
+.RowData {
+    font-size: 13px;
+
+    background-color: rgb(46, 46, 46);
+
+    border:none;
+    padding: 10px 5%;
+    margin: 1px;
+}
+
+.OddRowData {
+    font-size: 13px;
+
+    background-color: rgb(68, 67, 67);
+
+    border:none;
+    padding: 10px 5%;
+    margin: 1px;
+}
+
+.OnDay {
+    background-color: rgb(185, 185, 185);
+
+    padding: 7px;
+}
+
+.OffDay {
+    background-color: rgb(46, 46, 46);
+
+    padding: 7px ;
+}

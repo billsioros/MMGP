@@ -4,13 +4,15 @@ from openrouteservice import distance_matrix as od, geocoding as ogeo, client as
 import time
 import sys
 import csv
+import json
 
 class GreekDecoder:
 
     def __init__(self):
         self.LetterDictionary = dict()
-        EngLetters = ['A', 'V', 'G', 'D', 'E', 'Z', 'I', 'TH', 'K', 'L', 'M', 'N', 'KS', 'O', 'P', 'R', 'S', 'T', 'Y', 'F', 'CH', 'PS']
+        EngLetters = ["'", 'A', 'V', 'G', 'D', 'E', 'Z', 'I', 'TH', 'K', 'L', 'M', 'N', 'KS', 'O', 'P', 'R', 'S', 'T', 'Y', 'F', 'CH', 'PS']
         GrLetters = [\
+            [u'\u0384'],\
             ['\x80', u'\u0391', u'\u0386'],\
             ['\x81', u'\u0392'],\
             ['\x82', u'\u0393'],\
@@ -71,7 +73,9 @@ class GreekMunicipalConverter:
         "VOYLAS": "VOYLA",
         "ELLINIKOY" : "ELLINIKO",
         "TAYROY" : "TAYROS",
-        "ATHINAION" : "ATHINA"}
+        "ATHINAION" : "ATHINA",
+        "KALYVION THORIKOY": "KALYVIA",
+        "VOYLIAGMENIS": "VOYLIAGMENI"}
 
     def Convert(self, Municipal):
         return self.Municipals[Municipal]
@@ -94,6 +98,7 @@ class MapsHandler:
 
 
     def Geocode(self, Address):
+
         results = ggeo.geocode(self.GoogleClient, address=Address, region="GR")
 
 
@@ -113,7 +118,7 @@ class MapsHandler:
                     print "Third Error"
                     print Address
                     print results
-                    return
+                    return [None, None, None]
 
         address = results[0]["formatted_address"]
         return (address, locationData["lng"], locationData["lat"])
@@ -211,7 +216,6 @@ class MapsHandler:
 
 
     def __OpenDistanceMatrix(self, locations):
-
         Locations = dict()
         Locations["IDs"] = list()
         Locations["Points"] = list()
@@ -280,7 +284,7 @@ class MapsHandler:
         (Mins, Secs) = SecondsToMinutes(WholeDuration)
 
         try:
-            TimeLog = open("TimeLogs.txt", "a+")
+            TimeLog = open("../data/TimeLogs.txt", "a+")
             TimeLog.write("\n")
             full =  "Time elapsed for " + str(requests) + " requests (" + str(len(locations))\
              + "x" + str(len(locations)) + "): " + str(Mins) + "min, " + str(Secs) + "sec"
@@ -386,7 +390,7 @@ def ConvertGenitive(Genitive):
     
 
 def ConcatenateAddress(Road, Num, ZipCode, Municipal, Area, Prefecture, Country):
-
+    # print (Road, Num, ZipCode, Municipal, Area, Prefecture, Country)
     ResultAddress = ""
     if not Road:
         return ResultAddress
@@ -478,22 +482,62 @@ def SecondsToMinutes(duration):
     return (Minutes, Seconds)
     
 
-def GetCredentials(fileName, rowIndex):
+def GetCredentials(SettingsFile):
+    GoogleAPI_key = None
+    OpenAPI_key = None
+    ServerType = None
+    ServerName = None
+    DatabaseName = None
+    Username = None
+    Password = None
 
-    with open(fileName) as credentials:
-        readCSV = csv.DictReader(credentials, delimiter=',')
-        i = 0
-        for row in readCSV:
-            if int(rowIndex) == i:
-                GoogleAPI_key = row["GoogleAPI_key"]
-                OpenAPI_key = row["OpenAPI_key"]
-                ServerType = row["ServerType"]
-                ServerName = row["ServerName"]
-                DatabaseName = row["DatabaseName"]
-                break
-            i += 1
-    return [GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName]
+    with open(SettingsFile, "r") as json_file:
+        Settings = json.load(json_file)
 
+    activeConnection = str(Settings["Connection"]["Active"])
+
+    GoogleAPI_key = Settings["GoogleAPI_Key"]
+    OpenAPI_key = Settings["OpenAPI_Key"]
+
+    ServerType = Settings["Connection"][activeConnection]["Driver"]
+    ServerName = Settings["Connection"][activeConnection]["Server"]
+    DatabaseName = Settings["Connection"][activeConnection]["Database"]
+    Username = Settings["Connection"][activeConnection]["Username"]
+    Password = Settings["Connection"][activeConnection]["Password"]
+
+    if not Username or not Password:
+        Username = None
+        Password = None
+
+    return [activeConnection, GoogleAPI_key, OpenAPI_key,  ServerType, ServerName, DatabaseName, Username, Password]
+
+
+def GetSetting(SettingsFile, Keys):
+
+    with open(SettingsFile, "r") as json_file:
+        Settings = json.load(json_file)
+
+    SettingsToReturn = []
+    
+    if isinstance(Keys, list):
+        for key in Keys:
+            settingToReturn = dict()
+            if isinstance(key, list):
+                keylist = key
+                settingToReturn = Settings[keylist[0]]
+                keylist = keylist[1:]
+                
+
+                for subkey in keylist:
+                    settingToReturn = settingToReturn[subkey]
+            else:
+                settingToReturn = Settings[key]
+
+            SettingsToReturn.append(settingToReturn)
+    else:
+        SettingsToReturn.append(Settings[Keys])
+
+    return SettingsToReturn
 
 
 

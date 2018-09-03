@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>MMGP</title>
+
+    <!-- Style -->
+    <link rel="stylesheet" type="text/css" href="../css/style.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/tabs.css">
+    <link rel="stylesheet" type="text/css" href="../css/scrollbar.css">
+    <link rel="stylesheet" type="text/css" href="../css/tables.css">
+
+    <!-- Scripts -->
+    <script type="text/javascript" src="../js/brewtabs.js"> </script>
+    <script type="text/javascript" src="../js/search.js">   </script>
+    <script type="text/javascript" src="../js/khtml_all.js"></script>
+</head>
+
+<body>
+    
+    <header id="SearchTabHeader">
+        <div class="SearchTabGroup">
+
+        </div>
+        <button type=button id="ClearTabsButton" name="ClearTabs">
+            Clear Tabs
+        </button>    
+    </header>
+
+    <div class = "SideBar">
+        
+        <h2 class = "SideBarHeader">Bus</h2>
+        <div class = "BusButtonsContainer">
+            
+        </div>
+
+        <br><br>
+
+        <div class = "SelectorsContainer">
+            <div id="DayPartSelector" class = "Selector">
+                <h2 class="SelectorHeader">Day Part</h2>
+                <div id="DayPartSelectorButtonsContainer" class="SelectorButtonsContainer">
+                    <button class="DayPartSelectorButton SelectorButton">Morning</button>
+                    <button class="DayPartSelectorButton SelectorButton">Noon</button>
+                    <button class="DayPartSelectorButton SelectorButton">Study</button>
+                </div> 
+            </div>
+
+            
+            <div id="SchedulesSelector" class = "Selector">
+                <h2 class="SelectorHeader">Schedule</h2>
+                <select id = "ScheduleSelectorDropDown">
+                </select>
+            </div>
+        </div>
+
+        <!-- <br> -->
+
+        <button type="submit" id = "ScheduleSearchButton" class="SearchButton">
+            <img src="../images/General/loading.gif" class="loadingGif" hidden>
+            <span>Search</span>
+        </button>
+        <button type='button' id = "AddScheduleButton" class="SearchButton" disabled>
+            <img src="../images/General/loading.gif" class="loadingGif" hidden>
+            <span>Add Schedule</span>
+        </button>
+
+        <br><br><br><br>
+
+        <div class = 'SearchBarsContainer'>
+            <h2 class = "SideBarHeader">Student</h2>
+            <input type="text" placeholder="First Name.." id = "FirstNameBar" class="SearchBar">
+            <input type="text" placeholder="Last Name.." id = "LastNameBar" class="SearchBar">
+            <input type="text" placeholder="Class.." id = "ClassBar" class="SearchBar">
+            <input type="text" placeholder="Level.." id = "LevelBar" class="SearchBar">
+            <h2 class = "SideBarHeader">Address</h2>
+            <input type="text" placeholder="Street.." id = "StreetBar" class="SearchBar">
+            <input type="text" placeholder="Number.." id = "NumberBar" class="SearchBar">
+            <input type="text" placeholder="Municipal.." id = "MunicipalBar" class="SearchBar">
+            <input type="text" placeholder="ZipCode.." id = "ZipCodeBar" class="SearchBar">
+            <h2 class = 'SideBarHeader'>Schedule</h2>
+            <input type="text" placeholder="DayPart.." id = "DayPartBar" class="SearchBar">
+            <button type="submit" id = "StudentSearchButton" class="SearchButton">
+                    <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                    <span>Search</span>
+            </button>
+            <button type='button' id = "StudentClearButton" class="SearchButton">Clear</button>          
+        </div>
+
+        
+    </div>
+
+    <main id="main">
+        <header id="InfoMapTabHeader">
+            <div class="InfoMapTabGroup">
+
+            </div>
+            <button type=button id="PrintButton" name="Print" disabled>
+                <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                <span>Print</span>
+            </button> 
+            
+            <button type=button id="CalculateDurationButton" name="CalculateDuration" disabled>
+                <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                <span>Calculate Duration</span>
+            </button>  
+        </header>
+        <div class="MainInfo"></div>
+        
+    </main>
+    
+    
+    <script>
+        OnCreateWindow();
+    </script>
+</body>
+
+
+</html>

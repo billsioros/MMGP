@@ -1,0 +1,47 @@
+<head>
+    <meta charset="UTF-8">
+    <title>MMGP</title>
+
+    <!-- Style -->
+    <link rel="stylesheet" type="text/css" href="../css/printer.css">
+
+</head>
+<body>
+    <script>
+        const ipcRenderer = require("electron").ipcRenderer;
+
+        ipcRenderer.on("printPDF", (event, content, title, type) => {
+            document.body.innerHTML = content;
+
+            
+            
+            if (type === "Schedule" || type === "Student") {
+
+                let morebuttons = document.getElementsByClassName('MoreButton')
+                if (morebuttons)
+                    for (let i = 0; i < morebuttons.length; i++) {
+                        morebuttons[i].hidden = true;
+                    }
+                
+                let Table = document.getElementsByClassName('Table')[0]
+                if (Table) {
+                    let HeaderRow = Table.firstChild;
+                    if (HeaderRow)
+                        HeaderRow.firstChild.hidden = true;
+                }
+            }
+            
+            title = title.replace(/"/gi, "");
+            title = title.replace(/ /gi, "");
+            
+            setTimeout(() => {
+                if (confirm("Printing. Are you sure?"))
+                    ipcRenderer.send("readyToPrintPDF", title);
+                else {
+                    ipcRenderer.send("CanceledPrinting", title);
+                }
+            }, 1000)
+            
+        });
+    </script>
+</body>

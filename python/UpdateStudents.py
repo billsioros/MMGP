@@ -1,10 +1,11 @@
 import pyodbc
 from util import GetCredentials, GetSetting
 import sys
-import os
 from itertools import izip
 from DBmanagement import DBManager as DBM
+import os
 import json
+
 
 fileName = sys.argv[1]
 
@@ -13,11 +14,14 @@ with open(fileName, "r") as json_file:
 
 Settings = data["Settings"]
 Database = data["Database"]
+Overwrite = data["Overwrite"]
+
 
 Active = GetSetting(Settings, [["Current_Year", "Active"]])
 Active = Active[0]
 TableNames = GetSetting(Settings, [["Current_Year", Active, "Table_Names"]])
 TableNames = TableNames[0]
+
 ActiveCon, GoogleAPI_key, OpenAPI_key, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
 
@@ -90,30 +94,17 @@ for tableName, key in izip(TableNames, RowListKeys):
 
       cursor.execute(sql)
       RowLists[key] = cursor.fetchall()
-      
 # Select All Buses
-
-sql = "Select BusCode, BusNumber, BusStudentSites     \
-       From dbo.Bus"
-
-cursor.execute(sql)
-Buses = cursor.fetchall()
 
 con.close()
 
-# Create a new Database
 
-DBManager = DBM(Database, new=True, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
-
-print "Inserting Buses"
-DBManager.InsertBus(Buses)
-DBManager.Commit()
-print "Buses Inserted"
+DBManager = DBM(Database, GoogleAPIKey=GoogleAPI_key, OpenAPIKey=OpenAPI_key)
 
 DatabaseDir = os.path.realpath(os.path.dirname(Database))
 
 GeoFailsFile = open(DatabaseDir + "/FormatFails.tsv", "w+")
-GeoFailsFile.write("StudentID\tLastName\tFirstName\tFormattedAddress\tFullAddress\tDayPart\n")
+GeoFailsFile.write("StudentID\tFormattedAddress\tFullAddress\tDayPart\n")
 
 Tables = list()
 
@@ -122,20 +113,8 @@ for key in RowLists.keys():
       DayPart = DayPart.replace("_OldYear", "")
       Tables.append((RowLists[key], DayPart))
 
-print "Inserting Students"
-DBManager.InsertStudent(Tables, overwrite=True, GeoFailsFile=GeoFailsFile)
-DBManager.Commit()
-print "Students Inserted"
 
-DBManager.InsertDepot([["ERECHTHIOU", "6", "17455", "ATTIKIS", "ALIMOY", None]])
-DBManager.Commit()
-
-for DayPart in ["Morning", "Noon", "Study"]:
-      print "Inserting " + DayPart + " Distances"
-      DBManager.InsertDistances(DayPart, direct=True)
-      print DayPart + " Distances Inserted"
-
-
+DBManager.InsertStudent(Tables, overwrite=Overwrite, GeoFailsFile=GeoFailsFile)
 DBManager.Commit()
 
 DBManager.Disconnect()
