@@ -5,6 +5,7 @@
 #include "manager.hpp"
 #include "tsp.hpp"
 #include "sannealing.hpp"
+#include "../../cpp/nlohmann/json.hpp"
 #include <unordered_map>
 #include <iostream>
 #include <memory>
@@ -12,28 +13,61 @@
 #include <string>
 #include <algorithm>
 
-using Cost      = std::unordered_map<const Manager::Student *, double>;
-using Costs     = std::unordered_map<const Manager::Student *, Cost>;
+#include <node.h>
 
-std::string parse(const std::string&);
+using Cost  = std::unordered_map<const Manager::Student *, double>;
+using Costs = std::unordered_map<const Manager::Student *, Cost>;
+
+std::string parse(const std::string&, v8::Isolate *);
 
 void load(
     SQLite::Database&,
     const std::string&,
     std::vector<Manager::Student>&,
-    Manager::Student&);
+    Manager::Student&,
+    v8::Isolate *);
 
-int main(int argc, char * argv[])
+void tsp(const v8::FunctionCallbackInfo<Value>& args)
 {
-    if (argc < 4)
+    v8::Isolate * isolate = args.GetIsolate();
+
+    if (args.Length() < 4)
     {
-        std::cerr << "<MSG>: TSP <database> <Bus-Id> <Day-Part> <Schedule-Id>" << std::endl;
-        return EXIT_FAILURE;
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "<MSG>: TSP <database> <Bus-Id> <Day-Part> <Schedule-Id>"
+                )
+            )
+        );
+
+        std::exit(EXIT_FAILURE);
     }
 
-    std::string dbname(argv[1]),
-                BusScheduleId(argv[2] + parse(argv[3]) + argv[4]),
-                DayPart(argv[3]);
+    if (!args[1]->IsNumber() || !args[3]->IsNumber())
+    {
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "<ERR>: <Bus-Id> and <Schedule-Id> should be positive integers"
+                )
+            )
+        );
+
+        return;
+    }
+
+    std::string dbname(argv[0]->str()),
+                BusScheduleId(argv[1]->str() + parse(argv[2]->str(), isolate) + argv[3]->str()),
+                DayPart(argv[2]->str());
 
     std::unique_ptr<SQLite::Database> database;
     try
@@ -42,13 +76,22 @@ int main(int argc, char * argv[])
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "<ERR>: Exception ( " + e.what() + " )"
+                )
+            )
+        );
     }
 
     std::vector<Manager::Student> students; Manager::Student depot;
 
-    //CHANGE DayPart TO BusScheduleId ONCE EVERYTHING IS OKAY
-    load(*database, DayPart, students, depot);
+    load(*database, BusScheduleId, students, depot, isolate);
 
     auto cost = [&](const Manager::Student& A, const Manager::Student& B)
     {
@@ -104,10 +147,25 @@ int main(int argc, char * argv[])
 
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
-    std::cout << path << std::endl;
+    nlohmann::json json;
+    for (const auto& element : path.second)
+        json["students"].append(element._studentId);
+
+    json["cost"] = path.first;
+    
+    v8::Local<v8::String> rv = v8::String::NewFromUtf8(isolate, json.to_string());
+
+    args.GetReturnValue().Set(rv);
 }
 
-std::string parse(const std::string& DayPart)
+void Init(v8::Local<v8::Object> exports)
+{
+    NODE_SET_METHOD(exports, "tsp", tsp);
+}
+
+NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
+
+std::string parse(const std::string& DayPart, v8::Isolate * isolate)
 {
     if (DayPart == "Morning")
     {
@@ -123,7 +181,18 @@ std::string parse(const std::string& DayPart)
     }
     else
     {
-        std::cerr << "<ERR>: There can be no such option" << std::endl;
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "<ERR>: There can be no such option"
+                )
+            )
+        );
+
         std::exit(EXIT_FAILURE);
     }
 }
@@ -132,7 +201,8 @@ void load(
     SQLite::Database& database,
     const std::string& BusScheduleId,
     std::vector<Manager::Student>& students,
-    Manager::Student& depot
+    Manager::Student& depot,
+    v8::Isolate * isolate
 )
 {
     try
@@ -141,7 +211,7 @@ void load(
             database,
             "SELECT Student.StudentID, Student.AddressID, Address.GPS_X, Address.GPS_Y "\
             "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 30 -- AND Student.BusSchedule = ?"
+            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? AND Student.BusSchedule = ?"
         );
 
         stmt.bind(1, BusScheduleId);
@@ -167,7 +237,17 @@ void load(
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "<ERR>: Exception ( " + e.what() + " )"
+                )
+            )
+        );
     }
 
     try
@@ -193,6 +273,16 @@ void load(
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "<ERR>: Exception ( " + e.what() + " )"
+                )
+            )
+        );
     }
 }
