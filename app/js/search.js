@@ -665,7 +665,7 @@ function ExecuteSQLToProc(sql) {
         sql: sql
     }
 
-    fs.writeFile(datadir + "/tmp/sql.json", JSON.stringify(toJson), (err) => {
+    fs.writeFile(datadir + "tmp/sql.json", JSON.stringify(toJson), (err) => {
         if (err) {
             alert(err)
             console.error(err);
