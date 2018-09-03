@@ -84,6 +84,7 @@ main {
 
 .SideBarHeader {
     margin-bottom: 1px;
+    border-radius: 5px;
     padding: 2%;
     font-size: 18px;
     background-color: rgb(30, 30, 30); 
@@ -93,7 +94,7 @@ main {
 
 .BusButtonsContainer {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(auto-fit, 50px);
 }
 
 .BusButton {
@@ -102,10 +103,9 @@ main {
     background-color: #373838;
 
     border: none;
-    margin: 1px;
+    border-radius: 5px;
+    margin: 0.5px;
     padding-top: 10%;
-
-    max-height: 1fr;  
 }
 
 .BusButton:hover {
@@ -140,6 +140,7 @@ main {
     background-color: #2d2e2e;
 
     border: none;
+    border-radius: 5px;
     outline: none;
     padding: 2%;
     margin: 1px;
@@ -159,6 +160,7 @@ main {
     text-align: center;
     font-size: 15px;
     font-family: 'Ubuntu', Arial, sans-serif;
+    border-radius: 5px;
 }
 
 .Selector {
@@ -171,6 +173,7 @@ main {
     background-color: rgb(30, 30, 30); 
 
     margin: 1px;
+    border-radius: 5px;
 
     height: 28px;
 }
@@ -189,7 +192,8 @@ main {
     
     outline: none;
     border: none;
-    margin: 1px;
+    border-radius: 5px;
+    margin: 0.5px;
 }
 
 .SelectorButton:hover {
@@ -216,22 +220,23 @@ main {
     text-align: left;
     font-size: 13px;
 
-    background-color: #464646;
+    background-color: #373838;
 
     border:none;
+    border-radius: 5px;
     padding: 3% 2%;
-    margin: 1px;
+    margin: 0.5px;
     outline: none;
 
-    width: 100%;
+    width: 95%;
 }
 
 .SearchBar:hover {
-    background-color: #5a5a5a;
+    background-color: #4b4b4b;
 }
 
 .SearchBar:focus {
-    background-color: #616161;
+    background-color: #494949;
 }
 
 .SearchButton {
@@ -240,8 +245,10 @@ main {
     background-color: rgb(46, 46, 46);
 
     border: none;  
+    border-radius: 5px;
     padding: 2.5%;
     margin: 1px;
+
     width: 45%;
 }
 
@@ -265,12 +272,15 @@ main {
     background-color: rgb(56, 56, 56);
 
     border: none;  
-    margin: 1px;
+    border-radius: 5px;
+    margin: 0.5px;
 
     height: 100%;
 
     cursor: pointer;
     
+    overflow: hidden;
+    word-break: normal;
 }
 
 #CalculateDurationButton .loadingGif {
