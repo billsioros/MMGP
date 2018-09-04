@@ -216,7 +216,7 @@ void load(
             database,
             "SELECT Student.StudentID, Student.AddressID, Address.GPS_X, Address.GPS_Y "\
             "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? AND Student.BusSchedule = ?"
+            "WHERE Student.AddressID = Address.AddressID AND Student.BusSchedule = ?"
         );
 
         stmt.bind(1, BusScheduleId);

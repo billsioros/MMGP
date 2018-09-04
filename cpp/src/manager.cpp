@@ -80,10 +80,10 @@ void Manager::load(SQLite::Database& database, Student& depot)
         {
             int current = 0;
             const std::string _addressId(stmt.getColumn(current++).getText());
-            const Vector2 _position(
-                stmt.getColumn(current++).getDouble(),
-                stmt.getColumn(current++).getDouble()
-            );
+
+            const double x = stmt.getColumn(current++).getDouble();
+            const double y = stmt.getColumn(current++).getDouble();
+            const Vector2 _position(x, y);
 
             depot._addressId = _addressId;
             depot._position  = _position;
@@ -162,10 +162,9 @@ void Manager::load(
             for (; current < 7; current++)
                 _days.set(current - 2, stmt.getColumn(current).getText()[0] == '1');
 
-            const Vector2 _position(
-                stmt.getColumn(current++).getDouble(),
-                stmt.getColumn(current++).getDouble()
-            );
+            const double x = stmt.getColumn(current++).getDouble();
+            const double y = stmt.getColumn(current++).getDouble();
+            const Vector2 _position(x, y);
 
             const Vector2 _timespan(
                 0.0, // stmt.getColumn(current++).getDouble(),
@@ -338,8 +337,6 @@ double Manager::distance(
     const std::string& daypart
 )
 {
-    bool failed = false;
-
     try
     {
         SQLite::Statement stmt(database,
@@ -350,7 +347,7 @@ double Manager::distance(
         stmt.bind(1, A._addressId);
         stmt.bind(2, B._addressId);
 
-        if (!(failed = !stmt.executeStep()))
+        if (stmt.executeStep())
             return stmt.getColumn(0).getDouble();
     }
     catch (std::exception& e)
@@ -358,11 +355,8 @@ double Manager::distance(
         std::cerr << e.what() << std::endl;
     }
 
-    if (failed)
-    {
-        std::cerr << "<ERR>: No such student(s) ( " << A << ' ' << B << " )" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
+    std::cerr << "<ERR>: No such student(s) ( " << A << ' ' << B << " )" << std::endl;
+    std::exit(EXIT_FAILURE);
 }
 
 Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)
