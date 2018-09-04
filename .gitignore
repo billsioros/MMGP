@@ -4,3 +4,4 @@ bin/
 data/
 app/node_modules
 app/MMGP-win32-x64
+TSP/build
