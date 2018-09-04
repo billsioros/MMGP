@@ -6,6 +6,8 @@
             "sources":
             [
                 "../TSP/src/main.cpp",
+                "../cpp/src/vector2.cpp",
+                "../cpp/src/manager.cpp",
                 "../cpp/SQLiteCpp/src/Backup.cpp",
                 "../cpp/SQLiteCpp/src/Column.cpp",
                 "../cpp/SQLiteCpp/src/Database.cpp",
@@ -22,7 +24,12 @@
             "cflags!": [ "-fno-exceptions" ],
             "cflags": [ "-W", "-g3", "-std=c++14" ],
             "cflags_cc!": [ "-fno-exceptions" ],
-            "cflags_cc": [ "-W", "-g3", "-std=c++14" ]
+            "cflags_cc": [ "-W", "-g3", "-std=c++14" ],
+            'link_settings': {
+                'libraries': [
+                    '-lsqlite3'
+                ]
+            }
         }
     ]
 }
