@@ -209,10 +209,10 @@ function OnBusClickHandle() {
     }
 
     var button = document.getElementById("ScheduleSearchButton");
-    button.onmouseup = SearchSchedule;
+    button.onclick = SearchSchedule;
 
     button = document.getElementById("AddScheduleButton");
-    button.onmouseup = AddSchedule;
+    button.onclick = AddSchedule;
 
     button = document.getElementById("CalculateDurationButton");
     button.onclick = CalculateScheduleDuration;
@@ -426,6 +426,10 @@ function CalculateScheduleDuration() {
         console.error(data.toString());
     }) 
 
+}
+
+function SolveScheduleTSP() {
+    
 }
 
 

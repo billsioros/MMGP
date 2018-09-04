@@ -188,7 +188,7 @@ main {
 .SelectorButton {
     font-size: 15px;
     
-    background-color: #2d2e2e;
+    background-color: #2e2e2e;
     
     outline: none;
     border: none;
@@ -197,15 +197,15 @@ main {
 }
 
 .SelectorButton:hover {
-    background-color: #4f5050
+    background-color: #333333
 }
 
 .SelectorButton.active {
-    background-color: #5e5f5f
+    background-color: #414141
 }
 
 .SelectorButton:active {
-    background-color: #424242
+    background-color: #414141;
 }
 
 
@@ -232,17 +232,17 @@ main {
 }
 
 .SearchBar:hover {
-    background-color: #4b4b4b;
+    background-color: #404040;
 }
 
 .SearchBar:focus {
-    background-color: #494949;
+    background-color: #404040;
 }
 
 .SearchButton {
     font-size: 15px;
 
-    background-color: rgb(46, 46, 46);
+    background-color: rgb(50, 50, 50);
 
     border: none;  
     border-radius: 5px;
@@ -258,18 +258,18 @@ main {
 }
 
 .SearchButton:hover:not([disabled]), #ClearTabsButton:hover, #CalculateDurationButton:hover:not([disabled]), #PrintButton:hover:not([disabled]) {
-    background-color: rgb(146, 146, 146);
+    background-color: rgb(55, 55, 55);
 }
 
-.SearchButton:active, #ClearTabsButton:active, #CalculateDurationButton:active, #PrintButton:active {
-    background-color: rgb(39, 39, 39);
+.SearchButton:active:not([disabled]), #ClearTabsButton:active, #CalculateDurationButton:active:not([disabled]), #PrintButton:active:not([disabled]) {
+    background-color: rgb(45, 45, 45);
 }
 
 
 #ClearTabsButton, #CalculateDurationButton, #PrintButton {
     font-size: 15px;
 
-    background-color: rgb(56, 56, 56);
+    background-color: rgb(50, 50, 50);
 
     border: none;  
     border-radius: 5px;
