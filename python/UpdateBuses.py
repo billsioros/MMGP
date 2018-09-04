@@ -1,5 +1,5 @@
 import pyodbc
-from util import GetCredentials
+from util import GetCredentials, RowListToDict
 import sys
 from itertools import izip
 from DBmanagement import DBManager as DBM
@@ -47,6 +47,10 @@ sql = "Select BusCode, BusNumber, BusStudentSites     \
 
 cursor.execute(sql)
 Buses = cursor.fetchall()
+
+BusColumns = ["Code", "Number", "Capacity"]
+
+Buses = RowListToDict(Buses, BusColumns)
 
 con.close()
 

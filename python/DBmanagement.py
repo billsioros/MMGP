@@ -71,18 +71,19 @@ class DBManager:
                     Foreign Key (AddressID) References Address(AddressID)  )"
         self.Cursor.execute(sql)
 
-        sql = "Create Table Address (               \
-                    AddressID   varchar(255),       \
-                    Road        varchar(255),       \
-                    Number      varchar(255),       \
-                    ZipCode     int,                \
-                    Prefecture  varchar(255),       \
-                    Municipal   varchar(255),       \
-                    Area        varchar(255),       \
-                    GPS_X       decimal(20, 14),    \
-                    GPS_Y       decimal(20, 14),    \
-                    FullAddress varchar(255),       \
-                    FormattedAddress varchar(255),  \
+        sql = "Create Table Address (                       \
+                    AddressID           varchar(255),       \
+                    Road                varchar(255),       \
+                    Number              varchar(255),       \
+                    ZipCode             int,                \
+                    Prefecture          varchar(255),       \
+                    Municipal           varchar(255),       \
+                    Area                varchar(255),       \
+                    GPS_X               decimal(20, 14),    \
+                    GPS_Y               decimal(20, 14),    \
+                    FullAddress         varchar(255),       \
+                    TranslatedAddress   varchar(255),       \
+                    FormattedAddress    varchar(255),       \
                     Primary Key (AddressID)         )"
         self.Cursor.execute(sql)
 
@@ -123,18 +124,19 @@ class DBManager:
                     Primary Key (BusID)         )"
         self.Cursor.execute(sql)   
 
-        sql = "Create Table Depot (             \
-                AddressID   varchar(255),       \
-                Road        varchar(255),       \
-                Number      varchar(255),       \
-                ZipCode     int,                \
-                Prefecture  varchar(255),       \
-                Municipal   varchar(255),       \
-                Area        varchar(255),       \
-                GPS_X       decimal(20, 14),    \
-                GPS_Y       decimal(20, 14),    \
-                FullAddress varchar(255),       \
-                FormattedAddress varchar(255),  \
+        sql = "Create Table Depot (                     \
+                AddressID           varchar(255),       \
+                Road                varchar(255),       \
+                Number              varchar(255),       \
+                ZipCode             int,                \
+                Prefecture          varchar(255),       \
+                Municipal           varchar(255),       \
+                Area                varchar(255),       \
+                GPS_X               decimal(20, 14),    \
+                GPS_Y               decimal(20, 14),    \
+                FullAddress         varchar(255),       \
+                TranslatedAddress   varchar(255),       \
+                FormattedAddress    varchar(255),       \
                 Primary Key (AddressID)         )"
         self.Cursor.execute(sql)
 
@@ -201,45 +203,46 @@ class DBManager:
             NoGPS = list()
 
             # Insert All Records that already have GPS coordinates
-            for ID, LastName, FirstName, Road, Num, ZipCode, Prefec, Muni, Area, Notes, Level, Class,\
-            BusSchedule, ScheduleOrder, ScheduleTime, Mon, Tue, Wen, Thu, Fri, GPSX, GPSY, Phone, Mobile, OtherPhone1, OtherPhone2 in RowList:
+            for Row in RowList:
 
                 # print LastName.decode("greek", "strict")
                 # print BusSchedule, ScheduleOrder
                 # Concatenate the Address to a single string and hash it
-                FullAddress = util.ConcatenateAddress(Road, Num, ZipCode, Muni, Area, Prefec, "GREECE")
+            
+                FullAddress, TranslatedAddress = util.ConcatenateAddress(Row["Road"], Row["Num"], Row["ZipCode"], Row["Muni"], Row["Area"], Row["Prefec"], "GREECE")
                 
-                HashAddress = self.__Hash(FullAddress)
+                HashAddress = self.__Hash(TranslatedAddress)
                 
                 # If address has not been added to the database add it
-                if GPSX and GPSY:
+                if Row["GPSX"] and Row["GPSY"]:
                     if not Addresses.has_key(HashAddress):
                         # Decimals must be turned to strings
-                        GPSX = str(GPSX)
-                        GPSY = str(GPSY)
+                        GPSX = str(Row["GPSX"])
+                        GPSY = str(Row["GPSY"])
                         
                         Addresses[HashAddress] = (GPSX, GPSY)
-                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, FullAddress, None]
+                        AddressList = [HashAddress, Row["Road"], Row["Num"], Row["ZipCode"], Row["Prefec"], Row["Muni"], Row["Area"], GPSX, GPSY, FullAddress, TranslatedAddress, None]
 
                         self.Cursor.execute("Insert Into Address    \
-                                            Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                                            Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
                 # If there is no GPS coordinates add address to GeoCoding list and geocode it after 
                 # all other addresses have been inserted. This way if an address is already in the database
                 # we do not have to geocode it. (Trying to reduce geocoding requests)
                 else:
-                    NoGPS.append((ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress))
+                    NoGPS.append((Row["ID"], Row["LastName"], Row["FirstName"], HashAddress, \
+                    Row["Road"], Row["Num"], Row["ZipCode"], Row["Prefec"], Row["Muni"], Row["Area"], TranslatedAddress))
 
                 # Add student to the database
                 # Format Some Values
-                if Class:
-                    Class = Class.replace('-', "")
-                    Class.strip()
-                    if Class == "":
-                        Class = None
+                if Row["Class"]:
+                    Row["Class"] = Row["Class"].replace('-', "")
+                    Row["Class"].strip()
+                    if Row["Class"] == "":
+                        Row["Class"] = None
 
-                if Notes:
+                if "Notes":
                     self.__InitParser()
-                    NotesDict = self._Parser.Parse(Notes)
+                    NotesDict = self._Parser.Parse("Notes")
                     EarlyPickup = NotesDict["Early Pickup"]
                     LatePickup = NotesDict["Late Pickup"]
                     EarlyDrop = NotesDict["Early Drop"]
@@ -256,29 +259,31 @@ class DBManager:
                     Comment = None
                     Around = None
 
-                if Phone != None:
-                    Phone.strip(" ")
-                    if Phone == "":
-                        Phone = None
+                if Row["Phone"] != None:
+                    Row["Phone"].strip(" ")
+                    if Row["Phone"] == "":
+                        Row["Phone"] = None
 
-                if Mobile != None:
-                    Mobile.strip(" ")
-                    if Mobile == "":
-                        Mobile = None
+                if Row["Mobile"] != None:
+                    Row["Mobile"].strip(" ")
+                    if Row["Mobile"] == "":
+                        Row["Mobile"] = None
 
-                if OtherPhone1 != None:
-                    OtherPhone1.strip(" ")
-                    if OtherPhone1 == "":
-                        OtherPhone1 = None
+                if Row["OtherPhone1"] != None:
+                    Row["OtherPhone1"].strip(" ")
+                    if Row["OtherPhone1"] == "":
+                        Row["OtherPhone1"] = None
 
-                if OtherPhone2 != None:
-                    OtherPhone2.strip(" ")
-                    if OtherPhone2 == "":
-                        OtherPhone2 = None
+                if Row["OtherPhone2"] != None:
+                    Row["OtherPhone2"].strip(" ")
+                    if Row["OtherPhone2"] == "":
+                        Row["OtherPhone2"] = None
 
-                StudentList = [ID, LastName, FirstName, HashAddress, Level, Class, Mon, Tue, Wen, Thu, Fri, DayPart,
-                Notes, EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, BusSchedule, ScheduleOrder, ScheduleTime,
-                Phone, Mobile, OtherPhone1, OtherPhone2]
+                StudentList = [Row["ID"], Row["LastName"], Row["FirstName"], HashAddress, Row["Level"], Row["Class"], 
+                Row["Mon"], Row["Tue"], Row["Wen"], Row["Thu"], Row["Fri"], DayPart,
+                Row["Notes"], EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, 
+                Row["BusSchedule"], Row["ScheduleOrder"], Row["ScheduleTime"],
+                Row["Phone"], Row["Mobile"], Row["OtherPhone1"], Row["OtherPhone2"]]
                 
                 self.Cursor.execute("Insert Into Student     \
                                 Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
@@ -287,9 +292,9 @@ class DBManager:
             # Insert All Records that do not have GPS coordinates
             i = 0 # Geocoding per sec
           
-            for ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, FullAddress in NoGPS:
+            for ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, TranslatedAddress in NoGPS:
 
-                if not FullAddress:
+                if not TranslatedAddress:
                     continue
 
                 # If address has not been added to the database, geocode it and add it
@@ -302,7 +307,7 @@ class DBManager:
                         sleep(1) # Sleep 1 seconds for safety
                         i = 0
                     requests += 1
-                    FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
+                    FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(TranslatedAddress)
                     i += 1
 
                     valid = False
@@ -310,30 +315,29 @@ class DBManager:
                         Addresses[HashAddress] = (GPSX, GPSY)
                     
                         # Find Error and Log it into a csv of your choosing
-                        valid = self.__LogGeocodingError(ID, LastName, FirstName, FormattedAddress, FullAddress, DayPart, GeoFailsFile)
+                        valid = self.__LogGeocodingError(ID, LastName, FirstName, FormattedAddress, TranslatedAddress, DayPart, GeoFailsFile)
                     else:
-                        valid = False
+                        valid = self.__LogGeocodingError(ID, LastName, FirstName, "None", TranslatedAddress, DayPart, GeoFailsFile)
                         
                     if valid:
-                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY,\
-                        FullAddress, FormattedAddress]
+                        AddressList = [HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, GPSX, GPSY, \
+                        FullAddress, TranslatedAddress, FormattedAddress]
 
                         self.Cursor.execute("Insert Into Address    \
-                                            Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                                            Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
         self.__DiscardAddresses()
 
 
     def InsertBus(self, RowList):
         Buses = self.GetBuses()
-        for Code, Num, Capacity in RowList:
-            
-            Num = int(Num)                   
-            if not Buses.has_key(Code):
-                ToAdd = [Code, Num, Capacity]   
+
+        for Bus in RowList:
+            ToAdd = [Bus["Code"], int(Bus["Number"]), Bus["Capacity"]]      
+
+            if not Buses.has_key(Bus["Code"]):
                 self.Cursor.execute("Insert Into Bus    \
                                         Values (?,?,?)", ToAdd)
             else:
-                ToAdd = [Num, Capacity, Code]
                 self.Cursor.execute("Update Bus     \
                                         Set Number = ?, Capacity = ?    \
                                         Where BusID = ?", ToAdd)
@@ -343,16 +347,16 @@ class DBManager:
 
         for Road, Number, ZipCode, Prefecture, Municipal, Area in RowList:
 
-            FullAddress = util.ConcatenateAddress(Road, Number, ZipCode, Municipal, Area, Prefecture, "GREECE")
-            HashAddress = self.__Hash(FullAddress)
+            FullAddress, TranslatedAddress = util.ConcatenateAddress(Road, Number, ZipCode, Municipal, Area, Prefecture, "GREECE")
+            HashAddress = self.__Hash(TranslatedAddress)
             self.__InitMapsHandler()
-            FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(FullAddress)
+            FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(TranslatedAddress)
 
             AddressList = [HashAddress, Road, Number, ZipCode, Prefecture, Municipal, Area, GPSX, GPSY,\
-            FullAddress, FormattedAddress]
+            FullAddress, TranslatedAddress, FormattedAddress]
 
             self.Cursor.execute("Insert Into Depot    \
-                                Values (?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
 
 
     def InsertDistances(self, DayPart, direct=False, fileName=None):
@@ -509,9 +513,6 @@ class DBManager:
         sql = "Select * From " + DayPart + "Distance"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
-
-        for Row in Rows:
-            print Row
         
         Distances = {}
         for ID1, ID2, Duration, Distance in Rows:
@@ -571,6 +572,11 @@ class DBManager:
         self.Cursor = self.Connection.cursor()
 
 
+    def __ResetRowFactory(self):
+        self.Disconnect()
+        self.Connect(self.FileName)
+
+
     def __InitParser(self):
         if not self._Parser:
             self._Parser = util.Parser()
@@ -599,16 +605,14 @@ class DBManager:
         return sha1(Address).hexdigest()
 
 
-    def __LogGeocodingError(self, ID, LastName, FirstName, FormattedAddress, FullAddress, DayPart, GeoFailsFile):
+    def __LogGeocodingError(self, ID, LastName, FirstName, FormattedAddress, TranslatedAddress, DayPart, GeoFailsFile):
         valid = True 
         if util.CountNumbers(FormattedAddress) <= 5:
             if "&" not in FormattedAddress and " KAI " not in FormattedAddress:
                 valid = False
-                print FullAddress
-                print FormattedAddress
                 if GeoFailsFile:
                     LN = util.TranslateAddress(LastName)
                     FN = util.TranslateAddress(FirstName)
                     GeoFailsFile.write(str(ID) + "\t" + LN + "\t" + FN + "\t" + FormattedAddress + "\t"\
-                    + FullAddress + "\t" + DayPart + "\n")
+                    + TranslatedAddress + "\t" + DayPart + "\n")
         return valid

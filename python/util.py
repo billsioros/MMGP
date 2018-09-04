@@ -8,9 +8,14 @@ import json
 
 class GreekDecoder:
 
-    def __init__(self):
+    def __init__(self, number=False):
         self.LetterDictionary = dict()
+        self.isNumberDecoder = number
         EngLetters = ["'", 'A', 'V', 'G', 'D', 'E', 'Z', 'I', 'TH', 'K', 'L', 'M', 'N', 'KS', 'O', 'P', 'R', 'S', 'T', 'Y', 'F', 'CH', 'PS']
+
+        if self.isNumberDecoder:
+            EngLetters[2] = 'B'
+
         GrLetters = [\
             [u'\u0384'],\
             ['\x80', u'\u0391', u'\u0386'],\
@@ -392,50 +397,50 @@ def ConvertGenitive(Genitive):
 def ConcatenateAddress(Road, Num, ZipCode, Municipal, Area, Prefecture, Country):
     # print (Road, Num, ZipCode, Municipal, Area, Prefecture, Country)
     ResultAddress = ""
+    TranslatedAddress = ""
+
     if not Road:
-        return ResultAddress
+        return (ResultAddress, TranslatedAddress)
     
-    Road = TranslateAddress(Road)
+    TranslatedAddress += TranslateAddress(Road) + " "
     ResultAddress += Road + " "
 
     if "&" not in Road and " KAI " not in Road:
         if Num:
             NewNum = ""
-            Num = TranslateAddress(Num)
+
             for char in Num:
-                if not char == ' ':
+                if char == '-':
+                    break
+                if char != ' ':
                     NewNum += char
-            ResultAddress += NewNum + " "
+            
+            TranslatedAddress += TranslateNumber(NewNum)
+            ResultAddress += NewNum
+
     ResultAddress += ", "
+    TranslatedAddress += ", "
 
-    # if Area:
-    #     Area = TranslateAddress(Area)
-    #     ResultAddress += Area + " "
+    if Municipal:    
+        TrMunicipal = TranslateAddress(Municipal)
+        TrMunicipal = ConvertGenitive(TrMunicipal)
 
-    if Municipal:# and not Area:       
-        Municipal = TranslateAddress(Municipal)
-        Municipal = ConvertGenitive(Municipal)
         ResultAddress += Municipal + " "
+        TranslatedAddress += TrMunicipal + " "
 
     
     if ZipCode:
         ResultAddress += ZipCode + " "  
+        TranslatedAddress += ZipCode + " "
 
     if Prefecture:
-        Prefecture = TranslateAddress(Prefecture)
-        if Prefecture == "PEIRAIOS":
-            ResultAddress += ", "
-            Prefecture = ConvertGenitive(Prefecture)
-            ResultAddress += Prefecture + " "
-
+        TrPrefecture = TranslateAddress(Prefecture)
+        if TrPrefecture == "PEIRAIOS":
+            TrPrefecture = ConvertGenitive(TrPrefecture)
+            TranslatedAddress += TrPrefecture
+            ResultAddress += ", " + Prefecture
     
-
-    #ResultAddress += ", "
-
-    #if Country:
-        #ResultAddress += Country
-    
-    return ResultAddress
+    return (ResultAddress, TranslatedAddress)
 
 
 def TranslateAddress(Address):
@@ -443,6 +448,10 @@ def TranslateAddress(Address):
     ResultAddress = Decoder.Decode(Address)
     return ResultAddress
 
+def TranslateNumber(Number):
+    Decoder = GreekDecoder(number=True)
+    ResultNumber = Decoder.Decode(Number)
+    return ResultNumber
 
 def CountNumbers(String):
     if not isinstance(String, basestring):
@@ -540,4 +549,12 @@ def GetSetting(SettingsFile, Keys):
     return SettingsToReturn
 
 
+def RowListToDict(RowList, ColumnNames):
+    results = []
+    for row in RowList:
+        d = {}
+        for field, column in izip(row, ColumnNames):
+            d[column] = field
+        results.append(d)
 
+    return results

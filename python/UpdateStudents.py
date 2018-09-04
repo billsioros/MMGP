@@ -1,5 +1,5 @@
 import pyodbc
-from util import GetCredentials, GetSetting
+from util import GetCredentials, GetSetting, RowListToDict
 import sys
 from itertools import izip
 from DBmanagement import DBManager as DBM
@@ -60,6 +60,10 @@ for tableName in TableNames:
 
 RowLists = dict()
 
+
+StudentColumns = ["ID", "LastName", "FirstName", "Road", "Num", "ZipCode", "Prefec", "Muni", "Area", "Notes", "Level", "Class",\
+      "BusSchedule", "ScheduleOrder", "ScheduleTime", "Mon", "Tue", "Wen", "Thu", "Fri", "GPSX", "GPSY", "Phone", "Mobile", "OtherPhone1", "OtherPhone2"]
+
 for tableName, key in izip(TableNames, RowListKeys):
       sql = "Select                             \
                   sched.StCode,                 \
@@ -94,6 +98,8 @@ for tableName, key in izip(TableNames, RowListKeys):
 
       cursor.execute(sql)
       RowLists[key] = cursor.fetchall()
+
+      RowLists[key] = RowListToDict(RowLists[key], StudentColumns)
 # Select All Buses
 
 con.close()

@@ -1,5 +1,5 @@
 import pyodbc
-from util import GetCredentials, GetSetting
+from util import GetCredentials, GetSetting, RowListToDict
 import sys
 import os
 from itertools import izip
@@ -7,6 +7,8 @@ from DBmanagement import DBManager as DBM
 import json
 
 fileName = sys.argv[1]
+
+# Connection
 
 with open(fileName, "r") as json_file:
     data = json.load(json_file)
@@ -56,6 +58,9 @@ for tableName in TableNames:
 
 RowLists = dict()
 
+StudentColumns = ["ID", "LastName", "FirstName", "Road", "Num", "ZipCode", "Prefec", "Muni", "Area", "Notes", "Level", "Class",\
+            "BusSchedule", "ScheduleOrder", "ScheduleTime", "Mon", "Tue", "Wen", "Thu", "Fri", "GPSX", "GPSY", "Phone", "Mobile", "OtherPhone1", "OtherPhone2"]
+
 for tableName, key in izip(TableNames, RowListKeys):
       sql = "Select                             \
                   sched.StCode,                 \
@@ -90,6 +95,8 @@ for tableName, key in izip(TableNames, RowListKeys):
 
       cursor.execute(sql)
       RowLists[key] = cursor.fetchall()
+
+      RowLists[key] = RowListToDict(RowLists[key], StudentColumns)
       
 # Select All Buses
 
@@ -99,6 +106,9 @@ sql = "Select BusCode, BusNumber, BusStudentSites     \
 cursor.execute(sql)
 Buses = cursor.fetchall()
 
+BusColumns = ["Code", "Number", "Capacity"]
+
+Buses = RowListToDict(Buses, BusColumns)
 con.close()
 
 # Create a new Database
@@ -130,10 +140,10 @@ print "Students Inserted"
 DBManager.InsertDepot([["ERECHTHIOU", "6", "17455", "ATTIKIS", "ALIMOY", None]])
 DBManager.Commit()
 
-for DayPart in ["Morning", "Noon", "Study"]:
-      print "Inserting " + DayPart + " Distances"
-      DBManager.InsertDistances(DayPart, direct=True)
-      print DayPart + " Distances Inserted"
+# for DayPart in ["Morning", "Noon", "Study"]:
+#       print "Inserting " + DayPart + " Distances"
+#       DBManager.InsertDistances(DayPart, direct=True)
+#       print DayPart + " Distances Inserted"
 
 
 DBManager.Commit()
