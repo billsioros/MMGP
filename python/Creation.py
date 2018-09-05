@@ -6,15 +6,15 @@ from itertools import izip
 from DBmanagement import DBManager as DBM
 import json
 
-fileName = sys.argv[1]
+jsonRequest = sys.argv[1]
 
 # Connection
 
-with open(fileName, "r") as json_file:
-    data = json.load(json_file)
+data = json.loads(jsonRequest)
 
 Settings = data["Settings"]
 Database = data["Database"]
+
 
 Active = GetSetting(Settings, [["Current_Year", "Active"]])
 Active = Active[0]

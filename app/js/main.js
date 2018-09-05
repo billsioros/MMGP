@@ -139,22 +139,12 @@ function CreateDatabase() {
         Database: DBFile
     }
 
-    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
-        if (err) {
-            console.error(err);
-            return;
-        };
-    });
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "Creation.py", jsonfile]);
+    var proc = spawn('python', [pythondir + "Creation.py", JSON.stringify(toJson)]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
-        fs.unlink(jsonfile, (err) => {
-            if (err)
-                console.error(err)
-        })
     })
 
     proc.stdout.on('data', function(data) {
@@ -196,22 +186,11 @@ function BackupDatabase() {
         Database: DBFile
     }
 
-    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
-        if (err) {
-            console.error(err);
-            return;
-        };
-    });
-
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "BackupDatabase.py", jsonfile]);
+    var proc = spawn('python', [pythondir + "BackupDatabase.py", JSON.stringify(toJson)]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
-        fs.unlink(jsonfile, (err) => {
-            if (err)
-                console.error(err)
-        })
     })
 
     proc.stdout.on('data', function(data) {
@@ -264,22 +243,11 @@ function RestoreDatabase() {
             Backup: fileNames[0]
         }
 
-        fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
-            if (err) {
-                console.error(err);
-                return;
-            };
-        });
-
         spawn = require("child_process").spawn;
-        var proc = spawn('python', [pythondir + "RestoreDatabase.py", jsonfile]);
+        var proc = spawn('python', [pythondir + "RestoreDatabase.py", JSON.stringify(toJson)]);
 
         proc.on('close', function(code) {
             progressBar.setCompleted();
-            fs.unlink(jsonfile, (err) => {
-                if (err)
-                    console.error(err)
-            })
         })
 
         proc.stdout.on('data', function(data) {
@@ -320,22 +288,12 @@ function UpdateStudents(overwrite=false) {
         Overwrite: overwrite
     }
 
-    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
-        if (err) {
-            console.error(err);
-            return;
-        };
-    });
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "UpdateStudents.py", jsonfile]);
+    var proc = spawn('python', [pythondir + "UpdateStudents.py", JSON.stringify(toJson)]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
-        fs.unlink(jsonfile, (err) => {
-            if (err)
-                console.error(err)
-        })
     })
 
     proc.stderr.on('data', function(data) {
@@ -373,22 +331,12 @@ function UpdateBuses() {
         Settings: settings,
         Database: DBFile
     }
-    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
-        if (err) {
-            console.error(err);
-            return;
-        };
-    });
 
     spawn = require("child_process").spawn;
-    var proc = spawn('python', [pythondir + "UpdateBuses.py", jsonfile]);
+    var proc = spawn('python', [pythondir + "UpdateBuses.py", JSON.stringify(toJson)]);
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
-        fs.unlink(jsonfile, (err) => {
-            if (err)
-                console.error(err)
-        })
     })
 
     proc.stderr.on('data', function(data) {
@@ -402,7 +350,6 @@ function UpdateBuses() {
 }
 
 function UpdateAllDistances() {
-    let fs = require('fs')
     let DayParts = ["Study", "Noon", "Morning"]
 
     let firstdistproc = UpdateDayPartDistances(DayParts[0], true)
@@ -422,36 +369,17 @@ function UpdateAllDistances() {
             thidistproc.process.on('close', function() {
 
                 thidistproc.progressBar.setCompleted();
-                let jsonfile = datadir + "tmp/update" + DayParts[2] + "distances.json"
-                fs.unlink(jsonfile, (err) => {
-                    if (err)
-                        console.error(err)
-                })
             })
 
             thidistproc.process.stderr.on('data', function(data) {
                 dialog.showErrorBox(DayParts[2] + "Distances Error", data.toString());
                 console.error(data.toString());
             })
-
-            let jsonfile = datadir + "tmp/update" + DayParts[1] + "distances.json"
-            fs.unlink(jsonfile, (err) => {
-                if (err) {
-                    dialog.showErrorBox(DayParts[0] + "File System Error", err);
-                    console.error(err)
-                }
-            })
         })
 
         secdistproc.process.stderr.on('data', function(data) {
             dialog.showErrorBox(DayParts[1] + "Distances Error", data.toString());
             console.error(data.toString());
-        })
-
-        let jsonfile = datadir + "tmp/update" + DayParts[0] + "distances.json"
-        fs.unlink(jsonfile, (err) => {
-            if (err)
-                console.error(err)
         })
     })
 
@@ -463,7 +391,6 @@ function UpdateAllDistances() {
 }
 
 function AllDistancesToFile() {
-    let fs = require('fs')
     dialog.showOpenDialog((fileNames) => {
         if (!fileNames) {
             console.log("undefined filenames")
@@ -491,11 +418,6 @@ function AllDistancesToFile() {
                 thidistproc.process.on('close', function() {
     
                     thidistproc.progressBar.setCompleted();
-                    let jsonfile = datadir + "tmp/update" + DayParts[2] + "distances.json"
-                    fs.unlink(jsonfile, (err) => {
-                        if (err)
-                            console.error(err)
-                    })
                 })
     
                 thidistproc.process.stderr.on('data', function(data) {
@@ -503,13 +425,6 @@ function AllDistancesToFile() {
                     console.error(data.toString());
                 })
 
-                let jsonfile = datadir + "tmp/update" + DayParts[1] + "distances.json"
-                fs.unlink(jsonfile, (err) => {
-                    if (err) {
-                        dialog.showErrorBox(DayParts[0] + "File System Error", err);
-                        console.error(err)
-                    }
-                })
             })
     
             secdistproc.process.stderr.on('data', function(data) {
@@ -517,11 +432,6 @@ function AllDistancesToFile() {
                 console.error(data.toString());
             })
 
-            let jsonfile = datadir + "tmp/update" + DayParts[0] + "distances.json"
-            fs.unlink(jsonfile, (err) => {
-                if (err)
-                    console.error(err)
-            })
         })
     
         firstdistproc.process.stderr.on('data', function(data) {
@@ -538,17 +448,11 @@ function FileToAllDistances() {
 }
 
 function UpdateSpecificDistances(DayPart) {
-    let fs = require('fs')
     let proc = UpdateDayPartDistances(DayPart, true)
 
     proc.process.on('close', function() {
         proc.progressBar.setCompleted()
         console.log("Updating " + DayPart + " Distances completed.")
-        let jsonfile = datadir + "tmp/update" + DayPart + "distances.json"
-        fs.unlink(jsonfile, (err) => {
-            if (err)
-                console.error(err)
-        })
     })
 
     proc.process.stderr.on('data', function(data) {
@@ -562,8 +466,6 @@ function UpdateSpecificDistances(DayPart) {
 }
 
 function SpecificDistancesToFile(DayPart) {
-    let fs = require('fs')
-
     dialog.showOpenDialog((fileNames) => {
         if (!fileNames) {
             console.log("undefined filenames")
@@ -577,13 +479,6 @@ function SpecificDistancesToFile(DayPart) {
         proc.process.on('close', function() {
             proc.progressBar.setCompleted();
             console.log("Updating " + DayPart + " Distances to file: " + fileName + " completed.")
-            let jsonfile = datadir + "tmp/update" + DayPart + "distances.json"
-            fs.unlink(jsonfile, (err) => {
-                if (err) {
-                    dialog.showErrorBox("File System Error", err);
-                    console.error(err)
-                }
-            })
         })
     
         proc.process.stderr.on('data', function(data) {
@@ -613,15 +508,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
         toJson.fileName = fileName
     }
 
-    fs.writeFile(jsonfile, JSON.stringify(toJson), (err) => {
-        if (err) {
-            dialog.showErrorBox("File System Error", err);
-            console.error(err);
-            return;
-        };
-    });
-
-    updistproc = spawn('python', [pythondir + "UpdateDistances.py", jsonfile]);
+    updistproc = spawn('python', [pythondir + "UpdateDistances.py", JSON.stringify(toJson)]);
 
     var progressBar = undefined
 

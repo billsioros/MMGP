@@ -5,11 +5,9 @@ import os
 
 cwd = os.getcwd()
 
-fileName = sys.argv[1]
+jsonRequest = sys.argv[1]
 
-
-with open(fileName, "r") as json_file:
-    data = json.load(json_file)
+data = json.loads(jsonRequest)
 
 students = data["students"]
 Database = data["Database"]
@@ -59,5 +57,4 @@ Result = {
     "Duration" : FullDuration
 }
 
-with open(fileName, "w") as json_file:
-    json.dump(Result, json_file, sort_keys=True, indent=4)
+print json.dumps(Result, sort_keys=True, indent=4)

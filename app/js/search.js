@@ -380,45 +380,26 @@ function CalculateScheduleDuration() {
         })
     }
 
-    reqrespfile = datadir + "/tmp/sched.json";
-
-    fs.writeFile(datadir + "/tmp/sched.json", JSON.stringify(toJson), (err) => {
-        if (err) {
-            alert(err);
-            console.error(err);
-            return;
-        };
-    })
-
-    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", reqrespfile]);
+    var proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", JSON.stringify(toJson)]);
 
     proc.on('close', function(code) {
+        loading.hidden = true;
+        loading.nextElementSibling.innerHTML = "Calculate Duration"
+    })
+
+    proc.stdout.on('data', function(data) {
+        
         console.log("Calculating Completed");
+        Results = JSON.parse(data.toString());
 
-        var json_content;
-        let raw_data = fs.readFileSync(datadir + "/tmp/sched.json");
-        let raw_results = JSON.parse(raw_data)
-
-        let Distance = raw_results.Distance;
-        let Duration = raw_results.Duration;
+        let Distance = Results.Distance;
+        let Duration = Results.Duration;
 
         let Minutes = Math.ceil(Duration / 60)
         let Seconds = Math.ceil(Duration % 60)
 
         alert("Distance: " + (Distance / 1000).toString() + "km\nDuration: " + Minutes.toString() + "min " + Seconds.toString() + "sec.");
-        loading.hidden = true;
-        loading.nextElementSibling.innerHTML = "Calculate Duration"
-
-        fs.unlink(reqrespfile, (err) => {
-            if (err) {
-                alert(err);
-                console.error(err)
-            }
-        })
-    })
-
-    proc.stdout.on('data', function(data) {
-        console.log(data.toString());
+        
     })
 
     proc.stderr.on('data', function(data) {

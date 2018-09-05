@@ -548,7 +548,6 @@ class DBManager:
         if Rows:
             return (Rows[0]["Distance"], Rows[0]["Duration"])
         else:
-            print AddressID_1 + " -> " + AddressID_2 + " does not exist!"
             return []
 
 

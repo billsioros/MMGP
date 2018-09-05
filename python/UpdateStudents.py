@@ -7,10 +7,9 @@ import os
 import json
 
 
-fileName = sys.argv[1]
+jsonRequest = sys.argv[1]
 
-with open(fileName, "r") as json_file:
-    data = json.load(json_file)
+data = json.loads(jsonRequest)
 
 Settings = data["Settings"]
 Database = data["Database"]
