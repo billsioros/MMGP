@@ -1,28 +1,50 @@
 const {app, Menu, BrowserWindow, dialog, ipcMain, shell, os} = require('electron')
 
+
+// #region Variables
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+
 let win
 let printwin
 let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
 let settings = datadir + "MMGP_settings.json"
 let DBFile = datadir + "MMGP_data.db"
+let closing = false
 
-function createWindow() {
-    // Create the browser window.
-    win = new BrowserWindow({width:1640, height:840, title:"MMGP", opacity: 1.0})
-    win.maximize();
+// #endregion   //
 
 
+
+// #region Window Handlers  //
+
+function initPrintWindow() {
+    if (closing) {
+        printwin = null;
+    }
     printwin = new BrowserWindow({width:1640, height:840, title:"MMGP_Print", opacity: 1.0});
     printwin.loadFile("html/printer.html")
     printwin.maximize();
     printwin.hide();
     // printwin.webContents.openDevTools();
     printwin.on("closed", () => {
-        printwin = undefined;
+        if (closing) {
+            printwin = null;
+        }
+        else {
+            initPrintWindow();
+        }
     });
+}
+
+function createWindow() {
+    // Create the browser window.
+    win = new BrowserWindow({width:1640, height:840, title:"MMGP", opacity: 1.0})
+    win.maximize();
+
+    initPrintWindow();
 
 
     // and Load the index.html of the app
@@ -86,7 +108,11 @@ function createWindow() {
         {
             label: 'Window',
             submenu: [
-                {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {win.reload(); printwin.reload();}},
+                {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {
+                    win.reload();
+                    printwin.reload();
+                    printwin.hide();
+                }},
                 {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools(); printwin.webContents.toggleDevTools();}},
             ]
         }
@@ -100,10 +126,16 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
+        closing = true;
         printwin.close()
-        printwin = null    
     })
 }
+
+// #endregion
+
+
+
+// #region Create - Backup - Restore    //
 
 function CreateDatabase() {
     spawn = require("child_process").spawn;
@@ -260,6 +292,11 @@ function RestoreDatabase() {
     })
 }
 
+// #endregion
+
+
+// #region Update Students - Buses      //
+
 function UpdateStudents(overwrite=false) {
     const ProgressBar = require('electron-progressbar');
 
@@ -348,6 +385,11 @@ function UpdateBuses() {
         console.log(data.toString());
     })
 }
+
+// #endregion   //
+
+
+// #region Update All Distances //
 
 function UpdateAllDistances() {
     let DayParts = ["Study", "Noon", "Morning"]
@@ -447,6 +489,11 @@ function FileToAllDistances() {
 
 }
 
+// #endregion
+
+
+// #region Update Specific Distances //
+
 function UpdateSpecificDistances(DayPart) {
     let proc = UpdateDayPartDistances(DayPart, true)
 
@@ -489,6 +536,11 @@ function SpecificDistancesToFile(DayPart) {
     })
 }
 
+// #endregion
+
+
+// #region Update Distances Handler //
+
 function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     const spawn = require("child_process").spawn;
     var updistproc;
@@ -528,6 +580,11 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     return {process: updistproc, progressBar: progressBar};
 }
 
+// #endregion
+
+
+// #region DB Connection - TableNames handler   //
+
 function setActiveConnection(con) {
     let fs = require("fs");
 
@@ -565,6 +622,13 @@ function setActiveCurrentYear(year) {
         };
     });
 }
+
+// #endregion
+
+
+
+// #region Electron App Handler //
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -587,6 +651,12 @@ app.on('activate', () => {
         createWindow
     }
 })
+
+// #endregion
+
+
+
+// #region Message Getter for printing  //
 
 // retransmit it to printwin
 ipcMain.on("printPDF", (event, content, title, type) => {
@@ -633,5 +703,7 @@ ipcMain.on("CanceledPrinting", (event) => {
     printwin.hide();
     event.sender.send('canceled-printing')
 })
+
+// #endregion   //
 
 

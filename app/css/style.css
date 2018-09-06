@@ -100,7 +100,7 @@ main {
 .BusButton {
     font-size: 20px;
 
-    background-color: #373838;
+    background-color: #2e2e2e;
 
     border: none;
     border-radius: 5px;
@@ -109,15 +109,15 @@ main {
 }
 
 .BusButton:hover {
-    background-color: #3e3f3f
+    background-color: #333333
 }
 
 .BusButton.active {
-    background-color: #5e5f5f
+    background-color: #414141
 }
 
 .BusButton:active {
-    background-color: #424242
+    background-color: #414141;
 }
 
 /* Bus Selectors */

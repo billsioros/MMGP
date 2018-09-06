@@ -34,13 +34,13 @@
             title = title.replace(/"/gi, "");
             title = title.replace(/ /gi, "");
             
-            // setTimeout(() => {
-            //     if (confirm("Printing. Are you sure?"))
-            //         ipcRenderer.send("readyToPrintPDF", title);
-            //     else {
-            //         ipcRenderer.send("CanceledPrinting", title);
-            //     }
-            // }, 1000)
+            setTimeout(() => {
+                if (confirm("Printing. Are you sure?"))
+                    ipcRenderer.send("readyToPrintPDF", title);
+                else {
+                    ipcRenderer.send("CanceledPrinting", title);
+                }
+            }, 1000)
             
         });
     </script>

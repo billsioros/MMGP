@@ -70,10 +70,10 @@ body {
 }
 
 .RowHeader {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 11px;
 
-    background-color: rgb(172, 171, 171);
+    background-color: rgb(207, 207, 207);
     /* border: 1px solid black; */
 
     padding: 5px 5%;
@@ -83,7 +83,7 @@ body {
 .RowData {
     font-size: 11px;
 
-    background-color: rgb(226, 226, 226);
+    background-color: rgb(238, 238, 238);
 
     /* border: 1px solid black; */
     padding: 5px 5%;
