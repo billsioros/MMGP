@@ -294,7 +294,7 @@ function GetScheduleSearchCriteria() {
 
         let activeDayPart = activeDayPartButton.innerHTML;
 
-        if (!activeDayPartButton || !activeSchedule) {
+        if (!activeDayPart || !activeSchedule) {
             alert("Error: No DayPart or Schedule given.");
             return;
         }
@@ -338,7 +338,7 @@ function GetScheduleSearchCriteria() {
 function SearchSchedule() {
 
     let busSchedules = GetScheduleSearchCriteria();
-    if (!busSchedules)
+    if (busSchedules.length === 0)
         return;
 
     let loading = document.getElementById("ScheduleSearchButton").childNodes[1];
@@ -875,7 +875,7 @@ function DisplayStudentCard(student) {
         let lab = document.createElement("label");
         lab.innerHTML = "Last Name";
         GInfo.appendChild(lab);
-        p = document.createElement("p");
+        let p = document.createElement("p");
         p.innerHTML = student.LastName;
         GInfo.appendChild(p);
 
@@ -883,7 +883,7 @@ function DisplayStudentCard(student) {
         lab = document.createElement("label");
         lab.innerHTML = "First Name";
         GInfo.appendChild(lab);
-        let p = document.createElement("p");
+        p = document.createElement("p");
         p.innerHTML = student.FirstName;
         GInfo.appendChild(p);
       
@@ -927,10 +927,10 @@ function DisplayStudentCard(student) {
 
 
         // Mobile Phone
-        let lab = document.createElement("label");
+        lab = document.createElement("label");
         lab.innerHTML = "Mobile";
         Phones.appendChild(lab);
-        let p = document.createElement("p");
+        p = document.createElement("p");
         if (student.Mobile) {
             p.innerHTML = student.Mobile
         }
@@ -941,10 +941,10 @@ function DisplayStudentCard(student) {
 
 
         // Other Phone 2
-        let lab = document.createElement("label");
+        lab = document.createElement("label");
         lab.innerHTML = "Other Phone 1";
         Phones.appendChild(lab);
-        let p = document.createElement("p");
+        p = document.createElement("p");
         if (student.OtherPhone1) {
             p.innerHTML = student.OtherPhone1;
         }
@@ -955,10 +955,10 @@ function DisplayStudentCard(student) {
 
 
         // Other Phone 2
-        let lab = document.createElement("label");
+        lab = document.createElement("label");
         lab.innerHTML = "Other Phone 2";
         Phones.appendChild(lab);
-        let p = document.createElement("p");
+        p = document.createElement("p");
         if (student.OtherPhone2) {
             p.innerHTML = student.OtherPhone2;
         }
@@ -1975,7 +1975,7 @@ function OnCreateWindow() {
     spawn = require('child_process').spawn;
     fs = require('fs');
 
-    let raw_data = fs.readFileSync("./images/colors.json");
+    let raw_data = fs.readFileSync(__dirname + "/../images/colors.json");
     let data = JSON.parse(raw_data)
 
     MarkerColors = data.colors;
