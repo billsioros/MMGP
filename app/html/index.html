@@ -31,7 +31,7 @@
     <div class = "SideBar">
         
         <h2 class = "SideBarHeader">Bus</h2>
-        <div class = "BusButtonsContainer">
+        <div id = "BusButtonsContainer">
             
         </div>
 
@@ -50,21 +50,27 @@
             
             <div id="SchedulesSelector" class = "Selector">
                 <h2 class="SelectorHeader">Schedule</h2>
-                <select id = "ScheduleSelectorDropDown">
+                <div id = "ScheduleSelectorContainer">
+                    
+                </div>
                 </select>
+            </div>
+
+            <div id="SelectorsSearchButtons">
+                <button type="submit" id = "ScheduleSearchButton" class="SearchButton">
+                    <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                    <span>Search Schedule(s)</span>
+                </button>
+                <button type='button' id = "AddScheduleButton" class="SearchButton" disabled>
+                    <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                    <span>Add Schedule(s)</span>
+                </button>
             </div>
         </div>
 
         <!-- <br> -->
 
-        <button type="submit" id = "ScheduleSearchButton" class="SearchButton">
-            <img src="../images/General/loading.gif" class="loadingGif" hidden>
-            <span>Search</span>
-        </button>
-        <button type='button' id = "AddScheduleButton" class="SearchButton" disabled>
-            <img src="../images/General/loading.gif" class="loadingGif" hidden>
-            <span>Add Schedule</span>
-        </button>
+        
 
         <br><br><br><br>
 
@@ -83,9 +89,9 @@
             <input type="text" placeholder="DayPart.." id = "DayPartBar" class="SearchBar">
             <button type="submit" id = "StudentSearchButton" class="SearchButton">
                     <img src="../images/General/loading.gif" class="loadingGif" hidden>
-                    <span>Search</span>
+                    <span>Search Student(s)</span>
             </button>
-            <button type='button' id = "StudentClearButton" class="SearchButton">Clear</button>          
+            <button type='button' id = "StudentClearButton" class="SearchButton">Clear Bars</button>          
         </div>
 
         

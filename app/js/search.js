@@ -39,7 +39,7 @@ let MarkerURL;
 // #region Bus Searching        //
 
 
-    // #region Side-bar Buttons functions       //
+    // #region Side-bar Schedule Searching Buttons functions       //
 
 function GetActiveDayPart() {
     let buttons = document.getElementsByClassName("DayPartSelectorButton");
@@ -56,18 +56,25 @@ function GetActiveDayPart() {
 }
 
 function GetActiveSchedule() {
-    let DropDown = document.getElementById("ScheduleSelectorDropDown");
-    return DropDown.value;
+    let buttons = document.getElementsByClassName("ScheduleButton");
+    let active = [];
+
+    for (let i = 0; i < buttons.length; i++) {
+        if (buttons[i].classList.contains("active")) {
+            active.push(buttons[i]);
+        }
+    }
+
+    return active
 }
 
 function GetActiveBus() {
     let buttons = document.getElementsByClassName("BusButton");
-    let active = null;
+    let active = [];
 
     for (let i = 0; i < buttons.length; i++) {
         if (buttons[i].classList.contains("active")) {
-            active = buttons[i];
-            break;
+            active.push(buttons[i]);
         }
     }
 
@@ -76,8 +83,8 @@ function GetActiveBus() {
 
 // Bus Search Button Generation //
 function GenerateScheduleButtons() {
-    let selectordropdown = document.getElementById("ScheduleSelectorDropDown");
-    selectordropdown.innerHTML = "";
+    let ScheduleContainer = document.getElementById("ScheduleSelectorContainer");
+    ScheduleContainer.innerHTML = "";
 
     let DayPart = GetActiveDayPart().innerHTML;
     let sql;
@@ -91,18 +98,13 @@ function GenerateScheduleButtons() {
             break;
         case "Study":
             sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
-            let bus = GetActiveBus();
-            if (bus)
-                bus.classList.remove("active")
+            let buses = GetActiveBus();
+            for (let i = 0; i < buses.length; i++)
+                buses[i].classList.remove("active")
             break;
         default: break;
     }
 
-    let option = document.createElement("option");
-    option.className = "ScheduleSelectorOption";
-    option.value = "";
-    option.innerHTML = "";
-    selectordropdown.appendChild(option);
 
     let searchobj = ExecuteSQLToProc(sql, function() {
         
@@ -115,11 +117,13 @@ function GenerateScheduleButtons() {
             
             for (let i = 0; i < Rows.length; i++) {
                 let row = Rows[i];
-                let option = document.createElement("option");
-                option.className = "ScheduleSelectorOption";
-                option.value = row.BusSchedule;
-                option.innerHTML = row.BusSchedule;
-                selectordropdown.appendChild(option);
+                const newButton = document.createElement("button");
+                newButton.type = "button";
+                newButton.className = "ScheduleButton";
+                newButton.innerHTML = row.BusSchedule;
+                newButton.onclick = OnScheduleClick;
+
+                ScheduleContainer.appendChild(newButton);
             }
         }
         else {
@@ -133,11 +137,13 @@ function GenerateScheduleButtons() {
 
             
             for (let i = 0; i < distinctSchedules.length; i++) {
-                let option = document.createElement("option");
-                option.className = "ScheduleSelectorOption";
-                option.value = i + 1;
-                option.innerHTML = i + 1;
-                selectordropdown.appendChild(option);
+                const newButton = document.createElement("button");
+                newButton.type = "button";
+                newButton.className = "ScheduleButton";
+                newButton.innerHTML = i + 1;
+                newButton.onclick = OnScheduleClick;
+
+                ScheduleContainer.appendChild(newButton);
             }
         }
 
@@ -152,7 +158,7 @@ function GenerateScheduleButtons() {
 }
 
 function GenerateBusButtons() {
-    const BusButtons = document.getElementsByClassName("BusButtonsContainer")[0];
+    const BusButtons = document.getElementById("BusButtonsContainer");
 
     let sql = "Select Number From Bus Order By Number";
 
@@ -223,18 +229,28 @@ function OnDayPartClick() {
 
 function OnScheduleClick() {
     let prevActive = GetActiveSchedule();
-    if (prevActive)
-        prevActive.classList.remove("active");
+        
+    if (prevActive.includes(this)) {
+        this.classList.remove("active");
+        prevActive.splice(prevActive.indexOf(this), 1);
+        return;
+    }
+    
     this.classList.add("active");
+    prevActive.push(this);
 }
 
 function OnBusClick() {
     let prevActive = GetActiveBus();
-    if (prevActive)
-        prevActive.classList.remove("active");
-    if (prevActive === this)
+        
+    if (prevActive.includes(this)) {
+        this.classList.remove("active");
+        prevActive.splice(prevActive.indexOf(this), 1);
         return;
+    }
+    
     this.classList.add("active");
+    prevActive.push(this);
 }
 
 function CheckDisabledScheduleButton(tab) {
@@ -265,51 +281,64 @@ function CheckDisabledScheduleButton(tab) {
 
 function GetScheduleSearchCriteria() {
     let activeBus = null;
-    let activeBusButton = GetActiveBus();
-
-    if (activeBusButton)
-        activeBus = activeBusButton.innerHTML;
-
+    let activeSchedule = null;
+    let activeBusButtons = GetActiveBus();
     let activeDayPartButton = GetActiveDayPart()
-    let activeSchedule = GetActiveSchedule();
+    let activeSchedules = GetActiveSchedule();
 
-    if (!activeDayPartButton || !activeSchedule) {
-        alert("Error: No DayPart or Schedule given.");
-        return;
+    let busSchedules = []
+
+    for (let j = 0; j < activeSchedules.length; j++) {
+    
+        activeSchedule = activeSchedules[j];
+
+        let activeDayPart = activeDayPartButton.innerHTML;
+
+        if (!activeDayPartButton || !activeSchedule) {
+            alert("Error: No DayPart or Schedule given.");
+            return;
+        }
+
+        let busSchedule;
+
+        if (activeDayPart === "Study") 
+            busSchedules.push(activeSchedule.innerHTML)
+
+        else {
+            for (let i = 0; i < activeBusButtons.length; i++) {
+
+                activeBus = activeBusButtons[i].innerHTML
+    
+                switch(activeDayPart) {
+                    case "Morning":
+                        if (!activeBus) {
+                            alert("Error: No Bus given.");
+                            return;
+                        }
+                        busSchedule = activeBus + "Π" + activeSchedule.innerHTML;
+                        break;
+                    case "Noon":
+                        if (!activeBus) {
+                            alert("Error: No Bus given.");
+                            return;
+                        }
+                        busSchedule = activeBus + "Μ" + activeSchedule.innerHTML;
+                        break;
+                    default: break;
+                }
+    
+                busSchedules.push(busSchedule)
+            }
+        }
     }
 
-    let activeDayPart = activeDayPartButton.innerHTML;
-
-    let busSchedule;
-
-    switch(activeDayPart) {
-        case "Morning":
-            if (!activeBus) {
-                alert("Error: No Bus given.");
-                return;
-            }
-            busSchedule = activeBus + "Π" + activeSchedule;
-            break;
-        case "Noon":
-            if (!activeBus) {
-                alert("Error: No Bus given.");
-                return;
-            }
-            busSchedule = activeBus + "Μ" + activeSchedule;
-            break;
-        case "Study":
-            busSchedule = activeSchedule;
-            break;
-        default: break;
-    }
-
-    return busSchedule;
+    return busSchedules;
 }
 
 function SearchSchedule() {
 
-    let busSchedule = GetScheduleSearchCriteria();
-    if (!busSchedule)
+    let busSchedules = GetScheduleSearchCriteria();
+    if (!busSchedules)
         return;
 
     let loading = document.getElementById("ScheduleSearchButton").childNodes[1];
@@ -317,24 +346,118 @@ function SearchSchedule() {
 
     loading.nextElementSibling.innerHTML = "Searching";
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
+    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+
+    for (let i = 0; i < busSchedules.length; i++) {
+        let busSchedule = busSchedules[i];
+        sql += "BusSchedule = \"" + busSchedule + "\" ";
+
+        if (i + 1 < busSchedules.length) {
+            sql += "or ";
+        }
+    }
+
+    sql += ") Order by BusSchedule, ScheduleOrder"
     
     let searchobj = ExecuteSQLToProc(sql, function() {
         let Students = ScheduleJsonRead(searchobj.json_file);
 
-        let title = busSchedule;
+        let title = "";
+        for (let i = 0; i < busSchedules.length; i++) {
+            title += busSchedules[i]
+            if (i + 1 < busSchedules.length) {
+                title += ", ";
+            }
+        }
+
         let waitTime = 20;
         let type = "Schedule";  
 
         let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
         newSearchTab.activate(false);
-        newSearchTab.activeBuses = [busSchedule];
+        newSearchTab.activeBuses = busSchedules;
 
         // Assign onclick to More Buttons.  //
         ReassignAllButtons(); 
 
         loading.hidden = true;
-        loading.nextElementSibling.innerHTML = "Search";
+        loading.nextElementSibling.innerHTML = "Search Schedule(s)";
+    });
+}
+
+function AddSchedule() {
+    let activeTab = SearchTabGroup.activeTab()
+
+    if (activeTab.type !== "Schedule") {
+        return;
+    }
+    
+    let busSchedules = GetScheduleSearchCriteria();
+
+    if (activeTab.hasOwnProperty("activeBuses")) {
+        if (activeTab.activeBuses.length + busSchedules.length > MarkerColors.length) {
+            alert("Can't have more than " + MarkerColors.length + " open schedules at once.");
+            return;
+        }
+
+        for (let i = 0; i < busSchedules.length; i++) {
+            let busSchedule = busSchedules[i];
+            if (activeTab.activeBuses.includes(busSchedule)) {
+                alert("Schedule " + busSchedule + " is already open in this tab.");
+                return;
+            }
+        }
+    }
+
+    let loading = document.getElementById("AddScheduleButton").childNodes[1];
+
+    loading.hidden = false;
+
+    loading.nextElementSibling.innerHTML = "Adding"
+
+    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+
+    for (let i = 0; i < busSchedules.length; i++) {
+        let busSchedule = busSchedules[i];
+        sql += "BusSchedule = \"" + busSchedule + "\" ";
+
+        if (i + 1 < busSchedules.length) {
+            sql += "or ";
+        }
+    }
+
+    sql += ") Order by BusSchedule, ScheduleOrder"
+
+    let searchobj = ExecuteSQLToProc(sql, function() {
+        let Students = ScheduleJsonRead(searchobj.json_file)
+
+        let title = activeTab.title + ", "
+
+        for (let i = 0; i < busSchedules.length; i++) {
+            title += busSchedules[i]
+            if (i + 1 < busSchedules.length) {
+                title += ", ";
+            }
+        }
+
+        let type = "Schedule";
+        // let waitTime = 20;
+
+        Students.push.apply(Students, activeTab.students);
+        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
+
+        newSearchTab.activeBuses = activeTab.activeBuses;
+        newSearchTab.activeBuses.push.apply(newSearchTab.activeBuses, busSchedules);
+        
+
+        newSearchTab.activate(false);
+        activeTab.close();
+        
+        // Assign onclick to More Buttons.
+        ReassignAllButtons(); 
+
+        loading.hidden = true;
+        loading.nextElementSibling.innerHTML = "Add Schedule(s)"
     });
 }
  
@@ -396,57 +519,6 @@ function CalculateScheduleDuration() {
 
 function SolveScheduleTSP() {
     
-}
-
-function AddSchedule() {
-    let activeTab = SearchTabGroup.activeTab()
-
-    if (activeTab.type !== "Schedule") {
-        return;
-    }
-    
-    let busSchedule = GetScheduleSearchCriteria();
-
-    if (activeTab.hasOwnProperty("activeBuses")) {
-        if (activeTab.activeBuses.length >= MarkerColors.length) {
-            alert("Can't have more than " + MarkerColors.length + " open schedules at once.");
-            return;
-        }
-        if (activeTab.activeBuses.includes(busSchedule)) {
-            alert("This Schedule is already open in this tab.");
-            return;
-        }
-    }
-
-    let loading = document.getElementById("AddScheduleButton").childNodes[1];
-    loading.hidden = false;
-
-    loading.nextElementSibling.innerHTML = "Adding"
-
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and BusSchedule = \"" + busSchedule + "\" Order By ScheduleOrder";
-    let searchobj = ExecuteSQLToProc(sql, function() {
-        let Students = ScheduleJsonRead(searchobj.json_file)
-
-        let title = activeTab.title + ", " + busSchedule;
-        let type = "Schedule";
-        let waitTime = 20;
-
-        Students.push.apply(Students, activeTab.students)
-        let newSearchTab = OpenSearchTab(docmain, title, type, DisplayBusTable, DisplayBusMap, Students);
-
-        newSearchTab.activeBuses = activeTab.activeBuses
-        newSearchTab.activeBuses.push(busSchedule);
-        
-
-        newSearchTab.activate(false);
-        activeTab.close();
-        
-        // Assign onclick to More Buttons.
-        ReassignAllButtons(); 
-
-        loading.hidden = true;
-        loading.nextElementSibling.innerHTML = "Add Schedule"
-    });
 }
 
     // #endregion //
@@ -1191,7 +1263,7 @@ function SearchStudents() {
         ReassignAllButtons(); 
 
         loading.hidden = true;
-        loading.nextElementSibling.innerHTML = "Search"
+        loading.nextElementSibling.innerHTML = "Search Student(s)"
     });
 
 }
@@ -1513,10 +1585,16 @@ function PlotStudents(tab) {
 function PlotSchedules(Students, Schedules) {
 
     SchedulesIcons = {};
+    let tooMany = false;
+
+    // If there are too many schedules (> 5), marker label will be scheduleName, not order inside schedule  //
+    if (Schedules.length > 5) {
+        tooMany = true;
+    }
     for (let i = 0; i < Schedules.length; i++) {
         SchedulesIcons[Schedules[i]] = {
             Schedule: Schedules[i],
-            MarkerIndex: i
+            MarkerIndex: i,
         }
     }
 
@@ -1578,6 +1656,22 @@ function PlotSchedules(Students, Schedules) {
     for (let i = 0; i < plottedAddressKeys.length; i++) {
         let toMark = plottedAddresses[plottedAddressKeys[i]];
 
+        let url;
+
+        if (tooMany) {
+            url = MarkerURL
+            if (toMark.schedule.length > 1) {
+                url += (toMark.schedule[0] + toMark.schedule[1]);
+            }
+            else {
+                url += toMark.schedule[0];
+            }
+            url +=MarkerColors[SchedulesIcons[toMark.schedule].MarkerIndex];
+        }
+        else {
+            url = MarkerURL + toMark.order + MarkerColors[SchedulesIcons[toMark.schedule].MarkerIndex];
+        }
+
         let marker = new khtml.maplib.overlay.Marker({
             position: new khtml.maplib.LatLng(toMark.address.Latitude, toMark.address.Longitude), 
             map: map,
@@ -1587,7 +1681,7 @@ function PlotSchedules(Students, Schedules) {
             schedule: toMark.schedule,
             icon: {
                 // Give different-colored Markers foreach different schedule    //
-                url: MarkerURL + toMark.order + MarkerColors[SchedulesIcons[toMark.schedule].MarkerIndex],
+                url: url,
                 size: {width: 26, height: 32},
                 origin: {x: 0, y: 0},
                 anchor: {

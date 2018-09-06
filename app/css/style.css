@@ -92,7 +92,7 @@ main {
 
 /* Bus Buttons */
 
-.BusButtonsContainer {
+#BusButtonsContainer, #ScheduleSelectorContainer {
     display: grid;
     grid-template-columns: repeat(auto-fit, 50px);
 }
@@ -108,24 +108,36 @@ main {
     padding-top: 10%;
 }
 
-.BusButton:hover {
+.ScheduleButton {
+    font-size: 16px;
+
+    background-color: #2e2e2e;
+
+    border: none;
+    border-radius: 5px;
+    margin: 0.5px;
+    padding: 0px;
+}
+
+.BusButton:hover, .ScheduleButton:hover {
     background-color: #333333
 }
 
-.BusButton.active {
+.BusButton.active, .ScheduleButton.active {
     background-color: #414141
 }
 
-.BusButton:active {
+.BusButton:active, .ScheduleButton:active {
     background-color: #414141;
 }
 
 /* Bus Selectors */
 .SelectorsContainer {
     display: grid;
-    grid-template-areas: "DayPart Schedules";
+    grid-template-areas:    "DayPart Schedules"
+                            "Buttons Buttons";
 
-    height: 150px;
+    /* height: 150px; */
 }
 
 #DayPartSelector {
@@ -134,33 +146,6 @@ main {
 
 #SchedulesSelector {
     grid-area: Schedules;
-}
-
-#ScheduleSelectorDropDown {
-    background-color: #2d2e2e;
-
-    border: none;
-    border-radius: 5px;
-    outline: none;
-    padding: 2%;
-    margin: 1px;
-
-    width: 100%;
-}
-
-#ScheduleSelectorDropDown:hover {
-    background-color: #3c3d3d;
-}
-
-#ScheduleSelectorDropDown:active {
-    background-color: #3c3d3d;
-}
-
-.ScheduleSelectorOption {
-    text-align: center;
-    font-size: 15px;
-    font-family: 'Ubuntu', Arial, sans-serif;
-    border-radius: 5px;
 }
 
 .Selector {
@@ -206,6 +191,10 @@ main {
 
 .SelectorButton:active {
     background-color: #414141;
+}
+
+#SelectorsSearchButtons {
+    grid-area: Buttons;
 }
 
 
