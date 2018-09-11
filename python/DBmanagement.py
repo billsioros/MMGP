@@ -205,8 +205,6 @@ class DBManager:
             # Insert All Records that already have GPS coordinates
             for Row in RowList:
 
-                # print LastName.decode("greek", "strict")
-                # print BusSchedule, ScheduleOrder
                 # Concatenate the Address to a single string and hash it
             
                 FullAddress, TranslatedAddress = util.ConcatenateAddress(Row["Road"], Row["Num"], Row["ZipCode"], Row["Muni"], Row["Area"], Row["Prefec"], "GREECE")
@@ -230,7 +228,7 @@ class DBManager:
                 # we do not have to geocode it. (Trying to reduce geocoding requests)
                 else:
                     NoGPS.append((Row["ID"], Row["LastName"], Row["FirstName"], HashAddress, \
-                    Row["Road"], Row["Num"], Row["ZipCode"], Row["Prefec"], Row["Muni"], Row["Area"], TranslatedAddress))
+                    Row["Road"], Row["Num"], Row["ZipCode"], Row["Prefec"], Row["Muni"], Row["Area"], TranslatedAddress, FullAddress))
 
                 # Add student to the database
                 # Format Some Values
@@ -292,7 +290,7 @@ class DBManager:
             # Insert All Records that do not have GPS coordinates
             i = 0 # Geocoding per sec
           
-            for ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, TranslatedAddress in NoGPS:
+            for ID, LastName, FirstName, HashAddress, Road, Num, ZipCode, Prefec, Muni, Area, TranslatedAddress, FullAddress in NoGPS:
 
                 if not TranslatedAddress:
                     continue

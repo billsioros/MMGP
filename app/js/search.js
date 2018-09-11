@@ -1194,9 +1194,10 @@ function SearchStudents() {
     const DayPart = document.getElementById("DayPartBar").value;
 
     const SearchValues = [FirstName, LastName, Class, Level, DayPart, Street, Number, Municipal, ZipCode];
-    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Student.DayPart", "ad.Road", "ad.Number", "ad.Municipal", "ad.ZipCode"];
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Student.DayPart",
+     "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
 
-    let toSearch = "Where  Student.AddressID = ad.AddressID"
+    let toSearch = "Where  Student.AddressID = Address.AddressID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1227,7 +1228,7 @@ function SearchStudents() {
     loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
-            From Student, Address as ad " + toSearch + " Order By Student.LastName";
+            From Student, Address " + toSearch + " Order By Student.LastName";
     
 
     // Execute query and get Students
@@ -1701,7 +1702,7 @@ function PlotSchedules(Students, Schedules) {
 
 // Executes sql in a python process and handles data returned in callback parameter //
 function ExecuteSQLToProc(sql, callback) {
-
+    console.log(sql);
     let toJson = {
         Database: DBFile,
         sql: sql
@@ -1836,6 +1837,12 @@ function StudentJsonRead(json_file) {
 
             key = row.DayPart + 'Buses';
             Students[id][key].push(row.BusSchedule)
+
+            key = row.DayPart + "Order";
+            Students[id][key].push(row.ScheduleOrder);
+
+            key = row.DayPart + "Time";
+            Students[id][key].push(row.ScheduleTime)
         }
     }
 
