@@ -2,11 +2,13 @@
 #include "manager.hpp"
 #include "vector2.hpp"
 #include "Database.h"
+#include "json.hpp"
 #include <vector>           // std::vector
 #include <bitset>           // std::bitset
 #include <string>           // std::string
 #include <fstream>          // std::ostream
 #include <iostream>         // std::cerr
+#include <iomanip>          // std::setw
 #include <ctime>            // std::time etc
 #include <unordered_set>    // std::unordered_set
 #include <limits>           // std::numeric_limits<double>().max()
@@ -205,9 +207,54 @@ void Manager::load(SQLite::Database& database, Buses& buses)
     }
 }
 
-static std::string unique(const std::string& fname)
+void Manager::json(
+    const std::string& dayPart,
+    const Schedules& schedules
+)
 {
-    time_t raw; std::time(&raw);
+    nlohmann::json json;
+    
+    for (const auto& buses : schedules)
+    {
+        if (buses.empty())
+            return;
+
+        json.emplace_back(nlohmann::json::object());
+
+        for (const auto& bus : buses)
+        {
+            json.back()["buses"].emplace_back
+            (
+                nlohmann::json::object
+                (
+                    {
+                        { "busId", bus._busId },
+                        { "cost",  bus._cost }
+                    }
+                )
+            );
+
+            for (const auto& student : bus._students)
+            {
+                json.back()["buses"].back()["students"].emplace_back
+                (
+                    nlohmann::json::object
+                    (
+                        {
+                            { "studentId", student._studentId    },
+                            { "addressId", student._addressId    },
+                            { "longitude", student._position.x() },
+                            { "latitude",  student._position.y() },
+                            { "earliest",  student._timespan.x() },
+                            { "latest",    student._timespan.y() }
+                        }
+                    )
+                );
+            }
+        }
+    }
+
+     time_t raw; std::time(&raw);
     
     struct std::tm * tm = std::localtime(&raw);
     
@@ -215,74 +262,14 @@ static std::string unique(const std::string& fname)
 
     std::strftime(strtime, 511, "%Y%m%d%H%M%S", tm);
 
-    return fname + strtime;
-}
-
-void Manager::json(
-    const std::string& dayPart,
-    const Schedules& schedules
-)
-{
-    std::ofstream json(unique(dayPart) + ".json");
-    if (!json.is_open())
+    std::ofstream ofs(dayPart + strtime + ".json");
+    if (!ofs.is_open())
     {
         std::cerr << "<ERR>: Unable to save the data in json format" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
-    json << '[' << std::endl;
-    
-    std::size_t scheduleId = 0UL;
-    for (const auto& buses : schedules)
-    {
-        json
-        << "    {"                                         << std::endl
-        << "        \"scheduleId\": " << scheduleId << ',' << std::endl
-        << "        \"buses\": "                           << std::endl
-        << "        ["                                     << std::endl;
-
-        if (buses.empty())
-            return;
-
-        for (const auto& bus : buses)
-        {
-            json
-            << "            {" << std::endl
-            << "                \"busId\": "   << "\"" << bus._busId << "\"" << ',' << std::endl
-            << "                \"cost\": "    << "\"" << bus._cost  << "\"" << ',' << std::endl
-            << "                \"students\":"                                      << std::endl
-            << "                [" << std::endl;
-            for (const auto& student : bus._students)
-            {
-                json
-                << "                    {"
-                << std::endl
-                << "                        \"studentId\": "  << "\"" << student._studentId    << "\"" << ',' << std::endl
-                << "                        \"latitude\": "           << student._position.x()         << ',' << std::endl
-                << "                        \"longitude\": "          << student._position.y()         << ',' << std::endl
-                << "                        \"earliest\": "           << student._timespan.x()         << ',' << std::endl
-                << "                        \"latest\": "             << student._timespan.y()         << ',' << std::endl
-                << "                        \"days\": "       << "\"" << student._days         << "\""        << std::endl
-                << "                    }"
-                << (student._studentId != bus._students.back()._studentId ? "," : "")
-                << std::endl;
-            }
-            
-            json
-            << "                ]" << std::endl
-            << "            }"
-            << (bus._busId != buses.back()._busId ? "," : "") << std::endl;
-        }
-
-        json
-        << "        ]" << std::endl
-        << "    }"
-        << (scheduleId < schedules.size() - 1UL ? "," : "") << std::endl;
-
-        scheduleId++;
-    }
-
-    json << ']' << std::endl;
+    ofs << std::setw(4) << json;
 }
 
 double Manager::distance(
@@ -310,7 +297,7 @@ double Manager::distance(
         std::cerr << e.what() << std::endl;
     }
 
-    std::cerr << "<ERR>: No such student(s) ( " << A << ' ' << B << " )" << std::endl;
+    std::cerr << "<ERR>: No such address(es) ( " << A._addressId << ' ' << B._addressId << " )" << std::endl;
     std::exit(EXIT_FAILURE);
 }
 
