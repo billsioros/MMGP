@@ -217,14 +217,14 @@ void Manager::json(
     for (const auto& buses : schedules)
     {
         if (buses.empty())
-            return;
+            continue;
 
         json.emplace_back(nlohmann::json::object());
 
         for (const auto& bus : buses)
         {
             if (bus._students.empty())
-                return;
+                continue;
 
             json.back()["buses"].emplace_back
             (
