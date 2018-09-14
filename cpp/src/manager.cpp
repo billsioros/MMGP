@@ -223,6 +223,9 @@ void Manager::json(
 
         for (const auto& bus : buses)
         {
+            if (bus._students.empty())
+                return;
+
             json.back()["buses"].emplace_back
             (
                 nlohmann::json::object
