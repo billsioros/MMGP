@@ -254,7 +254,7 @@ void Manager::json(
         }
     }
 
-     time_t raw; std::time(&raw);
+    time_t raw; std::time(&raw);
     
     struct std::tm * tm = std::localtime(&raw);
     
