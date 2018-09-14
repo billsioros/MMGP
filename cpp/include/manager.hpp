@@ -60,7 +60,6 @@ namespace Manager
     void load(SQLite::Database&, std::vector<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void csv(const std::string&, const Schedules&);
     void json(const std::string&, const Schedules&);
 
     double distance(

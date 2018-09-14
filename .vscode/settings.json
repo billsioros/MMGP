@@ -56,7 +56,9 @@
         "cinttypes": "cpp",
         "*.ipp": "cpp",
         "string": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "forward_list": "cpp",
+        "valarray": "cpp"
     },
     "python.pythonPath": "C:\\Python27\\python.exe"
 }
