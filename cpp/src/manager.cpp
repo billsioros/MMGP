@@ -218,51 +218,6 @@ static std::string unique(const std::string& fname)
     return fname + strtime;
 }
 
-void Manager::csv(
-    const std::string& dayPart,
-    const Schedules& schedules
-)
-{
-    std::ofstream csv(unique(dayPart) + ".csv");
-    if (!csv.is_open())
-    {
-        std::cerr << "<ERR>: Unable to save the data in csv format" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    csv << "sheduleId, busId, studentId, longitude, latitude, earliest, latest, days" << std::endl;
-
-    std::size_t sheduleId = 0UL;
-    for (const auto& buses : schedules)
-    {
-        if (buses.empty())
-            return;
-
-        for (const auto& bus : buses)
-        {
-            if (bus._students.empty())
-                continue;
-
-            for (const auto& student : bus._students)
-            {
-                csv
-                << sheduleId             << ", "
-                << bus._busId            << ", "
-                << bus._cost             << ", "
-                << student._studentId    << ", "
-                << student._position.x() << ", "
-                << student._position.y() << ", "
-                << student._timespan.x() << ", "
-                << student._timespan.y() << ", "
-                << student._days
-                << std::endl;
-            }
-        }
-
-        sheduleId++;
-    }
-}
-
 void Manager::json(
     const std::string& dayPart,
     const Schedules& schedules
