@@ -4,7 +4,7 @@
 #include "manager.hpp"
 #include "cmeans.hpp"
 #include "tsp.hpp"
-#include "sannealing.hpp"
+#include "annealing.hpp"
 #include <vector>
 #include <iostream>
 #include <memory>
@@ -192,7 +192,7 @@ TSP::path<Manager::Student> tsp(
     std::cout << "OPT2: " << path.first << std::endl;
     #endif
 
-    path = SimulatedAnnealing<TSP::path<Manager::Student>>(
+    path = Annealing::simulated<TSP::path<Manager::Student>>(
         path,
         [&cost](const TSP::path<Manager::Student>& current)
         {

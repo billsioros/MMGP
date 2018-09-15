@@ -4,7 +4,7 @@
 #include "vector2.hpp"
 #include "manager.hpp"
 #include "tsp.hpp"
-#include "sannealing.hpp"
+#include "annealing.hpp"
 #include "json.hpp"
 #include <unordered_map>
 #include <iostream>
@@ -15,23 +15,36 @@
 
 #include <node.h>
 
-using Cost  = std::unordered_map<const Manager::Student *, double>;
-using Costs = std::unordered_map<const Manager::Student *, Cost>;
+// @ Parameter tsp-json:
+// {
+//      "daypart": "Morning",
+//      "depot": "XXXXXXXXXXXX",
+//      "students":
+//       [
+//            {
+//                 "timespan":  [ 7.30, 8.00 ],
+//                 "addressId": "XXXXXXXXXXXX",
+//                 "studentId": "YYYYYYYYYYYY"
+//            },
+//            ...
+//            {
+//                 "timespan":  [ 7.45, 8.15 ],
+//                 "addressId": "XXXXXXXXXXXX",
+//                 "studentId": "YYYYYYYYYYYY"
+//            }
+//       ]
+// }
 
-std::string parse(const std::string&, v8::Isolate *);
-
-void load(
-    SQLite::Database&,
-    const std::string&,
-    std::vector<Manager::Student>&,
-    Manager::Student&,
-    v8::Isolate *);
+using DVector = std::unordered_map<Manager::Student, double>;
+using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
 void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * isolate = args.GetIsolate();
 
-    if (args.Length() < 4)
+    // Firstly check if there are at least 2 arguements
+    // otherwise throw an exception and exit
+    if (args.Length() < 2)
     {
         isolate->ThrowException
         (
@@ -40,7 +53,7 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "<MSG>: TSP <database> <Bus-Id> <Day-Part> <Schedule-Id>"
+                    "<ERR>: Missing parameter(s) <database> and/or <tsp-json>"
                 )
             )
         );
@@ -48,7 +61,34 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         std::exit(EXIT_FAILURE);
     }
 
-    if (!args[1]->IsNumber() || !args[3]->IsNumber())
+    // Secondly, assert arguement integrity.
+    // Using a try / catch scheme handle any SQLiteCpp or
+    // nlohmann::json exceptions.
+    // An error in this stage (probably) indicates malformed arguements
+    std::string daypart;
+    Manager::Student depot;
+    std::vector<Manager::Student> students;
+
+    // (1) Parse the second arguement,
+    // which is expected to be a json string of the format @ Parameter
+    try
+    {
+        nlohmann::json json = nlohmann::json::parse(*(v8::String::Utf8Value(args[1]->ToString())));
+        
+        daypart = json["daypart"];
+        
+        depot._addressId = json["depot"];
+
+        for (const auto& entry : json["students"])
+        {
+            Manager::Student student;
+            student._studentId = entry["studentId"];
+            student._addressId = entry["addressId"];
+            student._timespan  = Vector2(entry["timespan"][0], entry["timespan"][1]);
+
+            students.emplace_back(student);
+        }
+    } catch (std::exception& e)
     {
         isolate->ThrowException
         (
@@ -57,27 +97,18 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "<ERR>: <Bus-Id> and <Schedule-Id> should be positive integers"
+                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
-
-        return;
     }
 
-    v8::String::Utf8Value v8_dbname(args[0]->ToString());
-    v8::String::Utf8Value v8_busId(args[1]->ToString());
-    v8::String::Utf8Value v8_daypart(args[2]->ToString());
-    v8::String::Utf8Value v8_scheduleId(args[3]->ToString());
-
-    std::string dbname(*v8_dbname),
-                BusScheduleId(*v8_busId + parse(*v8_daypart, isolate) + *v8_scheduleId),
-                DayPart(*v8_daypart);
-
+    // (2) Initialize a SQLite::Database unique_ptr
+    // with the specified database path
     std::unique_ptr<SQLite::Database> database;
     try
     {
-        database = std::make_unique<SQLite::Database>(dbname);
+        database = std::make_unique<SQLite::Database>(*(v8::String::Utf8Value(args[0]->ToString())));
     }
     catch (std::exception& e)
     {
@@ -94,67 +125,117 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         );
     }
 
-    std::vector<Manager::Student> students; Manager::Student depot;
-
-    load(*database, BusScheduleId, students, depot, isolate);
-
-    auto cost = [&](const Manager::Student& A, const Manager::Student& B)
+    // Given the "distance" lambda function which
+    // returns the expected duration to service
+    // student A  and then go to student B,
+    // determine an initial solution of the tsp
+    // without taking into consideration time windows
+    auto distance = [&](const Manager::Student& A, const Manager::Student& B)
     {
-        static Costs costs;
-    
-        Costs::const_iterator it1; Cost::const_iterator it2;
-        if ((it1 = costs.find(&A)) != costs.end())
-            if ((it2 = it1->second.find(&B)) != it1->second.end())
-                return it2->second;
+        static DMatrix dmatrix;
 
-        return (costs[&A][&B] = Manager::distance(*database, A, B, DayPart));
+        DMatrix::const_iterator mit;
+        DVector::const_iterator vit;
+
+        if ((mit = dmatrix.find(A)) != dmatrix.end())
+            if ((vit = mit->second.find(B)) != mit->second.end())
+                return vit->second;
+
+        return
+        (
+            dmatrix[A][B] = Manager::distance(*database, A, B, daypart)
+                          + (A == depot ? 0.0 : 30.0)
+        );
     };
 
     TSP::path<Manager::Student> path;
     
-    path = TSP::nearestNeighbor<Manager::Student>(
-        depot,
-        students,
-        cost
-    );
+    path = TSP::nearestNeighbor<Manager::Student>(depot, students, distance);
 
-    path = TSP::opt2<Manager::Student>(
-        path.second.front(),
-        path.second,
-        cost
-    );
+    path = TSP::opt2<Manager::Student>(path.second.front(), path.second, distance);
 
-    path.second = SimulatedAnnealing<std::vector<Manager::Student>>(
-        path.second,
-        [](const std::vector<Manager::Student>& current)
+    // Finally, use a variation of the Simulated Annealing algorithm
+    // (Compressed Annealing) while taking into consideration
+    // the time windows. The algorithm succeeds in minimizing both
+    // the total travel time and the time window inconsistencies
+    auto penalty = [&distance](const TSP::path<Manager::Student>& path)
+    {
+        double penalty = 0.0, partial = 0.0;
+        for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
         {
-            std::vector<Manager::Student> next(current);
+            const Manager::Student& previous = path.second[j];
+            const Manager::Student& current  = path.second[j + 1UL];
 
-            const std::size_t i = 1UL + std::rand() % (next.size() - 2UL);
-            const std::size_t j = 1UL + std::rand() % (next.size() - 2UL);
+            partial += distance(previous, current);
 
-            std::reverse(next.begin() + i, next.begin() + j);
+            const double departure = std::max<double>(partial, current._timespan.x());
 
-            return next;
-        },
-        [&cost](const std::vector<Manager::Student>& current)
-        {
-            double total = 0.0;
-            for (std::size_t j = 0; j < current.size() - 1UL; j++)
-                total += cost(current[j], current[j + 1UL]);
+            penalty += std::max<double>(0.0, departure - current._timespan.y());
+        }
 
-            return total;
-        },
-        1000000.0,
-        0.00003,
-        1000000UL
+        return penalty;
+    };
+
+    auto shift1 = [&distance](const TSP::path<Manager::Student>& current)
+    {
+        TSP::path<Manager::Student> next(0.0, current.second);
+
+        const std::size_t i = 1UL + std::rand() % (next.second.size() - 2UL);
+        const std::size_t j = 1UL + std::rand() % (next.second.size() - 2UL);
+
+        const Manager::Student v(next.second[i]);
+        next.second.erase(next.second.begin() + i);
+        next.second.insert(next.second.begin() + j, v);
+
+        next.first = TSP::totalCost<Manager::Student>(next.second, distance);
+
+        return next;
+    };
+
+    auto cost = [](const TSP::path<Manager::Student>& path)
+    {
+        return path.first;
+    };
+
+    // Parameter Initialization (Robust Set provided by the authors):
+    const double COOLING     = 0.95,    // (1)  Cooling Coefficient
+                 ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
+                 PRESSURE0   = 0.0,     // (3)  Initial Pressure
+                 COMPRESSION = 0.06,    // (4)  Compression Coefficient
+                 PCR         = 0.9999;  // (5)  Pressure Cap Ratio
+
+    const std::size_t IPT = 30000UL,    // (6)  Iterations per temperature
+                      MTC = 100UL,      // (7)  Minimum number of temperature changes
+                      ITC = 75UL,       // (8)  Maximum idle temperature changes
+                      TLI = IPT,        // (9)  Trial loop of iterations
+                      TNP = 5000UL;     // (10) Trial neighbour pairs
+
+    path = Annealing::compressed<TSP::path<Manager::Student>>
+    (
+        path,
+        shift1,
+        cost,
+        penalty,
+        COOLING,
+        ACCEPTANCE,
+        PRESSURE0,
+        COMPRESSION,
+        PCR,
+        IPT,
+        MTC,
+        ITC,
+        TLI,
+        TNP
     );
-
-    path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
     nlohmann::json json;
-    for (const auto& element : path.second)
-        json["students"].push_back(element._studentId);
+    for (const auto& student : path.second)
+    {
+        json["students"].emplace_back(nlohmann::json::object());
+
+        json["students"].back()["addressId"] = student._addressId;
+        json["students"].back()["studentId"] = student._studentId;
+    }
 
     json["cost"] = path.first;
     
@@ -169,125 +250,3 @@ void Init(v8::Local<v8::Object> exports)
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
-
-std::string parse(const std::string& DayPart, v8::Isolate * isolate)
-{
-    if (DayPart == "Morning")
-    {
-        return "\u03A0";
-    }
-    else if (DayPart == "Noon")
-    {
-        return "\u039c";
-    }
-    else if (DayPart == "Study")
-    {
-        return "\u0391";
-    }
-    else
-    {
-        isolate->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    isolate,
-                    "<ERR>: There can be no such option"
-                )
-            )
-        );
-
-        std::exit(EXIT_FAILURE);
-    }
-}
-
-void load(
-    SQLite::Database& database,
-    const std::string& BusScheduleId,
-    std::vector<Manager::Student>& students,
-    Manager::Student& depot,
-    v8::Isolate * isolate
-)
-{
-    try
-    {
-        SQLite::Statement stmt(
-            database,
-            "SELECT Student.StudentID, Student.AddressID, Address.GPS_X, Address.GPS_Y "\
-            "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.BusSchedule = ?"
-        );
-
-        stmt.bind(1, BusScheduleId);
-
-        while (stmt.executeStep())
-        {
-            int current = 0;
-
-            const std::string _studentId(stmt.getColumn(current++).getText());
-            const std::string _addressId(stmt.getColumn(current++).getText());
-
-            const double x = stmt.getColumn(current++).getDouble();
-            const double y = stmt.getColumn(current++).getDouble();
-            const Vector2 _position(x, y);
-
-            Manager::Student student;
-            student._studentId = _studentId;
-            student._addressId = _addressId;
-            student._position  = _position;
-
-            students.push_back(student);
-        }
-    }
-    catch (std::exception& e)
-    {
-        isolate->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    isolate,
-                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
-                )
-            )
-        );
-    }
-
-    try
-    {
-        SQLite::Statement stmt(
-            database,
-            "SELECT AddressID, GPS_X, GPS_Y "\
-            "FROM Depot"
-        );
-
-        while (stmt.executeStep())
-        {
-            int current = 0;
-            const std::string _addressId(stmt.getColumn(current++).getText());
-            
-            const double x = stmt.getColumn(current++).getDouble();
-            const double y = stmt.getColumn(current++).getDouble();
-            const Vector2 _position(x, y);
-
-            depot._addressId = _addressId;
-            depot._position  = _position;
-        }
-    }
-    catch (std::exception& e)
-    {
-        isolate->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    isolate,
-                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
-                )
-            )
-        );
-    }
-}
