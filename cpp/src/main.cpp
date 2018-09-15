@@ -4,7 +4,7 @@
 #include "manager.hpp"
 #include "cmeans.hpp"
 #include "tsp.hpp"
-#include "sannealing.hpp"
+#include "annealing.hpp"
 #include <vector>
 #include <iostream>
 #include <memory>
