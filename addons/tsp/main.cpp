@@ -244,9 +244,9 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
     args.GetReturnValue().Set(rv);
 }
 
-void Init(v8::Local<v8::Object> exports)
+void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 {
-    NODE_SET_METHOD(exports, "tsp", tsp);
+    NODE_SET_METHOD(module, "exports", tsp);
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
