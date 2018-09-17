@@ -14,7 +14,7 @@ PATH_JSN_INC = ./nlohmann
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
 MNGR_DEP = $(PATH_SQL_INC)/Database.h $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_INC)/, vector2.hpp manager.hpp) $(PATH_SRC)/manager.cpp
-MAIN_DEP = $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp annealing.hpp) $(PATH_SRC)/main.cpp
+MAIN_DEP = $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp annealing.hpp) $(PATH_SRC)/main.cpp
 
 BACK_DEP = $(addprefix $(PATH_SQL_INC)/, Backup.h Exception.h) $(PATH_SQL_SRC)/Backup.cpp
 CLMN_DEP = $(PATH_SQL_INC)/Column.h $(PATH_SQL_SRC)/Column.cpp
@@ -45,7 +45,7 @@ $(PATH_BIN)/manager.o: $(MNGR_DEP)
 	$(CC) -I $(PATH_INC) -I $(PATH_SQL_INC) -I $(PATH_JSN_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/manager.cpp -c -o $(PATH_BIN)/manager.o
 
 $(PATH_BIN)/main.o: $(MAIN_DEP)
-	$(CC) -I $(PATH_INC) -I $(PATH_SQL_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o
+	$(CC) -I $(PATH_JSN_INC) -I $(PATH_INC) -I $(PATH_SQL_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o
 
 # SQLite3 Wrapper:
 

@@ -5,6 +5,7 @@
 #include "cmeans.hpp"
 #include "tsp.hpp"
 #include "annealing.hpp"
+#include "json.hpp"
 #include <vector>
 #include <iostream>
 #include <memory>
@@ -153,7 +154,24 @@ int main(int argc, char * argv[])
     << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
     << " seconds (Route Optimization)" << std::endl;
 
-    Manager::json(args["-dp"], schedules);
+    nlohmann::json json = Manager::json(args["-dp"], schedules);
+
+    time_t raw; std::time(&raw);
+    
+    struct std::tm * tm = std::localtime(&raw);
+    
+    char strtime[512UL];
+
+    std::strftime(strtime, 511, "%Y%m%d%H%M%S", tm);
+
+    std::ofstream ofs(args["-dp"] + strtime + ".json");
+    if (!ofs.is_open())
+    {
+        std::cerr << "<ERR>: Unable to save the data in json format" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    ofs << std::setw(4) << json;
 
     return 0;
 }

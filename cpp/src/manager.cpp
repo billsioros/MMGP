@@ -207,7 +207,7 @@ void Manager::load(SQLite::Database& database, Buses& buses)
     }
 }
 
-void Manager::json(
+nlohmann::json Manager::json(
     const std::string& dayPart,
     const Schedules& schedules
 )
@@ -257,22 +257,7 @@ void Manager::json(
         }
     }
 
-    time_t raw; std::time(&raw);
-    
-    struct std::tm * tm = std::localtime(&raw);
-    
-    char strtime[512UL];
-
-    std::strftime(strtime, 511, "%Y%m%d%H%M%S", tm);
-
-    std::ofstream ofs(dayPart + strtime + ".json");
-    if (!ofs.is_open())
-    {
-        std::cerr << "<ERR>: Unable to save the data in json format" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    ofs << std::setw(4) << json;
+    return json;
 }
 
 double Manager::distance(
