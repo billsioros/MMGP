@@ -213,6 +213,8 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                       TLI = IPT,        // (9)  Trial loop of iterations
                       TNP = 5000UL;     // (10) Trial neighbour pairs
 
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
     path = Annealing::compressed<TSP::path<Manager::Student>>
     (
         path,
