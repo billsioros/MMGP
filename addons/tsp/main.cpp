@@ -73,7 +73,10 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
     // which is expected to be a json string of the format @ Parameter
     try
     {
-        nlohmann::json json = nlohmann::json::parse(*(v8::String::Utf8Value(args[1]->ToString())));
+        nlohmann::json json = nlohmann::json::parse
+        (
+            *(v8::String::Utf8Value(args[1]->ToString()))
+        );
         
         daypart = json["daypart"];
         
