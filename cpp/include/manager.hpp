@@ -3,6 +3,7 @@
 
 #include "vector2.hpp"
 #include "Database.h"
+#include "json.hpp"
 #include <vector>           // std::vector
 #include <bitset>           // std::bitset
 #include <string>           // std::string
@@ -60,7 +61,7 @@ namespace Manager
     void load(SQLite::Database&, std::vector<Student>&, const std::string&);
     void load(SQLite::Database&, std::vector<Bus>&);
 
-    void json(const std::string&, const Schedules&);
+    nlohmann::json json(const std::string&, const Schedules&);
 
     double distance(
         SQLite::Database&,

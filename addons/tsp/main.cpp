@@ -7,11 +7,9 @@
 #include "annealing.hpp"
 #include "json.hpp"
 #include <unordered_map>
-#include <iostream>
 #include <memory>
 #include <vector>
 #include <string>
-#include <algorithm>
 
 #include <node.h>
 
@@ -42,8 +40,6 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * isolate = args.GetIsolate();
 
-    // Firstly check if there are at least 2 arguements
-    // otherwise throw an exception and exit
     if (args.Length() < 2)
     {
         isolate->ThrowException
@@ -53,27 +49,24 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "<ERR>: Missing parameter(s) <database> and/or <tsp-json>"
+                    "Missing parameter(s) <database> and/or <tsp-json>"
                 )
             )
         );
 
-        std::exit(EXIT_FAILURE);
+        return;
     }
 
-    // Secondly, assert arguement integrity.
-    // Using a try / catch scheme handle any SQLiteCpp or
-    // nlohmann::json exceptions.
-    // An error in this stage (probably) indicates malformed arguements
     std::string daypart;
     Manager::Student depot;
     std::vector<Manager::Student> students;
 
-    // (1) Parse the second arguement,
-    // which is expected to be a json string of the format @ Parameter
     try
     {
-        nlohmann::json json = nlohmann::json::parse(*(v8::String::Utf8Value(args[1]->ToString())));
+        nlohmann::json json = nlohmann::json::parse
+        (
+            *(v8::String::Utf8Value(args[1]->ToString()))
+        );
         
         daypart = json["daypart"];
         
@@ -97,18 +90,20 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
+                    (std::string("Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
+
+        return;
     }
 
-    // (2) Initialize a SQLite::Database unique_ptr
-    // with the specified database path
+    std::string dbname(*(v8::String::Utf8Value(args[0]->ToString())));
+
     std::unique_ptr<SQLite::Database> database;
     try
     {
-        database = std::make_unique<SQLite::Database>(*(v8::String::Utf8Value(args[0]->ToString())));
+        database = std::make_unique<SQLite::Database>(dbname);
     }
     catch (std::exception& e)
     {
@@ -119,17 +114,14 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    (std::string("<ERR>: Exception ( ") + e.what() + " )").c_str()
+                    (std::string("Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
+
+        return;
     }
 
-    // Given the "distance" lambda function which
-    // returns the expected duration to service
-    // student A  and then go to student B,
-    // determine an initial solution of the tsp
-    // without taking into consideration time windows
     auto distance = [&](const Manager::Student& A, const Manager::Student& B)
     {
         static DMatrix dmatrix;
@@ -144,20 +136,18 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         return
         (
             dmatrix[A][B] = Manager::distance(*database, A, B, daypart)
-                          + (A == depot ? 0.0 : 30.0)
+                          + (A == depot ? 0.0 : 30.0) // Service Time
         );
     };
 
     TSP::path<Manager::Student> path;
     
+    // Local Optimization
     path = TSP::nearestNeighbor<Manager::Student>(depot, students, distance);
 
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, distance);
 
-    // Finally, use a variation of the Simulated Annealing algorithm
-    // (Compressed Annealing) while taking into consideration
-    // the time windows. The algorithm succeeds in minimizing both
-    // the total travel time and the time window inconsistencies
+    // Compressed Annealing
     auto penalty = [&distance](const TSP::path<Manager::Student>& path)
     {
         double penalty = 0.0, partial = 0.0;
@@ -210,6 +200,8 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                       TLI = IPT,        // (9)  Trial loop of iterations
                       TNP = 5000UL;     // (10) Trial neighbour pairs
 
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
     path = Annealing::compressed<TSP::path<Manager::Student>>
     (
         path,
@@ -238,15 +230,19 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
     }
 
     json["cost"] = path.first;
-    
-    v8::Local<v8::String> rv = v8::String::NewFromUtf8(isolate, json.dump().c_str());
 
-    args.GetReturnValue().Set(rv);
+    args.GetReturnValue().Set
+    (
+        v8::String::NewFromUtf8
+        (
+            isolate, json.dump().c_str()
+        )
+    );
 }
 
-void Init(v8::Local<v8::Object> exports)
+void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 {
-    NODE_SET_METHOD(exports, "tsp", tsp);
+    NODE_SET_METHOD(module, "exports", tsp);
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
