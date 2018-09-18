@@ -122,10 +122,9 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
+    DMatrix dmatrix;
     auto distance = [&](const Manager::Student& A, const Manager::Student& B)
     {
-        static DMatrix dmatrix;
-
         DMatrix::const_iterator mit;
         DVector::const_iterator vit;
 
@@ -135,8 +134,8 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
 
         return
         (
-            dmatrix[A][B] = Manager::distance(*database, A, B, daypart)
-                          + (A == depot ? 0.0 : 30.0) // Service Time
+            dmatrix[A][B] = (A == depot ? 0.0 : 30.0) // Service Time
+                          + Manager::distance(*database, A, B, daypart)
         );
     };
 
