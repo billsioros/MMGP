@@ -62,6 +62,28 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
     Manager::Buses buses;
     Manager::load(*database, buses);
 
+    const std::size_t CAPACITY = static_cast<std::size_t>
+    (
+        std::ceil
+        (
+            static_cast<double>
+            (
+                std::accumulate
+                (
+                    buses.begin(),
+                    buses.end(),
+                    0UL,
+                    [&](std::size_t currentSum, const Manager::Bus& bus)
+                    {
+                        return currentSum + bus._capacity;
+                    }
+                )
+            )
+            /
+            static_cast<double>(buses.size())
+        )
+    );
+
     Manager::Student depot;
     Manager::load(*database, depot);
 
@@ -82,7 +104,7 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         Cluster<Manager::Student>::cmeans
         (
             students,
-            24UL,
+            CAPACITY,
             [&haversine](const Manager::Student& A, const Manager::Student& B)
             {
                 return haversine(A._position, B._position);
