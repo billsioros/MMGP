@@ -57,6 +57,30 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
+    std::string dbname(*(v8::String::Utf8Value(args[0]->ToString())));
+
+    std::unique_ptr<SQLite::Database> database;
+    try
+    {
+        database = std::make_unique<SQLite::Database>(dbname);
+    }
+    catch (std::exception& e)
+    {
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    (std::string("Exception ( ") + e.what() + " )").c_str()
+                )
+            )
+        );
+
+        return;
+    }
+
     std::string daypart;
     Manager::Student depot;
     std::vector<Manager::Student> students;
@@ -82,30 +106,6 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
             students.emplace_back(student);
         }
     } catch (std::exception& e)
-    {
-        isolate->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    isolate,
-                    (std::string("Exception ( ") + e.what() + " )").c_str()
-                )
-            )
-        );
-
-        return;
-    }
-
-    std::string dbname(*(v8::String::Utf8Value(args[0]->ToString())));
-
-    std::unique_ptr<SQLite::Database> database;
-    try
-    {
-        database = std::make_unique<SQLite::Database>(dbname);
-    }
-    catch (std::exception& e)
     {
         isolate->ThrowException
         (
