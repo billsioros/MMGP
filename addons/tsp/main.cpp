@@ -42,7 +42,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * isolate = args.GetIsolate();
 
-    if (args.Length() < 2)
+    if (args.Length() != 2)
     {
         isolate->ThrowException
         (
@@ -51,7 +51,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "Missing parameter(s) <database> and/or <tsp-json>"
+                    "No matching function for call to route(" + std::to_string(args.Length()) + ")"
                 )
             )
         );
