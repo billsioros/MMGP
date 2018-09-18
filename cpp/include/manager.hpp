@@ -18,7 +18,7 @@ namespace Manager
         std::string    _addressId;
         std::bitset<5> _days;
         Vector2        _position;
-        Vector2        _timespan;
+        Vector2        _timewindow;
 
         Student();
         Student(const Student&);
