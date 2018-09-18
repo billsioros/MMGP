@@ -15,19 +15,21 @@
 
 // @ Parameter tsp-json:
 // {
-//      "daypart": "Morning",
-//      "depot": "XXXXXXXXXXXX",
+//      "serviceTime": 30.0,                            # 30 seconds
+//      "departureTime": 27000.0,                       # 7:30 AM
+//      "dayPart": "Morning",                           # Morning / Noon / Study
+//      "depot": "XXXXXXXXXXXXXXXXXXXXXXXX",            # AddressId
 //      "students":
 //       [
 //            {
-//                 "timespan":  [ 7.30, 8.00 ],
-//                 "addressId": "XXXXXXXXXXXX",
+//                 "timewindow": [ 27000.0, 28800.0 ],  # [ 7.30 AM, 8.00 AM ]
+//                 "addressId": "XXXXXXXXXXXXXXXXXXXXXXXX",
 //                 "studentId": "YYYYYYYYYYYY"
 //            },
 //            ...
 //            {
-//                 "timespan":  [ 7.45, 8.15 ],
-//                 "addressId": "XXXXXXXXXXXX",
+//                 "timewindow": [ 27900.0, 29700.0 ],  # [ 7.45 AM, 8.15 AM ]
+//                 "addressId": "XXXXXXXXXXXXXXXXXXXXXXXX",
 //                 "studentId": "YYYYYYYYYYYY"
 //            }
 //       ]
@@ -36,7 +38,7 @@
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
-void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
+void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * isolate = args.GetIsolate();
 
@@ -50,47 +52,6 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
                 (
                     isolate,
                     "Missing parameter(s) <database> and/or <tsp-json>"
-                )
-            )
-        );
-
-        return;
-    }
-
-    std::string daypart;
-    Manager::Student depot;
-    std::vector<Manager::Student> students;
-
-    try
-    {
-        nlohmann::json json = nlohmann::json::parse
-        (
-            *(v8::String::Utf8Value(args[1]->ToString()))
-        );
-        
-        daypart = json["daypart"];
-        
-        depot._addressId = json["depot"];
-
-        for (const auto& entry : json["students"])
-        {
-            Manager::Student student;
-            student._studentId = entry["studentId"];
-            student._addressId = entry["addressId"];
-            student._timespan  = Vector2(entry["timespan"][0], entry["timespan"][1]);
-
-            students.emplace_back(student);
-        }
-    } catch (std::exception& e)
-    {
-        isolate->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    isolate,
-                    (std::string("Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
@@ -122,10 +83,52 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
+    double serviceTime, departureTime;
+    std::string dayPart;
+    Manager::Student depot;
+    std::vector<Manager::Student> students;
+
+    try
+    {
+        nlohmann::json json = nlohmann::json::parse
+        (
+            *(v8::String::Utf8Value(args[1]->ToString()))
+        );
+        
+        serviceTime      = json["serviceTime"];
+        departureTime    = json["departureTime"];
+        dayPart          = json["dayPart"];
+        depot._addressId = json["depot"];
+
+        for (const auto& entry : json["students"])
+        {
+            Manager::Student student;
+            student._studentId = entry["studentId"];
+            student._addressId = entry["addressId"];
+            student._timewindow  = Vector2(entry["timespan"][0], entry["timewindow"][1]);
+
+            students.emplace_back(student);
+        }
+    } catch (std::exception& e)
+    {
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    (std::string("Exception ( ") + e.what() + " )").c_str()
+                )
+            )
+        );
+
+        return;
+    }
+
+    DMatrix dmatrix;
     auto distance = [&](const Manager::Student& A, const Manager::Student& B)
     {
-        static DMatrix dmatrix;
-
         DMatrix::const_iterator mit;
         DVector::const_iterator vit;
 
@@ -135,8 +138,8 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
 
         return
         (
-            dmatrix[A][B] = Manager::distance(*database, A, B, daypart)
-                          + (A == depot ? 0.0 : 30.0) // Service Time
+            dmatrix[A][B] = (A == depot ? 0.0 : serviceTime)
+                          + Manager::distance(*database, A, B, dayPart)
         );
     };
 
@@ -148,19 +151,19 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, distance);
 
     // Compressed Annealing
-    auto penalty = [&distance](const TSP::path<Manager::Student>& path)
+    auto penalty = [&](const TSP::path<Manager::Student>& path)
     {
-        double penalty = 0.0, partial = 0.0;
+        double penalty = 0.0, arrival = departureTime;
         for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
         {
             const Manager::Student& previous = path.second[j];
             const Manager::Student& current  = path.second[j + 1UL];
 
-            partial += distance(previous, current);
+            arrival += distance(previous, current);
 
-            const double departure = std::max<double>(partial, current._timespan.x());
+            const double startOfService = std::max<double>(arrival, current._timewindow.x());
 
-            penalty += std::max<double>(0.0, departure - current._timespan.y());
+            penalty += std::max<double>(0.0, startOfService + serviceTime - current._timewindow.y());
         }
 
         return penalty;
@@ -229,7 +232,8 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
         json["students"].back()["studentId"] = student._studentId;
     }
 
-    json["cost"] = path.first;
+    json["cost"]    = path.first;
+    json["penalty"] = penalty(path);
 
     args.GetReturnValue().Set
     (
@@ -242,7 +246,7 @@ void tsp(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 {
-    NODE_SET_METHOD(module, "exports", tsp);
+    NODE_SET_METHOD(module, "exports", route);
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);

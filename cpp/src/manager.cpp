@@ -24,7 +24,7 @@ _studentId(other._studentId),
 _addressId(other._addressId),
 _days(other._days),
 _position(other._position),
-_timespan(other._timespan)
+_timewindow(other._timewindow)
 {
 }
 
@@ -33,23 +33,23 @@ Manager::Student::Student(
     const std::string& _addressId,
     const std::bitset<5>& _days,
     const Vector2& _position,
-    const Vector2& _timespan
+    const Vector2& _timewindow
 )
 :
 _studentId(_studentId),
 _addressId(_addressId),
 _position(_position),
-_timespan(_timespan)
+_timewindow(_timewindow)
 {
 }
 
 Manager::Student& Manager::Student::operator=(const Student& other)
 {
-    this->_studentId = other._studentId;
-    this->_addressId = other._addressId;
-    this->_days      = other._days;
-    this->_position  = other._position;
-    this->_timespan  = other._timespan;
+    this->_studentId   = other._studentId;
+    this->_addressId   = other._addressId;
+    this->_days        = other._days;
+    this->_position    = other._position;
+    this->_timewindow  = other._timewindow;
 
     return *this;
 }
@@ -168,12 +168,12 @@ void Manager::load(
             const double y = stmt.getColumn(current++).getDouble();
             const Vector2 _position(x, y);
 
-            const Vector2 _timespan(
+            const Vector2 _timewindow(
                 0.0, // stmt.getColumn(current++).getDouble(),
                 0.0  // stmt.getColumn(current++).getDouble()
             );
 
-            students.emplace_back(_studentId, _addressId, _days, _position, _timespan);
+            students.emplace_back(_studentId, _addressId, _days, _position, _timewindow);
         }
     }
     catch (std::exception& e)
@@ -244,12 +244,12 @@ nlohmann::json Manager::json(
                     nlohmann::json::object
                     (
                         {
-                            { "studentId", student._studentId    },
-                            { "addressId", student._addressId    },
-                            { "longitude", student._position.x() },
-                            { "latitude",  student._position.y() },
-                            { "earliest",  student._timespan.x() },
-                            { "latest",    student._timespan.y() }
+                            { "studentId", student._studentId      },
+                            { "addressId", student._addressId      },
+                            { "longitude", student._position.x()   },
+                            { "latitude",  student._position.y()   },
+                            { "earliest",  student._timewindow.x() },
+                            { "latest",    student._timewindow.y() }
                         }
                     )
                 );
@@ -296,8 +296,8 @@ Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)
     for (std::size_t i = 0; i < A._days.size(); i++)
         student._days[i] = A._days[i] || B._days[i];
 
-    student._position = A._position + B._position;
-    student._timespan = A._timespan + B._timespan;
+    student._position   = A._position   + B._position;
+    student._timewindow = A._timewindow + B._timewindow;
 
     return student;
 }
@@ -307,7 +307,7 @@ Manager::Student operator/(const Manager::Student& _student, double factor)
     Manager::Student student;
 
     student._position = _student._position / factor;
-    student._timespan = _student._timespan / factor;
+    student._timewindow = _student._timewindow / factor;
 
     return student;
 }
