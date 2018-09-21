@@ -6,6 +6,7 @@
             "sources":
             [
                 "main.cpp",
+                "../../cpp/src/wrapper.cpp",
                 "../../cpp/src/vector2.cpp",
                 "../../cpp/src/manager.cpp",
                 "../../cpp/SQLiteCpp/src/Backup.cpp",

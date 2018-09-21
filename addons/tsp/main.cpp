@@ -5,15 +5,15 @@
 #include "manager.hpp"
 #include "tsp.hpp"
 #include "annealing.hpp"
-#include "json.hpp"
 #include <unordered_map>
 #include <memory>
 #include <vector>
 #include <string>
 
+#include "wrapper.hpp"
 #include <node.h>
 
-// @ Parameter tsp-json:
+// A JSON holding all necessary information for the tsptw solver
 // {
 //      "serviceTime": 30.0,                            # 30 seconds
 //      "departureTime": 27000.0,                       # 7:30 AM
@@ -42,7 +42,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * isolate = args.GetIsolate();
 
-    if (args.Length() != 2)
+    if (args.Length() != 6)
     {
         isolate->ThrowException
         (
@@ -51,7 +51,10 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     isolate,
-                    "No matching function for call to route(" + std::to_string(args.Length()) + ")"
+                    (
+                        "TypeError: function requires 6 arguements "\
+                        "(" + std::to_string(args.Length()) + " given)"
+                    ).c_str()
                 )
             )
         );
@@ -59,7 +62,75 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
-    std::string dbname(*(v8::String::Utf8Value(args[0]->ToString())));
+    if (
+        !args[0]->IsString() || !args[1]->IsString() ||
+        !args[2]->IsNumber() || !args[3]->IsNumber() ||
+        !args[4]->IsObject() ||
+        !args[5]->IsArray()
+    )
+    {
+        isolate->ThrowException
+        (
+            v8::Exception::TypeError
+            (
+                v8::String::NewFromUtf8
+                (
+                    isolate,
+                    "TypeError: Invalid arguement(s) type "\
+                    "[ "\
+                        "route"\
+                        "("\
+                            "const std::string& dbname, const std::string& dayPart, "\
+                            "double departureTime, double serviceTime, "\
+                            "const Manager::Student& depot, "\
+                            "const std::vector<Manager::Student>& students"\
+                        ") "\
+                    "]"
+                )
+            )
+        );
+
+        return;
+    }
+
+    const std::string dbname(*v8::String::Utf8Value(args[0].As<v8::String>()));
+    const std::string dayPart(*v8::String::Utf8Value(args[1].As<v8::String>()));
+    
+    const double departureTime = args[2].As<v8::Number>()->NumberValue();
+    const double serviceTime   = args[3].As<v8::Number>()->NumberValue();
+
+    Manager::Student depot;
+
+    WObject wstudent(isolate, args[4].As<v8::Object>());
+
+    wstudent.get("studentId", depot._studentId);
+    wstudent.get("addressId", depot._addressId);
+
+    std::vector<Manager::Student> students;
+
+    WArray wstudents(isolate, args[5].As<v8::Array>());
+    
+    for (std::size_t sid = 0UL; sid < wstudents.size(); sid++)
+    {
+        Manager::Student student;
+
+        wstudents.get(sid, wstudent);
+
+        wstudent.get("studentId", student._studentId);
+        wstudent.get("addressId", student._addressId);
+
+        double fst, snd;
+
+        wstudent.get("longitude", fst);
+        wstudent.get("latitude",  snd);
+        student._position = { fst, snd };
+
+        wstudent.get("earliest", fst);
+        wstudent.get("latest",   snd);
+        student._timewindow = { fst, snd };
+
+        students.emplace_back(student);
+    }
 
     std::unique_ptr<SQLite::Database> database;
     try
@@ -67,49 +138,6 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         database = std::make_unique<SQLite::Database>(dbname);
     }
     catch (std::exception& e)
-    {
-        isolate->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    isolate,
-                    (std::string("Exception ( ") + e.what() + " )").c_str()
-                )
-            )
-        );
-
-        return;
-    }
-
-    double serviceTime, departureTime;
-    std::string dayPart;
-    Manager::Student depot;
-    std::vector<Manager::Student> students;
-
-    try
-    {
-        nlohmann::json json = nlohmann::json::parse
-        (
-            *(v8::String::Utf8Value(args[1]->ToString()))
-        );
-        
-        serviceTime      = json["serviceTime"];
-        departureTime    = json["departureTime"];
-        dayPart          = json["dayPart"];
-        depot._addressId = json["depot"];
-
-        for (const auto& entry : json["students"])
-        {
-            Manager::Student student;
-            student._studentId = entry["studentId"];
-            student._addressId = entry["addressId"];
-            student._timewindow  = Vector2(entry["timespan"][0], entry["timewindow"][1]);
-
-            students.emplace_back(student);
-        }
-    } catch (std::exception& e)
     {
         isolate->ThrowException
         (
@@ -223,25 +251,27 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         TNP
     );
 
-    nlohmann::json json;
-    for (const auto& student : path.second)
-    {
-        json["students"].emplace_back(nlohmann::json::object());
+    wstudents = WArray(isolate, students.size());
 
-        json["students"].back()["addressId"] = student._addressId;
-        json["students"].back()["studentId"] = student._studentId;
+    for (std::size_t sid = 1UL; sid < students.size() - 1UL; sid++)
+    {
+        const Manager::Student& student = students[sid];
+
+        wstudent = WObject(isolate);
+
+        wstudent.set("studentId", student._studentId);
+        wstudent.set("addressId", student._addressId);
+
+        wstudents.set(sid, wstudent);
     }
 
-    json["cost"]    = path.first;
-    json["penalty"] = penalty(path);
+    WObject wtsp(isolate);
 
-    args.GetReturnValue().Set
-    (
-        v8::String::NewFromUtf8
-        (
-            isolate, json.dump().c_str()
-        )
-    );
+    wtsp.set("cost",     path.first);
+    wtsp.set("penalty",  penalty(path));
+    wtsp.set("students", wstudent);
+
+    args.GetReturnValue().Set(wtsp.raw());
 }
 
 void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
