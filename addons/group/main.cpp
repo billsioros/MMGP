@@ -9,6 +9,8 @@
 #include "wrapper.hpp"
 #include <node.h>
 
+namespace VRP_GROUP
+{
 v8::Local<v8::Array> package(v8::Isolate *, const Manager::Schedules&);
 
 void group(const v8::FunctionCallbackInfo<v8::Value>& args)
@@ -213,3 +215,4 @@ void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
+}
