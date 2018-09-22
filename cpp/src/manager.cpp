@@ -45,11 +45,11 @@ _timewindow(_timewindow)
 
 Manager::Student& Manager::Student::operator=(const Student& other)
 {
-    this->_studentId   = other._studentId;
-    this->_addressId   = other._addressId;
-    this->_days        = other._days;
-    this->_position    = other._position;
-    this->_timewindow  = other._timewindow;
+    _studentId   = other._studentId;
+    _addressId   = other._addressId;
+    _days        = other._days;
+    _position    = other._position;
+    _timewindow  = other._timewindow;
 
     return *this;
 }
@@ -70,31 +70,16 @@ _cost(std::numeric_limits<double>().max())
 
 void Manager::load(SQLite::Database& database, Student& depot)
 {
-    try
+    SQLite::Statement stmt(database, "SELECT AddressID, GPS_X, GPS_Y FROM Depot");
+
+    stmt.executeStep();
+
+    depot._addressId = stmt.getColumn(0).getText();
+    depot._position  =
     {
-        SQLite::Statement stmt(
-            database,
-            "SELECT AddressID, GPS_X, GPS_Y "\
-            "FROM Depot"
-        );
-
-        while (stmt.executeStep())
-        {
-            int current = 0;
-            const std::string _addressId(stmt.getColumn(current++).getText());
-
-            const double x = stmt.getColumn(current++).getDouble();
-            const double y = stmt.getColumn(current++).getDouble();
-            const Vector2 _position(x, y);
-
-            depot._addressId = _addressId;
-            depot._position  = _position;
-        }
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
+        stmt.getColumn(1).getDouble(),
+        stmt.getColumn(2).getDouble()
+    };
 }
 
 void Manager::load(
@@ -103,107 +88,70 @@ void Manager::load(
     const std::string& daypart
 )
 {
-    bool failed = false;
+    #ifdef __DEBUG_MANAGER__
+    SQLite::Statement stmt(database,
+        "SELECT Student.StudentID, Student.AddressID, "\
+        "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
+        "Address.GPS_X, Address.GPS_Y "\
+        "FROM Student, Address "\
+        "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 200");
+    #else
+    SQLite::Statement stmt(database,
+        "SELECT Student.StudentID, Student.AddressID, "\
+        "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
+        "Address.GPS_X, Address.GPS_Y "\
+        "FROM Student, Address "\
+        "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ?");
+    #endif
 
-    try
+    stmt.bind(1, daypart);
+
+    std::unordered_set<Student> set;
+    while (stmt.executeStep())
     {
-        SQLite::Statement stmt(database,
-            "SELECT name "\
-            "FROM sqlite_master "\
-            "WHERE type = 'table' AND name = ?");
+        int current = 0;
 
-        stmt.bind(1, daypart + "Distance");
+        std::string _studentId(stmt.getColumn(current++).getText());
+        std::string _addressId(stmt.getColumn(current++).getText());
 
-        failed = !stmt.executeStep();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
+        Student student;
+        student._studentId = _studentId; student._addressId = _addressId;
+        if (!set.insert(student).second)
+            continue;
 
-    if (failed)
-    {
-        std::cerr << "<ERR>: No table " << daypart << "Distance" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
+        std::bitset<5> _days;
+        for (; current < 7; current++)
+            _days.set(current - 2, stmt.getColumn(current).getText()[0] == '1');
 
-    try
-    {
-        #ifdef __DEBUG_MANAGER__
-        SQLite::Statement stmt(database,
-            "SELECT Student.StudentID, Student.AddressID, "\
-            "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
-            "Address.GPS_X, Address.GPS_Y "\
-            "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 200");
-        #else
-        SQLite::Statement stmt(database,
-            "SELECT Student.StudentID, Student.AddressID, "\
-            "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
-            "Address.GPS_X, Address.GPS_Y "\
-            "FROM Student, Address "\
-            "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ?");
-        #endif
+        const double x = stmt.getColumn(current++).getDouble();
+        const double y = stmt.getColumn(current++).getDouble();
+        const Vector2 _position(x, y);
 
-        stmt.bind(1, daypart);
+        const Vector2 _timewindow(
+            0.0, // stmt.getColumn(current++).getDouble(),
+            0.0  // stmt.getColumn(current++).getDouble()
+        );
 
-        std::unordered_set<Student> set;
-        while (stmt.executeStep())
-        {
-            int current = 0;
-
-            std::string _studentId(stmt.getColumn(current++).getText());
-            std::string _addressId(stmt.getColumn(current++).getText());
-
-            Student student;
-            student._studentId = _studentId; student._addressId = _addressId;
-            if (!set.insert(student).second)
-                continue;
-
-            std::bitset<5> _days;
-            for (; current < 7; current++)
-                _days.set(current - 2, stmt.getColumn(current).getText()[0] == '1');
-
-            const double x = stmt.getColumn(current++).getDouble();
-            const double y = stmt.getColumn(current++).getDouble();
-            const Vector2 _position(x, y);
-
-            const Vector2 _timewindow(
-                0.0, // stmt.getColumn(current++).getDouble(),
-                0.0  // stmt.getColumn(current++).getDouble()
-            );
-
-            students.emplace_back(_studentId, _addressId, _days, _position, _timewindow);
-        }
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
+        students.emplace_back(_studentId, _addressId, _days, _position, _timewindow);
     }
 }
 
 void Manager::load(SQLite::Database& database, Buses& buses)
 {
-    try
+    #ifdef __DEBUG_MANAGER__
+    SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
+    #else
+    SQLite::Statement stmt(database, "SELECT * FROM BUS");
+    #endif
+    
+    while (stmt.executeStep())
     {
-        #ifdef __DEBUG_MANAGER__
-        SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
-        #else
-        SQLite::Statement stmt(database, "SELECT * FROM BUS");
-        #endif
-        
-        while (stmt.executeStep())
-        {
-            std::string _busId(stmt.getColumn(0).getText());
-            unsigned _number   = stmt.getColumn(1).getUInt();
-            unsigned _capacity = stmt.getColumn(2).getUInt();
-
-            buses.emplace_back(_busId, _number, _capacity);
-        }
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
+        buses.emplace_back
+        (
+            stmt.getColumn(0).getText(),
+            stmt.getColumn(1).getUInt(),
+            stmt.getColumn(2).getUInt()
+        );
     }
 }
 
@@ -267,26 +215,17 @@ double Manager::distance(
     const std::string& daypart
 )
 {
-    try
-    {
-        SQLite::Statement stmt(database,
-            "SELECT Duration "\
-            "FROM " + daypart + "Distance "\
-            "WHERE AddressID_1 = ? AND AddressID_2 = ?");
+    SQLite::Statement stmt(database,
+        "SELECT Duration "\
+        "FROM " + daypart + "Distance "\
+        "WHERE AddressID_1 = ? AND AddressID_2 = ?");
 
-        stmt.bind(1, A._addressId);
-        stmt.bind(2, B._addressId);
+    stmt.bind(1, A._addressId);
+    stmt.bind(2, B._addressId);
 
-        if (stmt.executeStep())
-            return stmt.getColumn(0).getDouble();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
-
-    std::cerr << "<ERR>: No such address(es) ( " << A._addressId << ' ' << B._addressId << " )" << std::endl;
-    std::exit(EXIT_FAILURE);
+    stmt.executeStep();
+    
+    return stmt.getColumn(0).getDouble();
 }
 
 Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)

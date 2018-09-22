@@ -35,6 +35,8 @@
 //       ]
 // }
 
+namespace VRP_ROUTE
+{
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
@@ -280,3 +282,4 @@ void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
+}
