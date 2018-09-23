@@ -130,27 +130,24 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
     };
 
-    std::unique_ptr<const std::vector<Cluster<Manager::Student>>> groups
+    std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
     (
-        Cluster<Manager::Student>::cmeans
-        (
-            students,
-            CAPACITY,
-            [&haversine](const Manager::Student& A, const Manager::Student& B)
-            {
-                return haversine(A._position, B._position);
-            },
-            [](const Manager::Student& student)
-            {
-                return 1.0;
-            }
-        )
+        students,
+        CAPACITY,
+        [&haversine](const Manager::Student& A, const Manager::Student& B)
+        {
+            return haversine(A._position, B._position);
+        },
+        [](const Manager::Student& student)
+        {
+            return 1.0;
+        }
     );
 
     Manager::Schedules schedules;
 
     std::size_t busId = std::numeric_limits<std::size_t>().max();
-    for (const auto& group : *groups)
+    for (const auto& group : groups)
     {
         if (busId >= buses.size())
         {
@@ -168,7 +165,7 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedules)
 {
-    WArray wschedules(iso);
+    Wrapper::Array wschedules(iso);
 
     for (std::size_t sid = 0UL; sid < schedules.size(); sid++)
     {
@@ -177,7 +174,7 @@ v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedu
         if (buses.empty())
             continue;
         
-        WArray wbuses(iso);
+        Wrapper::Array wbuses(iso);
 
         for (std::size_t bid = 0UL; bid < buses.size(); bid++)
         {
@@ -186,13 +183,13 @@ v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedu
             if (bus._students.empty())
                 continue;
 
-            WArray wstudents(iso, bus._students.size());
+            Wrapper::Array wstudents(iso, bus._students.size());
 
             for (std::size_t pid = 0UL; pid < bus._students.size(); pid++)
             {
                 const Manager::Student& student = bus._students[pid];
 
-                WObject wstudent(iso);
+                Wrapper::Object wstudent(iso);
 
                 wstudent.set("studentId", student._studentId);
                 wstudent.set("addressId", student._addressId);
@@ -204,7 +201,7 @@ v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedu
                 wstudents.set(pid, wstudent);
             }
 
-            WObject wbus(iso);
+            Wrapper::Object wbus(iso);
 
             wbus.set("busId",    bus._busId);
             wbus.set("students", wstudents);

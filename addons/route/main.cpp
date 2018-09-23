@@ -103,14 +103,14 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
     Manager::Student depot;
 
-    WObject wstudent(iso, args[4].As<v8::Object>());
+    Wrapper::Object wstudent(iso, args[4].As<v8::Object>());
 
     wstudent.get("studentId", depot._studentId);
     wstudent.get("addressId", depot._addressId);
 
     std::vector<Manager::Student> students;
 
-    WArray wstudents(iso, args[5].As<v8::Array>());
+    Wrapper::Array wstudents(iso, args[5].As<v8::Array>());
     
     for (std::size_t sid = 0UL; sid < wstudents.size(); sid++)
     {
@@ -261,13 +261,13 @@ v8::Local<v8::Object> package
     const TSP::path<Manager::Student>& path
 )
 {
-    wstudents = WArray(iso, path.second.size() - 2UL);
+    Wrapper::Array wstudents = Wrapper::Array(iso, path.second.size() - 2UL);
 
     for (std::size_t sid = 1UL; sid < path.second.size() - 1UL; sid++)
     {
         const Manager::Student& student = path.second[sid];
 
-        wstudent = WObject(iso);
+        Wrapper::Object wstudent = Wrapper::Object(iso);
 
         wstudent.set("studentId", student._studentId);
         wstudent.set("addressId", student._addressId);
@@ -275,7 +275,7 @@ v8::Local<v8::Object> package
         wstudents.set(sid, wstudent);
     }
 
-    WObject wpath(iso);
+    Wrapper::Object wpath(iso);
 
     wpath.set("students", wstudents);
     wpath.set("cost",     path.first);

@@ -13,8 +13,6 @@
 #include <chrono>
 #include <iomanip>
 
-using Group = Cluster<Manager::Student>;
-
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
@@ -84,16 +82,15 @@ int main(int argc, char * argv[])
 
         auto beg = std::chrono::system_clock().now();
 
-        std::unique_ptr<const std::vector<Group>> groups(
-            Group::cmeans(
-                students,
-                24UL,
-                [&haversine](const Manager::Student& A, const Manager::Student& B)
-                {
-                    return haversine(A._position, B._position);
-                },
-                [](const Manager::Student& student) { return 1.0; }
-            )
+        std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
+        (
+            students,
+            24UL,
+            [&haversine](const Manager::Student& A, const Manager::Student& B)
+            {
+                return haversine(A._position, B._position);
+            },
+            [](const Manager::Student& student) { return 1.0; }
         );
 
         auto end = std::chrono::system_clock().now();
@@ -108,7 +105,7 @@ int main(int argc, char * argv[])
         std::srand(static_cast<unsigned>(std::time(nullptr)));
 
         std::size_t busId = std::numeric_limits<std::size_t>().max();
-        for (const auto& group : *groups)
+        for (const auto& group : groups)
         {
             if (busId >= buses.size())
             {
