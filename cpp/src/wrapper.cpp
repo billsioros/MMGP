@@ -3,20 +3,20 @@
 #include <node.h>
 #include <string>
 
-// WObject Implementation:
-WObject::WObject(v8::Isolate * iso)
+// Object Implementation:
+Wrapper::Object::Object(v8::Isolate * iso)
 :
 iso(iso), obj(v8::Object::New(iso))
 {
 }
 
-WObject::WObject(v8::Isolate * iso, const v8::Local<v8::Object>& obj)
+Wrapper::Object::Object(v8::Isolate * iso, const v8::Local<v8::Object>& obj)
 :
 iso(iso), obj(obj)
 {
 }
 
-WObject& WObject::operator=(const WObject& wobject)
+Wrapper::Object& Wrapper::Object::operator=(const Object& wobject)
 {
     iso = wobject.iso;
     obj = wobject.obj;
@@ -24,12 +24,12 @@ WObject& WObject::operator=(const WObject& wobject)
     return *this;
 }
 
-const v8::Local<v8::Object>& WObject::raw() const
+const v8::Local<v8::Object>& Wrapper::Object::raw() const
 {
     return obj;
 }
 
-void WObject::set(const std::string& field, const std::string& str)
+void Wrapper::Object::set(const std::string& field, const std::string& str)
 {
     obj->Set
     (
@@ -38,7 +38,7 @@ void WObject::set(const std::string& field, const std::string& str)
     );
 }
 
-void WObject::set(const std::string& field, double val)
+void Wrapper::Object::set(const std::string& field, double val)
 {
     obj->Set
     (
@@ -47,7 +47,7 @@ void WObject::set(const std::string& field, double val)
     );
 }
 
-void WObject::set(const std::string& field, const WObject& wobject)
+void Wrapper::Object::set(const std::string& field, const Object& wobject)
 {
     obj->Set
     (
@@ -56,7 +56,7 @@ void WObject::set(const std::string& field, const WObject& wobject)
     );
 }
 
-void WObject::set(const std::string& field, const WArray& warray)
+void Wrapper::Object::set(const std::string& field, const Array& warray)
 {
     obj->Set
     (
@@ -65,7 +65,7 @@ void WObject::set(const std::string& field, const WArray& warray)
     );
 }
 
-void WObject::get(const std::string& field, std::string& str) const
+void Wrapper::Object::get(const std::string& field, std::string& str) const
 {
     str = *v8::String::Utf8Value
     (
@@ -73,7 +73,7 @@ void WObject::get(const std::string& field, std::string& str) const
     );
 }
 
-void WObject::get(const std::string& field, double& val) const
+void Wrapper::Object::get(const std::string& field, double& val) const
 {
     val = obj->Get
     (
@@ -81,7 +81,7 @@ void WObject::get(const std::string& field, double& val) const
     ).As<v8::Number>()->NumberValue();
 }
 
-void WObject::get(const std::string& field, WObject& wobject) const
+void Wrapper::Object::get(const std::string& field, Object& wobject) const
 {
     wobject.iso = iso;
     wobject.obj = obj->Get
@@ -90,7 +90,7 @@ void WObject::get(const std::string& field, WObject& wobject) const
     ).As<v8::Object>();
 }
 
-void WObject::get(const std::string& field, WArray& warray) const
+void Wrapper::Object::get(const std::string& field, Array& warray) const
 {
     warray.iso = iso;
     warray.arr = obj->Get
@@ -99,20 +99,20 @@ void WObject::get(const std::string& field, WArray& warray) const
     ).As<v8::Array>();
 }
 
-// WArray Implementation:
-WArray::WArray(v8::Isolate * iso, std::size_t size)
+// Array Implementation:
+Wrapper::Array::Array(v8::Isolate * iso, std::size_t size)
 :
 iso(iso), arr(v8::Array::New(iso, size))
 {
 }
 
-WArray::WArray(v8::Isolate * iso, const v8::Local<v8::Array>& arr)
+Wrapper::Array::Array(v8::Isolate * iso, const v8::Local<v8::Array>& arr)
 :
 iso(iso), arr(arr)
 {
 }
 
-WArray& WArray::operator=(const WArray& warray)
+Wrapper::Array& Wrapper::Array::operator=(const Array& warray)
 {
     iso = warray.iso;
     arr = warray.arr;
@@ -120,32 +120,32 @@ WArray& WArray::operator=(const WArray& warray)
     return *this;
 }
 
-const v8::Local<v8::Array>& WArray::raw() const
+const v8::Local<v8::Array>& Wrapper::Array::raw() const
 {
     return arr;
 }
 
-void WArray::set(std::size_t index, const std::string& str)
+void Wrapper::Array::set(std::size_t index, const std::string& str)
 {
     arr->Set(index, v8::String::NewFromUtf8(iso, str.c_str()));
 }
 
-void WArray::set(std::size_t index, double val)
+void Wrapper::Array::set(std::size_t index, double val)
 {
     arr->Set(index, v8::Number::New(iso, val));
 }
 
-void WArray::set(std::size_t index, const WObject& wobject)
+void Wrapper::Array::set(std::size_t index, const Object& wobject)
 {
     arr->Set(index, wobject.obj);
 }
 
-void WArray::set(std::size_t index, const WArray& warray)
+void Wrapper::Array::set(std::size_t index, const Array& warray)
 {
     arr->Set(index, warray.arr);
 }
 
-void WArray::get(std::size_t index, std::string& str) const
+void Wrapper::Array::get(std::size_t index, std::string& str) const
 {
     str = *v8::String::Utf8Value
     (
@@ -153,24 +153,24 @@ void WArray::get(std::size_t index, std::string& str) const
     );
 }
 
-void WArray::get(std::size_t index, double& val) const
+void Wrapper::Array::get(std::size_t index, double& val) const
 {
     val = arr->Get(index).As<v8::Number>()->NumberValue();
 }
 
-void WArray::get(std::size_t index, WObject& wobject) const
+void Wrapper::Array::get(std::size_t index, Object& wobject) const
 {
     wobject.iso = iso;
     wobject.obj = arr->Get(index).As<v8::Object>();
 }
 
-void WArray::get(std::size_t index, WArray& warray) const
+void Wrapper::Array::get(std::size_t index, Array& warray) const
 {
     warray.iso = iso;
     warray.arr = arr->Get(index).As<v8::Array>();
 }
 
-std::size_t WArray::size() const
+std::size_t Wrapper::Array::size() const
 {
     return static_cast<std::size_t>(arr->Length());
 }

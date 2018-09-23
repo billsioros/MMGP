@@ -4,11 +4,14 @@
 #include <node.h>
 #include <string>
 
-class WArray;
-
-class WObject
+namespace Wrapper
 {
-    friend class WArray;
+
+class Array;
+
+class Object
+{
+    friend class Array;
 
     v8::Isolate * iso;
 
@@ -16,27 +19,27 @@ class WObject
 
 public:
 
-    WObject(v8::Isolate *);
-    WObject(v8::Isolate *, const v8::Local<v8::Object>&);
+    Object(v8::Isolate *);
+    Object(v8::Isolate *, const v8::Local<v8::Object>&);
 
-    WObject& operator=(const WObject&);
+    Object& operator=(const Object&);
 
     const v8::Local<v8::Object>& raw() const;
 
     void set(const std::string&, const std::string&);
     void set(const std::string&, double);
-    void set(const std::string&, const WObject&);
-    void set(const std::string&, const WArray&);
+    void set(const std::string&, const Object&);
+    void set(const std::string&, const Array&);
 
     void get(const std::string&, std::string&) const;
     void get(const std::string&, double&) const;
-    void get(const std::string&, WObject&) const;
-    void get(const std::string&, WArray&) const;
+    void get(const std::string&, Object&) const;
+    void get(const std::string&, Array&) const;
 };
 
-class WArray
+class Array
 {
-    friend class WObject;
+    friend class Object;
 
     v8::Isolate * iso;
 
@@ -44,22 +47,24 @@ class WArray
 
 public:
 
-    WArray(v8::Isolate *, std::size_t size = 0UL);
-    WArray(v8::Isolate *, const v8::Local<v8::Array>&);
+    Array(v8::Isolate *, std::size_t size = 0UL);
+    Array(v8::Isolate *, const v8::Local<v8::Array>&);
 
-    WArray& operator=(const WArray&);
+    Array& operator=(const Array&);
 
     const v8::Local<v8::Array>& raw() const;
 
     void set(std::size_t, const std::string&);
     void set(std::size_t, double);
-    void set(std::size_t, const WObject&);
-    void set(std::size_t, const WArray&);
+    void set(std::size_t, const Object&);
+    void set(std::size_t, const Array&);
 
     void get(std::size_t, std::string&) const;
     void get(std::size_t, double&) const;
-    void get(std::size_t, WObject&) const;
-    void get(std::size_t, WArray&) const;
+    void get(std::size_t, Object&) const;
+    void get(std::size_t, Array&) const;
 
     std::size_t size() const;
 };
+
+}

@@ -11,23 +11,24 @@
 
 namespace VRP_GROUP
 {
+
 v8::Local<v8::Array> package(v8::Isolate *, const Manager::Schedules&);
 
 void group(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::Isolate * isolate = args.GetIsolate();
+    v8::Isolate * iso = args.GetIsolate();
 
-    if (args.Length() != 2)
+    if (args.Length() != 3)
     {
-        isolate->ThrowException
+        iso->ThrowException
         (
             v8::Exception::TypeError
             (
                 v8::String::NewFromUtf8
                 (
-                    isolate,
+                    iso,
                     (
-                        "TypeError: function requires 2 arguements "\
+                        "TypeError: function requires 3 arguements "\
                         "(" + std::to_string(args.Length()) + " given)"
                     ).c_str()
                 )
@@ -37,17 +38,17 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
-    if (!args[0]->IsString() || !args[1]->IsString())
+    if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsFunction())
     {
-        isolate->ThrowException
+        iso->ThrowException
         (
             v8::Exception::TypeError
             (
                 v8::String::NewFromUtf8
                 (
-                    isolate,
-                    "TypeError: Invalid arguement(s) type "\
-                    "[ group(const std::string& database, const std::string& daypart) ]"
+                    iso,
+                    "TypeError: Invalid arguement(s) "\
+                    "[ group(dbname, dayPart, callback) ]"
                 )
             )
         );
@@ -55,37 +56,45 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
-    std::string dbname(*(v8::String::Utf8Value(args[0]->ToString())));
-
-    std::unique_ptr<SQLite::Database> database;
+    std::vector<Manager::Student> students;
+    Manager::Buses buses;
+    
     try
     {
-        database = std::make_unique<SQLite::Database>(dbname);
+        SQLite::Database database
+        (
+            *(v8::String::Utf8Value(args[0]->ToString()))
+        );
+
+        Manager::load
+        (
+            database,
+            students,
+            *(v8::String::Utf8Value(args[1]->ToString()))
+        );
+
+        Manager::load
+        (
+            database,
+            buses
+        );
     }
     catch (std::exception& e)
     {
-        isolate->ThrowException
+        iso->ThrowException
         (
             v8::Exception::TypeError
             (
                 v8::String::NewFromUtf8
                 (
-                    isolate,
-                    (std::string("Exception ( ") + e.what() + " )").c_str()
+                    iso,
+                    (std::string("SQLiteCpp Exception ( ") + e.what() + " )").c_str()
                 )
             )
         );
 
         return;
     }
-    
-    std::string daypart(*(v8::String::Utf8Value(args[1]->ToString())));
-
-    std::vector<Manager::Student> students;
-    Manager::load(*database, students, daypart);
-
-    Manager::Buses buses;
-    Manager::load(*database, buses);
 
     const std::size_t CAPACITY = static_cast<std::size_t>
     (
@@ -121,27 +130,24 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
     };
 
-    std::unique_ptr<const std::vector<Cluster<Manager::Student>>> groups
+    std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
     (
-        Cluster<Manager::Student>::cmeans
-        (
-            students,
-            CAPACITY,
-            [&haversine](const Manager::Student& A, const Manager::Student& B)
-            {
-                return haversine(A._position, B._position);
-            },
-            [](const Manager::Student& student)
-            {
-                return 1.0;
-            }
-        )
+        students,
+        CAPACITY,
+        [&haversine](const Manager::Student& A, const Manager::Student& B)
+        {
+            return haversine(A._position, B._position);
+        },
+        [](const Manager::Student& student)
+        {
+            return 1.0;
+        }
     );
 
     Manager::Schedules schedules;
 
     std::size_t busId = std::numeric_limits<std::size_t>().max();
-    for (const auto& group : *groups)
+    for (const auto& group : groups)
     {
         if (busId >= buses.size())
         {
@@ -154,12 +160,12 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
             bus._students.push_back(*element);
     }
 
-    args.GetReturnValue().Set(package(isolate, schedules));
+    args.GetReturnValue().Set(package(iso, schedules));
 }
 
-v8::Local<v8::Array> package(v8::Isolate * isolate, const Manager::Schedules& schedules)
+v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedules)
 {
-    WArray wschedules(isolate);
+    Wrapper::Array wschedules(iso);
 
     for (std::size_t sid = 0UL; sid < schedules.size(); sid++)
     {
@@ -168,7 +174,7 @@ v8::Local<v8::Array> package(v8::Isolate * isolate, const Manager::Schedules& sc
         if (buses.empty())
             continue;
         
-        WArray wbuses(isolate);
+        Wrapper::Array wbuses(iso);
 
         for (std::size_t bid = 0UL; bid < buses.size(); bid++)
         {
@@ -177,13 +183,13 @@ v8::Local<v8::Array> package(v8::Isolate * isolate, const Manager::Schedules& sc
             if (bus._students.empty())
                 continue;
 
-            WArray wstudents(isolate, bus._students.size());
+            Wrapper::Array wstudents(iso, bus._students.size());
 
             for (std::size_t pid = 0UL; pid < bus._students.size(); pid++)
             {
                 const Manager::Student& student = bus._students[pid];
 
-                WObject wstudent(isolate);
+                Wrapper::Object wstudent(iso);
 
                 wstudent.set("studentId", student._studentId);
                 wstudent.set("addressId", student._addressId);
@@ -195,7 +201,7 @@ v8::Local<v8::Array> package(v8::Isolate * isolate, const Manager::Schedules& sc
                 wstudents.set(pid, wstudent);
             }
 
-            WObject wbus(isolate);
+            Wrapper::Object wbus(iso);
 
             wbus.set("busId",    bus._busId);
             wbus.set("students", wstudents);
@@ -215,4 +221,5 @@ void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
+
 }

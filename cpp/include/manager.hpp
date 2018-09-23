@@ -21,7 +21,6 @@ namespace Manager
         Vector2        _timewindow;
 
         Student();
-        Student(const Student&);
         Student(
             const std::string&,
             const std::string&,
@@ -29,8 +28,11 @@ namespace Manager
             const Vector2&,
             const Vector2&
         );
+        Student(const Student&);
+        Student(const Student&&);
 
         Student& operator=(const Student&);
+        Student& operator=(const Student&&);
 
         friend bool operator==(const Student& A, const Student& B)
         {
