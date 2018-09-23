@@ -18,16 +18,6 @@ Manager::Student::Student()
 {
 }
 
-Manager::Student::Student(const Manager::Student& other)
-:
-_studentId(other._studentId),
-_addressId(other._addressId),
-_days(other._days),
-_position(other._position),
-_timewindow(other._timewindow)
-{
-}
-
 Manager::Student::Student(
     const std::string& _studentId,
     const std::string& _addressId,
@@ -43,6 +33,26 @@ _timewindow(_timewindow)
 {
 }
 
+Manager::Student::Student(const Manager::Student& other)
+:
+_studentId(other._studentId),
+_addressId(other._addressId),
+_days(other._days),
+_position(other._position),
+_timewindow(other._timewindow)
+{
+}
+
+Manager::Student::Student(const Manager::Student&& other)
+:
+_studentId(std::move(other._studentId)),
+_addressId(std::move(other._addressId)),
+_days(std::move(other._days)),
+_position(std::move(other._position)),
+_timewindow(std::move(other._timewindow))
+{
+}
+
 Manager::Student& Manager::Student::operator=(const Student& other)
 {
     _studentId   = other._studentId;
@@ -50,6 +60,17 @@ Manager::Student& Manager::Student::operator=(const Student& other)
     _days        = other._days;
     _position    = other._position;
     _timewindow  = other._timewindow;
+
+    return *this;
+}
+
+Manager::Student& Manager::Student::operator=(const Student&& other)
+{
+    _studentId   = std::move(other._studentId);
+    _addressId   = std::move(other._addressId);
+    _days        = std::move(other._days);
+    _position    = std::move(other._position);
+    _timewindow  = std::move(other._timewindow);
 
     return *this;
 }
