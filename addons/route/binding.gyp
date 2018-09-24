@@ -2,7 +2,7 @@
     "targets":
     [
         {
-            "target_name": "tsp",
+            "target_name": "route",
             "sources":
             [
                 "main.cpp",

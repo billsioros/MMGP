@@ -8,15 +8,29 @@
 
 #include "wrapper.hpp"
 #include <node.h>
+#include <uv.h>
 
 namespace VRP_GROUP
 {
 
-v8::Local<v8::Array> package(v8::Isolate *, const Manager::Schedules&);
+struct Worker
+{
+    uv_work_t request;
+    v8::Persistent<v8::Function> callback;
+
+    std::string dbname, dayPart;
+
+    Manager::Schedules schedules;
+
+    static void work(uv_work_t *);
+    static void completed(uv_work_t *, int);
+};
 
 void group(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * iso = args.GetIsolate();
+    
+    v8::HandleScope scope(iso);
 
     if (args.Length() != 3)
     {
@@ -54,30 +68,38 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         );
 
         return;
-    }
+    }   
+
+    Worker * worker = new Worker;
+    worker->request.data = worker;
+    worker->callback.Reset(iso, args[2].As<v8::Function>());
+
+    worker->dbname  = *(v8::String::Utf8Value(args[0].As<v8::String>()));
+    worker->dayPart = *(v8::String::Utf8Value(args[1].As<v8::String>()));
+
+    uv_queue_work(uv_default_loop(), &worker->request, Worker::work, Worker::completed);
+
+    args.GetReturnValue().Set(v8::Undefined(iso));
+}
+
+void Worker::work(uv_work_t * request)
+{
+    v8::Isolate * iso = v8::Isolate::GetCurrent();
+
+    v8::HandleScope scope(iso);
+
+    Worker * worker = static_cast<Worker *>(request->data);
 
     std::vector<Manager::Student> students;
     Manager::Buses buses;
-    
+
     try
     {
-        SQLite::Database database
-        (
-            *(v8::String::Utf8Value(args[0]->ToString()))
-        );
+        SQLite::Database database(worker->dbname);
 
-        Manager::load
-        (
-            database,
-            students,
-            *(v8::String::Utf8Value(args[1]->ToString()))
-        );
+        Manager::load(database, students, worker->dayPart);
 
-        Manager::load
-        (
-            database,
-            buses
-        );
+        Manager::load(database, buses);
     }
     catch (std::exception& e)
     {
@@ -144,32 +166,34 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         }
     );
 
-    Manager::Schedules schedules;
-
     std::size_t busId = std::numeric_limits<std::size_t>().max();
     for (const auto& group : groups)
     {
         if (busId >= buses.size())
         {
-            schedules.push_back(buses); busId = 0UL;
+            worker->schedules.push_back(buses); busId = 0UL;
         }
 
-        Manager::Bus& bus = schedules.back()[busId++];
+        Manager::Bus& bus = worker->schedules.back()[busId++];
 
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
     }
-
-    args.GetReturnValue().Set(package(iso, schedules));
 }
 
-v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedules)
+void Worker::completed(uv_work_t * request, int status)
 {
+    v8::Isolate * iso = v8::Isolate::GetCurrent();
+
+    v8::HandleScope scope(iso);
+
+    Worker * worker = static_cast<Worker *>(request->data);
+
     Wrapper::Array wschedules(iso);
 
-    for (std::size_t sid = 0UL; sid < schedules.size(); sid++)
+    for (std::size_t sid = 0UL; sid < worker->schedules.size(); sid++)
     {
-        const Manager::Buses& buses = schedules[sid];
+        const Manager::Buses& buses = worker->schedules[sid];
 
         if (buses.empty())
             continue;
@@ -212,7 +236,12 @@ v8::Local<v8::Array> package(v8::Isolate * iso, const Manager::Schedules& schedu
         wschedules.set(sid, wbuses);
     }
 
-    return wschedules.raw();
+    v8::Local<v8::Value> argv[] = { wschedules.raw() };
+    
+    v8::Local<v8::Function>::New(iso, worker->callback)->
+        Call(iso->GetCurrentContext()->Global(), 1, argv);
+
+    worker->callback.Reset(); delete worker;
 }
 
 void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
