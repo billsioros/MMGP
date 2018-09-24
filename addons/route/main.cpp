@@ -10,6 +10,7 @@
 
 #include "wrapper.hpp"
 #include <node.h>
+#include <uv.h>
 
 // A JSON holding all necessary information for the tsptw solver
 // {
@@ -36,14 +37,30 @@
 namespace VRP_ROUTE
 {
 
+struct Worker
+{
+    uv_work_t request;
+    v8::Persistent<v8::Function> callback;
+
+    std::string dbname, dayPart;
+    double departureTime, serviceTime;
+    Manager::Student depot;
+    std::vector<Manager::Student> students;
+
+    TSP::path<Manager::Student> path;
+
+    static void work(uv_work_t *);
+    static void completed(uv_work_t *, int);
+};
+
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
-
-v8::Local<v8::Object> package(v8::Isolate *, const TSP::path<Manager::Student>&);
 
 void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * iso = args.GetIsolate();
+
+    v8::HandleScope scope(iso);
 
     if (args.Length() != 7)
     {
@@ -95,28 +112,28 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         return;
     }
 
-    const std::string dbname(*v8::String::Utf8Value(args[0].As<v8::String>()));
-    const std::string dayPart(*v8::String::Utf8Value(args[1].As<v8::String>()));
-    
-    const double departureTime = args[2].As<v8::Number>()->NumberValue();
-    const double serviceTime   = args[3].As<v8::Number>()->NumberValue();
+    Worker * worker = new Worker;
+    worker->request.data = worker;
+    worker->callback.Reset(iso, args[6].As<v8::Function>());
 
-    Manager::Student depot;
+    worker->dbname  = *v8::String::Utf8Value(args[0].As<v8::String>());
+    worker->dayPart = *v8::String::Utf8Value(args[1].As<v8::String>());
+
+    worker->departureTime = args[2].As<v8::Number>()->NumberValue();
+    worker->serviceTime   = args[3].As<v8::Number>()->NumberValue();
 
     Wrapper::Object wstudent(iso, args[4].As<v8::Object>());
 
-    wstudent.get("studentId", depot._studentId);
-    wstudent.get("addressId", depot._addressId);
-
-    std::vector<Manager::Student> students;
+    wstudent.get("studentId", worker->depot._studentId);
+    wstudent.get("addressId", worker->depot._addressId);
 
     Wrapper::Array wstudents(iso, args[5].As<v8::Array>());
     
     for (std::size_t sid = 0UL; sid < wstudents.size(); sid++)
     {
-        Manager::Student student;
-
         wstudents.get(sid, wstudent);
+
+        Manager::Student student;
 
         wstudent.get("studentId", student._studentId);
         wstudent.get("addressId", student._addressId);
@@ -131,14 +148,25 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         wstudent.get("latest",   snd);
         student._timewindow = { fst, snd };
 
-        students.emplace_back(student);
+        worker->students.emplace_back(student);
     }
 
-    TSP::path<Manager::Student> path;
+    uv_queue_work(uv_default_loop(), &worker->request, Worker::work, Worker::completed);
+
+    args.GetReturnValue().Set(v8::Undefined(iso));
+}
+
+void Worker::work(uv_work_t * request)
+{
+    v8::Isolate * iso = v8::Isolate::GetCurrent();
+
+    v8::HandleScope scope(iso);
+
+    Worker * worker = static_cast<Worker *>(request->data);
 
     try
     {
-        SQLite::Database database(dbname);
+        SQLite::Database database(worker->dbname);
 
         DMatrix dmatrix;
         auto distance = [&](const Manager::Student& A, const Manager::Student& B)
@@ -152,20 +180,30 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
             return
             (
-                dmatrix[A][B] = (A == depot ? 0.0 : serviceTime)
-                            + Manager::distance(database, A, B, dayPart)
+                dmatrix[A][B] = (A == worker->depot ? 0.0 : worker->serviceTime)
+                              + Manager::distance(database, A, B, worker->dayPart)
             );
         };
         
         // Local Optimization
-        path = TSP::nearestNeighbor<Manager::Student>(depot, students, distance);
+        worker->path = TSP::nearestNeighbor<Manager::Student>
+        (
+            worker->depot,
+            worker->students,
+            distance
+        );
 
-        path = TSP::opt2<Manager::Student>(path.second.front(), path.second, distance);
+        worker->path = TSP::opt2<Manager::Student>
+        (
+            worker->path.second.front(),
+            worker->path.second,
+            distance
+        );
 
         // Compressed Annealing
         auto penalty = [&](const TSP::path<Manager::Student>& path)
         {
-            double penalty = 0.0, arrival = departureTime;
+            double penalty = 0.0, arrival = worker->departureTime;
             for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
             {
                 const Manager::Student& previous = path.second[j];
@@ -173,9 +211,17 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
                 arrival += distance(previous, current);
 
-                const double startOfService = std::max<double>(arrival, current._timewindow.x());
+                const double startOfService = std::max<double>
+                (
+                    arrival,
+                    current._timewindow.x()
+                );
 
-                penalty += std::max<double>(0.0, startOfService + serviceTime - current._timewindow.y());
+                penalty += std::max<double>
+                (
+                    0.0,
+                    startOfService + worker->serviceTime - current._timewindow.y()
+                );
             }
 
             return penalty;
@@ -217,9 +263,9 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
         std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-        path = Annealing::compressed<TSP::path<Manager::Student>>
+        worker->path = Annealing::compressed<TSP::path<Manager::Student>>
         (
-            path,
+            worker->path,
             shift1,
             cost,
             penalty,
@@ -251,21 +297,21 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
         return;
     }
-
-    args.GetReturnValue().Set(package(iso, path));
 }
 
-v8::Local<v8::Object> package
-(
-    v8::Isolate * iso,
-    const TSP::path<Manager::Student>& path
-)
+void Worker::completed(uv_work_t * request, int status)
 {
-    Wrapper::Array wstudents = Wrapper::Array(iso, path.second.size() - 2UL);
+    v8::Isolate * iso = v8::Isolate::GetCurrent();
 
-    for (std::size_t sid = 1UL; sid < path.second.size() - 1UL; sid++)
+    v8::HandleScope scope(iso);
+
+    Worker * worker = static_cast<Worker *>(request->data);
+
+    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.second.size() - 2UL);
+
+    for (std::size_t sid = 1UL; sid < worker->path.second.size() - 1UL; sid++)
     {
-        const Manager::Student& student = path.second[sid];
+        const Manager::Student& student = worker->path.second[sid];
 
         Wrapper::Object wstudent = Wrapper::Object(iso);
 
@@ -278,9 +324,14 @@ v8::Local<v8::Object> package
     Wrapper::Object wpath(iso);
 
     wpath.set("students", wstudents);
-    wpath.set("cost",     path.first);
+    wpath.set("cost",     worker->path.first);
 
-    return wpath.raw();
+    v8::Local<v8::Value> argv[] = { wpath.raw() };
+
+    v8::Local<v8::Function>::New(iso, worker->callback)->
+        Call(iso->GetCurrentContext()->Global(), 1, argv);
+
+    worker->callback.Reset(); delete worker;
 }
 
 void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)

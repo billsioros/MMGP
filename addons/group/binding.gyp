@@ -2,7 +2,7 @@
     "targets":
     [
         {
-            "target_name": "tsp",
+            "target_name": "group",
             "sources":
             [
                 "main.cpp",
