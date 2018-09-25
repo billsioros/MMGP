@@ -53,9 +53,6 @@ struct Worker
     static void completed(uv_work_t *, int);
 };
 
-using DVector = std::unordered_map<Manager::Student, double>;
-using DMatrix = std::unordered_map<Manager::Student, DVector>;
-
 void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     v8::Isolate * iso = args.GetIsolate();
@@ -164,122 +161,31 @@ void Worker::work(uv_work_t * request)
 
     Worker * worker = static_cast<Worker *>(request->data);
 
+    using DVector = std::unordered_map<Manager::Student, double>;
+    using DMatrix = std::unordered_map<Manager::Student, DVector>;
+
+    DMatrix dmatrix;
+    auto distance = [&dmatrix](const Manager::Student& A, const Manager::Student& B)
+    {
+        DMatrix::const_iterator mit;
+        DVector::const_iterator vit;
+
+        if ((mit = dmatrix.find(A)) != dmatrix.end())
+            if ((vit = mit->second.find(B)) != mit->second.end())
+                return vit->second;
+
+        return std::numeric_limits<double>().max();
+    };
+
     try
     {
         SQLite::Database database(worker->dbname);
 
-        DMatrix dmatrix;
-        auto distance = [&](const Manager::Student& A, const Manager::Student& B)
-        {
-            DMatrix::const_iterator mit;
-            DVector::const_iterator vit;
-
-            if ((mit = dmatrix.find(A)) != dmatrix.end())
-                if ((vit = mit->second.find(B)) != mit->second.end())
-                    return vit->second;
-
-            return
-            (
-                dmatrix[A][B] = (A == worker->depot ? 0.0 : worker->serviceTime)
-                              + Manager::distance(database, A, B, worker->dayPart)
-            );
-        };
-        
-        // Local Optimization
-        worker->path = TSP::nearestNeighbor<Manager::Student>
-        (
-            worker->depot,
-            worker->students,
-            distance
-        );
-
-        worker->path = TSP::opt2<Manager::Student>
-        (
-            worker->path.second.front(),
-            worker->path.second,
-            distance
-        );
-
-        // Compressed Annealing
-        auto penalty = [&](const TSP::path<Manager::Student>& path)
-        {
-            double penalty = 0.0, arrival = worker->departureTime;
-            for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
-            {
-                const Manager::Student& previous = path.second[j];
-                const Manager::Student& current  = path.second[j + 1UL];
-
-                arrival += distance(previous, current);
-
-                const double startOfService = std::max<double>
-                (
-                    arrival,
-                    current._timewindow.x()
-                );
-
-                penalty += std::max<double>
-                (
-                    0.0,
-                    startOfService + worker->serviceTime - current._timewindow.y()
-                );
-            }
-
-            return penalty;
-        };
-
-        auto shift1 = [&distance](const TSP::path<Manager::Student>& current)
-        {
-            TSP::path<Manager::Student> next(0.0, current.second);
-
-            const std::size_t i = 1UL + std::rand() % (next.second.size() - 2UL);
-            const std::size_t j = 1UL + std::rand() % (next.second.size() - 2UL);
-
-            const Manager::Student v(next.second[i]);
-            next.second.erase(next.second.begin() + i);
-            next.second.insert(next.second.begin() + j, v);
-
-            next.first = TSP::totalCost<Manager::Student>(next.second, distance);
-
-            return next;
-        };
-
-        auto cost = [](const TSP::path<Manager::Student>& path)
-        {
-            return path.first;
-        };
-
-        // Parameter Initialization (Robust Set provided by the authors):
-        const double COOLING     = 0.95,    // (1)  Cooling Coefficient
-                     ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
-                     PRESSURE0   = 0.0,     // (3)  Initial Pressure
-                     COMPRESSION = 0.06,    // (4)  Compression Coefficient
-                     PCR         = 0.9999;  // (5)  Pressure Cap Ratio
-
-        const std::size_t IPT = 30000UL,    // (6)  Iterations per temperature
-                          MTC = 100UL,      // (7)  Minimum number of temperature changes
-                          ITC = 75UL,       // (8)  Maximum idle temperature changes
-                          TLI = IPT,        // (9)  Trial loop of iterations
-                          TNP = 5000UL;     // (10) Trial neighbour pairs
-
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-        worker->path = Annealing::compressed<TSP::path<Manager::Student>>
-        (
-            worker->path,
-            shift1,
-            cost,
-            penalty,
-            COOLING,
-            ACCEPTANCE,
-            PRESSURE0,
-            COMPRESSION,
-            PCR,
-            IPT,
-            MTC,
-            ITC,
-            TLI,
-            TNP
-        );
+        for (const auto& A : worker->students)
+            for (const auto& B : worker->students)
+                if (A != B)
+                    dmatrix[A][B] = (A == worker->depot ? 0.0 : worker->serviceTime)
+                                  + Manager::distance(database, A, B, worker->dayPart);
     }
     catch (std::exception& e)
     {
@@ -297,6 +203,102 @@ void Worker::work(uv_work_t * request)
 
         return;
     }
+
+    // Local Optimization
+    worker->path = TSP::nearestNeighbor<Manager::Student>
+    (
+        worker->depot,
+        worker->students,
+        distance
+    );
+
+    worker->path = TSP::opt2<Manager::Student>
+    (
+        worker->path.second.front(),
+        worker->path.second,
+        distance
+    );
+
+    // Compressed Annealing
+    auto penalty = [&](const TSP::path<Manager::Student>& path)
+    {
+        double penalty = 0.0, arrival = worker->departureTime;
+        for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
+        {
+            const Manager::Student& previous = path.second[j];
+            const Manager::Student& current  = path.second[j + 1UL];
+
+            arrival += distance(previous, current);
+
+            const double startOfService = std::max<double>
+            (
+                arrival,
+                current._timewindow.x()
+            );
+
+            penalty += std::max<double>
+            (
+                0.0,
+                startOfService + worker->serviceTime - current._timewindow.y()
+            );
+        }
+
+        return penalty;
+    };
+
+    auto shift1 = [&distance](const TSP::path<Manager::Student>& current)
+    {
+        TSP::path<Manager::Student> next(0.0, current.second);
+
+        const std::size_t i = 1UL + std::rand() % (next.second.size() - 2UL);
+        const std::size_t j = 1UL + std::rand() % (next.second.size() - 2UL);
+
+        const Manager::Student v(next.second[i]);
+        next.second.erase(next.second.begin() + i);
+        next.second.insert(next.second.begin() + j, v);
+
+        next.first = TSP::totalCost<Manager::Student>(next.second, distance);
+
+        return next;
+    };
+
+    auto cost = [](const TSP::path<Manager::Student>& path)
+    {
+        return path.first;
+    };
+
+    // Parameter Initialization (Robust Set provided by the authors):
+    const double COOLING     = 0.95,    // (1)  Cooling Coefficient
+                    ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
+                    PRESSURE0   = 0.0,     // (3)  Initial Pressure
+                    COMPRESSION = 0.06,    // (4)  Compression Coefficient
+                    PCR         = 0.9999;  // (5)  Pressure Cap Ratio
+
+    const std::size_t IPT = 30000UL,    // (6)  Iterations per temperature
+                        MTC = 100UL,      // (7)  Minimum number of temperature changes
+                        ITC = 75UL,       // (8)  Maximum idle temperature changes
+                        TLI = IPT,        // (9)  Trial loop of iterations
+                        TNP = 5000UL;     // (10) Trial neighbour pairs
+
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    worker->path = Annealing::compressed<TSP::path<Manager::Student>>
+    (
+        worker->path,
+        shift1,
+        cost,
+        penalty,
+        COOLING,
+        ACCEPTANCE,
+        PRESSURE0,
+        COMPRESSION,
+        PCR,
+        IPT,
+        MTC,
+        ITC,
+        TLI,
+        TNP
+    );
 }
 
 void Worker::completed(uv_work_t * request, int status)
