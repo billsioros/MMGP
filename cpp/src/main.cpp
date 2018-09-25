@@ -16,11 +16,11 @@
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
-TSP::path<Manager::Student> tsp(
-    SQLite::Database&,
-    const std::string&,
+TSP::path<Manager::Student> tsp
+(
     const Manager::Student&,
-    const std::vector<Manager::Student>&
+    const std::vector<Manager::Student>&,
+    const std::function<double(const Manager::Student&, const Manager::Student&)>&
 );
 
 int main(int argc, char * argv[])
@@ -28,16 +28,23 @@ int main(int argc, char * argv[])
     if (argc == 1)
     {
         std::cerr << "<MSG>: " << argv[0]
-        << " -db <database>"
-        << " -dp <day-part>" << std::endl;
+        <<
+        " -dbname <path/to/database> "\
+        "-dayPart <day-part> "\
+        "-departureTime <departure-time> "\
+        "-serviceTime <service-time>"
+        <<
+        std::endl;
 
         std::exit(EXIT_FAILURE);
     }
 
     std::unordered_map<std::string, std::string> args =
     {
-        {"-db", ""},
-        {"-dp", ""}
+        { "-dbname",        "" },
+        { "-dayPart",       "" },
+        { "-departureTime", "" },
+        { "-serviceTime",   "" }
     };
 
     for (int i = 1; i < argc - 1; i += 2)
@@ -53,97 +60,37 @@ int main(int argc, char * argv[])
         }
     }
 
-    Manager::Schedules schedules;
+    const std::string dbname  = args["-dbname"];
+    const std::string dayPart = args["-dayPart"];
+
+    const double departureTime = std::stod(args["-departureTime"]);
+    const double serviceTime   = std::stod(args["-serviceTime"]);
+
+    DMatrix dmatrix;
+    auto cost = [&dmatrix](const Manager::Student& A, const Manager::Student& B)
+    {
+        return dmatrix[A][B];
+    };
+
+    std::vector<Manager::Student> students;
+    Manager::Buses buses;
+    Manager::Student depot;
 
     try
     {
-        SQLite::Database database(args["-db"]);
+        SQLite::Database database(dbname);
 
-        std::vector<Manager::Student> students;
-        Manager::load(database, students, args["-dp"]);
+        Manager::load(database, students, dayPart);
 
-        Manager::Buses buses;
         Manager::load(database, buses);
 
-        Manager::Student depot;
         Manager::load(database, depot);
         
-        auto haversine = [](const Vector2& A, const Vector2& B)
-        {
-            auto rads = [](double degrees) { return degrees * M_PI / 180.0; };
-
-            const double f1 = rads(A.x()), f2 = rads(B.x());
-            const double l1 = rads(A.y()), l2 = rads(B.y());
-
-            const double u1 = std::sin((f2 - f1) / 2.0), u2 = std::sin((l2 - l1) / 2.0);
-
-            return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
-        };
-
-        auto beg = std::chrono::system_clock().now();
-
-        std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
-        (
-            students,
-            24UL,
-            [&haversine](const Manager::Student& A, const Manager::Student& B)
-            {
-                return haversine(A._position, B._position);
-            },
-            [](const Manager::Student& student) { return 1.0; }
-        );
-
-        auto end = std::chrono::system_clock().now();
-
-        std::cerr
-        << "<MSG>: Elapsed time: "
-        << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
-        << " seconds (Student Clustering)" << std::endl;
-
-        beg = std::chrono::system_clock().now();
-
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-        std::size_t busId = std::numeric_limits<std::size_t>().max();
-        for (const auto& group : groups)
-        {
-            if (busId >= buses.size())
-            {
-                schedules.push_back(buses); busId = 0UL;
-            }
-
-            Manager::Bus& bus = schedules.back()[busId++];
-
-            for (const auto& element : group.elements())
-                bus._students.push_back(*element);
-
-            TSP::path<Manager::Student> route = tsp
-            (
-                database,
-                args["-dp"],
-                depot,
-                bus._students
-            );
-
-            bus._students = route.second; bus._cost = route.first;
-
-            bus._students.erase(bus._students.begin()); bus._students.pop_back();
-
-            std::cerr << "<MSG>: Duration of route "
-                    << std::setw(2) << std::setfill('0') << schedules.size()
-                    << '.'
-                    << std::setw(2) << std::setfill('0') << busId
-                    << ": "
-                    << std::fixed << std::setprecision(4) << route.first / 60.00
-                    << " minutes" << std::endl;
-        }
-
-        end = std::chrono::system_clock().now();
-
-        std::cerr
-        << "<MSG>: Elapsed time: "
-        << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
-        << " seconds (Route Optimization)" << std::endl;
+        for (const auto& A : students)
+            for (const auto& B : students)
+                if (A != B)
+                    dmatrix[A][B] = (A == depot ? 0.0 : serviceTime)
+                                  + Manager::distance(database, A, B, dayPart);
     }
     catch (std::exception& e)
     {
@@ -152,17 +99,95 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    nlohmann::json json = Manager::json(args["-dp"], schedules);
+    auto haversine = [](const Vector2& A, const Vector2& B)
+    {
+        auto rads = [](double degrees) { return degrees * M_PI / 180.0; };
+
+        const double f1 = rads(A.x()), f2 = rads(B.x());
+        const double l1 = rads(A.y()), l2 = rads(B.y());
+
+        const double u1 = std::sin((f2 - f1) / 2.0), u2 = std::sin((l2 - l1) / 2.0);
+
+        return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
+    };
+
+    auto beg = std::chrono::system_clock().now();
+
+    std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
+    (
+        students,
+        24UL,
+        [&haversine](const Manager::Student& A, const Manager::Student& B)
+        {
+            return haversine(A._position, B._position);
+        },
+        [](const Manager::Student& student) { return 1.0; }
+    );
+
+    auto end = std::chrono::system_clock().now();
+
+    std::cerr
+    << "<MSG>: Elapsed time: "
+    << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
+    << " seconds (Student Clustering)" << std::endl;
+
+    beg = std::chrono::system_clock().now();
+
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    Manager::Schedules schedules;
+
+    std::size_t busId = std::numeric_limits<std::size_t>().max();
+    for (const auto& group : groups)
+    {
+        if (busId >= buses.size())
+        {
+            schedules.push_back(buses); busId = 0UL;
+        }
+
+        Manager::Bus& bus = schedules.back()[busId++];
+
+        for (const auto& element : group.elements())
+            bus._students.push_back(*element);
+
+        TSP::path<Manager::Student> route = tsp
+        (
+            depot,
+            bus._students,
+            cost
+        );
+
+        bus._students = route.second; bus._cost = route.first;
+
+        bus._students.erase(bus._students.begin()); bus._students.pop_back();
+
+        std::cerr << "<MSG>: Duration of route "
+                << std::setw(2) << std::setfill('0') << schedules.size()
+                << '.'
+                << std::setw(2) << std::setfill('0') << busId
+                << ": "
+                << std::fixed << std::setprecision(4) << route.first / 60.00
+                << " minutes" << std::endl;
+    }
+
+    end = std::chrono::system_clock().now();
+
+    std::cerr
+    << "<MSG>: Elapsed time: "
+    << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
+    << " seconds (Route Optimization)" << std::endl;
+
+    nlohmann::json json = Manager::json(dayPart, schedules);
 
     time_t raw; std::time(&raw);
-    
+
     struct std::tm * tm = std::localtime(&raw);
-    
+
     char strtime[512UL];
 
     std::strftime(strtime, 511, "%Y%m%d%H%M%S", tm);
 
-    std::ofstream ofs(args["-dp"] + strtime + ".json");
+    std::ofstream ofs(dayPart + strtime + ".json");
     if (!ofs.is_open())
     {
         std::cerr << "<ERR>: Unable to save the data in json format" << std::endl;
@@ -174,26 +199,13 @@ int main(int argc, char * argv[])
     return 0;
 }
 
-TSP::path<Manager::Student> tsp(
-    SQLite::Database& database,
-    const std::string& daypart,
+TSP::path<Manager::Student> tsp
+(
     const Manager::Student& depot,
-    const std::vector<Manager::Student>& students
+    const std::vector<Manager::Student>& students,
+    const std::function<double(const Manager::Student&, const Manager::Student&)>& cost
 )
 {
-    DMatrix dmatrix;
-    auto cost = [&](const Manager::Student& A, const Manager::Student& B)
-    {
-        DMatrix::const_iterator mit;
-        DVector::const_iterator vit;
-
-        if ((mit = dmatrix.find(A)) != dmatrix.end())
-            if ((vit = mit->second.find(B)) != mit->second.end())
-                return vit->second;
-
-        return (dmatrix[A][B] = Manager::distance(database, A, B, daypart));
-    };
-
     TSP::path<Manager::Student> path;
     
     path = TSP::nearestNeighbor<Manager::Student>(depot, students, cost);

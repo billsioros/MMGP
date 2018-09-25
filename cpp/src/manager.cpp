@@ -7,7 +7,6 @@
 #include <bitset>           // std::bitset
 #include <string>           // std::string
 #include <fstream>          // std::ostream
-#include <iostream>         // std::cerr
 #include <iomanip>          // std::setw
 #include <ctime>            // std::time etc
 #include <unordered_set>    // std::unordered_set
