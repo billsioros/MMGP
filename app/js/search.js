@@ -214,6 +214,9 @@ function OnBusClickHandle() {
     button = document.getElementById("CalculateDurationButton");
     button.onclick = CalculateScheduleDuration;
 
+    button = document.getElementById("ClearBusButton");
+    button.onclick = OnClearBusClick;
+
 }
 
 function OnDayPartClick() {
@@ -251,6 +254,22 @@ function OnBusClick() {
     
     this.classList.add("active");
     prevActive.push(this);
+}
+
+function OnClearBusClick() {
+    let prevActive = GetActiveDayPart();
+    if (prevActive)
+        prevActive.classList.remove("active");
+
+    let ScheduleContainer = document.getElementById("ScheduleSelectorContainer");
+    ScheduleContainer.innerHTML = "";
+    
+    prevActive = GetActiveBus()
+
+    for (let i = 0; i < prevActive.length; i++) {
+        let bus = prevActive[i];
+        bus.classList.remove("active");
+    }
 }
 
 function CheckDisabledScheduleButton(tab) {
@@ -393,6 +412,7 @@ function AddSchedule() {
     }
     
     let busSchedules = GetScheduleSearchCriteria();
+    let actualBusSchedules = []
 
     if (activeTab.hasOwnProperty("activeBuses")) {
         if (activeTab.activeBuses.length + busSchedules.length > MarkerColors.length) {
@@ -402,12 +422,18 @@ function AddSchedule() {
 
         for (let i = 0; i < busSchedules.length; i++) {
             let busSchedule = busSchedules[i];
-            if (activeTab.activeBuses.includes(busSchedule)) {
-                alert("Schedule " + busSchedule + " is already open in this tab.");
-                return;
+            if (!activeTab.activeBuses.includes(busSchedule)) {
+                actualBusSchedules.push(busSchedule)
             }
         }
     }
+
+    if (actualBusSchedules.length == 0) {
+        alert("Error: All schedules selected are open in this tab!");
+        return;
+    }
+
+    busSchedules = actualBusSchedules
 
     let loading = document.getElementById("AddScheduleButton").childNodes[1];
 
