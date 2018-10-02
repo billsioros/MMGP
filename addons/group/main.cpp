@@ -49,7 +49,7 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
             )
         );
 
-        return;
+        args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }
 
     if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsFunction())
@@ -67,7 +67,7 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
             )
         );
 
-        return;
+        args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }   
 
     Worker * worker = new Worker;

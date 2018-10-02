@@ -76,7 +76,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
             )
         );
 
-        return;
+        args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }
 
     if
@@ -106,7 +106,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
             )
         );
 
-        return;
+        args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }
 
     Worker * worker = new Worker;
@@ -268,17 +268,17 @@ void Worker::work(uv_work_t * request)
     };
 
     // Parameter Initialization (Robust Set provided by the authors):
-    const double COOLING     = 0.95,    // (1)  Cooling Coefficient
-                    ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
-                    PRESSURE0   = 0.0,     // (3)  Initial Pressure
-                    COMPRESSION = 0.06,    // (4)  Compression Coefficient
-                    PCR         = 0.9999;  // (5)  Pressure Cap Ratio
+    const double COOLING    = 0.95,    // (1)  Cooling Coefficient
+                ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
+                PRESSURE0   = 0.0,     // (3)  Initial Pressure
+                COMPRESSION = 0.06,    // (4)  Compression Coefficient
+                PCR         = 0.9999;  // (5)  Pressure Cap Ratio
 
     const std::size_t IPT = 30000UL,    // (6)  Iterations per temperature
-                        MTC = 100UL,      // (7)  Minimum number of temperature changes
-                        ITC = 75UL,       // (8)  Maximum idle temperature changes
-                        TLI = IPT,        // (9)  Trial loop of iterations
-                        TNP = 5000UL;     // (10) Trial neighbour pairs
+                    MTC   = 100UL,      // (7)  Minimum number of temperature changes
+                    ITC   = 75UL,       // (8)  Maximum idle temperature changes
+                    TLI   = IPT,        // (9)  Trial loop of iterations
+                    TNP   = 5000UL;     // (10) Trial neighbour pairs
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
