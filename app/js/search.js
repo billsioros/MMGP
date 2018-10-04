@@ -523,10 +523,10 @@ function CalculateScheduleDuration() {
     }
 
     let route = require("../../addons/route/build/Release/route.node");
-    
+
     route(DBFile, Students[0].DayPart, 7*3600, 30, { addressId: Students[0].Address.AddressID }, toRoute, function(data) {
         console.log(data);
-    })
+    });
     console.log('list', list);
 
     let proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", JSON.stringify(toJson)]);
