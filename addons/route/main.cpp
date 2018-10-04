@@ -34,6 +34,9 @@
 //       ]
 // }
 
+#include <iostream>
+#define logger std::cerr
+
 namespace VRP_ROUTE
 {
 
@@ -99,7 +102,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
                     "[ "\
                         "route"\
                         "("\
-                            "dbname, dayPart, departureTime, serviceTime, depot, students"\
+                            "dbname, dayPart, departureTime, serviceTime, depot, students, callback"\
                         ")"\
                     " ]"
                 )
@@ -108,6 +111,8 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
         args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }
+
+    logger << "<MSG>: Initializing worker thread..." << std::endl;
 
     Worker * worker = new Worker;
     worker->request.data = worker;
@@ -167,15 +172,10 @@ void Worker::work(uv_work_t * request)
     DMatrix dmatrix;
     auto distance = [&dmatrix](const Manager::Student& A, const Manager::Student& B)
     {
-        DMatrix::const_iterator mit;
-        DVector::const_iterator vit;
-
-        if ((mit = dmatrix.find(A)) != dmatrix.end())
-            if ((vit = mit->second.find(B)) != mit->second.end())
-                return vit->second;
-
-        return std::numeric_limits<double>().max();
+        return dmatrix[A][B];
     };
+
+    logger << "<MSG>: Worker thread initializing distance matrix..." << std::endl;
 
     try
     {
@@ -185,26 +185,18 @@ void Worker::work(uv_work_t * request)
             for (const auto& B : worker->students)
                 if (A != B)
                     dmatrix[A][B] = (A == worker->depot ? 0.0 : worker->serviceTime)
-                                  + Manager::distance(database, A, B, worker->dayPart);
+                                  + Manager::distance(database, A, B, worker->dayPart, logger);
     }
     catch (std::exception& e)
     {
-        iso->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    iso,
-                    (std::string("SQLiteCpp Exception ( ") + e.what() + " )").c_str()
-                )
-            )
-        );
+        logger << "<ERR>: SQLiteCpp Exception ( " << e.what() << " )" << std::endl;
 
         return;
     }
 
     // Local Optimization
+    logger << "<MSG>: Optimizing Route..." << std::endl;
+
     worker->path = TSP::nearestNeighbor<Manager::Student>
     (
         worker->depot,
@@ -303,6 +295,8 @@ void Worker::work(uv_work_t * request)
 
 void Worker::completed(uv_work_t * request, int status)
 {
+    logger << "<MSG>: Packaging results..." << std::endl;
+
     v8::Isolate * iso = v8::Isolate::GetCurrent();
 
     v8::HandleScope scope(iso);
@@ -330,6 +324,8 @@ void Worker::completed(uv_work_t * request, int status)
 
     v8::Local<v8::Value> argv[] = { wpath.raw() };
 
+    logger << "<MSG>: Invoking callback..." << std::endl;
+
     v8::Local<v8::Function>::New(iso, worker->callback)->
         Call(iso->GetCurrentContext()->Global(), 1, argv);
 
@@ -341,6 +337,6 @@ void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
     NODE_SET_METHOD(module, "exports", route);
 }
 
-NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
+NODE_MODULE(NODE_GYP_MODULE_NAME, Init)
 
 }

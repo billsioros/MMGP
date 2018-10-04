@@ -10,6 +10,9 @@
 #include <node.h>
 #include <uv.h>
 
+#include <iostream>
+#define logger std::cerr
+
 namespace VRP_GROUP
 {
 
@@ -70,6 +73,8 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }   
 
+    logger << "<MSG>: Initializing worker thread..." << std::endl;
+
     Worker * worker = new Worker;
     worker->request.data = worker;
     worker->callback.Reset(iso, args[2].As<v8::Function>());
@@ -93,30 +98,24 @@ void Worker::work(uv_work_t * request)
     std::vector<Manager::Student> students;
     Manager::Buses buses;
 
+    logger << "<MSG>: Worker thread loading students and buses..." << std::endl;
+
     try
     {
         SQLite::Database database(worker->dbname);
 
-        Manager::load(database, students, worker->dayPart);
+        Manager::load(database, students, worker->dayPart, logger);
 
-        Manager::load(database, buses);
+        Manager::load(database, buses, logger);
     }
     catch (std::exception& e)
     {
-        iso->ThrowException
-        (
-            v8::Exception::TypeError
-            (
-                v8::String::NewFromUtf8
-                (
-                    iso,
-                    (std::string("SQLiteCpp Exception ( ") + e.what() + " )").c_str()
-                )
-            )
-        );
+        logger << "<ERR>: SQLiteCpp Exception ( " << e.what() << " )" << std::endl;
 
         return;
     }
+
+    logger << "<MSG>: Worker thread initiating clustering..." << std::endl;;
 
     const std::size_t CAPACITY = static_cast<std::size_t>
     (
@@ -183,6 +182,8 @@ void Worker::work(uv_work_t * request)
 
 void Worker::completed(uv_work_t * request, int status)
 {
+    logger << "<MSG>: Packaging results..." << std::endl;
+
     v8::Isolate * iso = v8::Isolate::GetCurrent();
 
     v8::HandleScope scope(iso);
@@ -236,6 +237,8 @@ void Worker::completed(uv_work_t * request, int status)
         wschedules.set(sid, wbuses);
     }
 
+    logger << "<MSG>: Invoking callback..." << std::endl;
+
     v8::Local<v8::Value> argv[] = { wschedules.raw() };
     
     v8::Local<v8::Function>::New(iso, worker->callback)->
@@ -249,6 +252,6 @@ void Init(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
     NODE_SET_METHOD(module, "exports", group);
 }
 
-NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
+NODE_MODULE(NODE_GYP_MODULE_NAME, Init)
 
 }

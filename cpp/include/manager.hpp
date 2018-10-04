@@ -59,9 +59,9 @@ namespace Manager
     using Buses     = std::vector<Bus>;
     using Schedules = std::vector<Buses>;
 
-    void load(SQLite::Database&, Student&);
-    void load(SQLite::Database&, std::vector<Student>&, const std::string&);
-    void load(SQLite::Database&, std::vector<Bus>&);
+    void load(SQLite::Database&, Student&, std::ostream&);
+    void load(SQLite::Database&, std::vector<Student>&, const std::string&, std::ostream&);
+    void load(SQLite::Database&, std::vector<Bus>&, std::ostream&);
 
     nlohmann::json json(const std::string&, const Schedules&);
 
@@ -69,7 +69,8 @@ namespace Manager
         SQLite::Database&,
         const Student&,
         const Student&,
-        const std::string&
+        const std::string&,
+        std::ostream&
     );
 }
 
