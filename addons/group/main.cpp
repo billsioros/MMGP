@@ -89,10 +89,6 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 void Worker::work(uv_work_t * request)
 {
-    v8::Isolate * iso = v8::Isolate::GetCurrent();
-
-    v8::HandleScope scope(iso);
-
     Worker * worker = static_cast<Worker *>(request->data);
 
     std::vector<Manager::Student> students;
@@ -116,6 +112,8 @@ void Worker::work(uv_work_t * request)
     }
 
     logger << "<MSG>: Worker thread initiating clustering..." << std::endl;;
+
+    auto beg = std::chrono::high_resolution_clock::now();
 
     const std::size_t CAPACITY = static_cast<std::size_t>
     (
@@ -178,6 +176,15 @@ void Worker::work(uv_work_t * request)
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    std::cerr << "<MSG>: " << diff << " seconds elapsed" << std::endl;
 }
 
 void Worker::completed(uv_work_t * request, int status)

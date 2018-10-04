@@ -173,6 +173,8 @@ void Worker::work(uv_work_t * request)
 
     logger << "<MSG>: Worker thread initializing distance matrix..." << std::endl;
 
+    auto beg = std::chrono::high_resolution_clock::now();
+
     try
     {
         SQLite::Database database(worker->dbname);
@@ -190,8 +192,19 @@ void Worker::work(uv_work_t * request)
         return;
     }
 
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    std::cerr << "<MSG>: " << diff << " seconds elapsed" << std::endl;
+
     // Local Optimization
     logger << "<MSG>: Optimizing Route..." << std::endl;
+
+    beg = std::chrono::high_resolution_clock::now();
 
     worker->path = TSP::nearestNeighbor<Manager::Student>
     (
@@ -287,6 +300,15 @@ void Worker::work(uv_work_t * request)
         TLI,
         TNP
     );
+
+    end = std::chrono::high_resolution_clock::now();
+
+    diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    std::cerr << "<MSG>: " << diff << " seconds elapsed" << std::endl;
 }
 
 void Worker::completed(uv_work_t * request, int status)
