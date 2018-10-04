@@ -1,4 +1,7 @@
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "Database.h"
 #include "Statement.h"
 #include "manager.hpp"
