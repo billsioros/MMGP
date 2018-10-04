@@ -501,6 +501,8 @@ function CalculateScheduleDuration() {
         Database: DBFile
     }
 
+    toRoute = []
+
     for (let i = 0; i < Students.length - 1; i++) {
         let student = Students[i]
         toJson.students.push({
@@ -512,7 +514,20 @@ function CalculateScheduleDuration() {
             earliest: 0,
             latest: 0,
         })
+
+        toRoute.push({
+            timewindow: [0, 0],
+            addressId: student.Address.AddressID,
+            studentId: student.ID
+        })
     }
+
+    let route = require("../../addons/route/build/Release/route.node");
+    
+    route(DBFile, Students[0].DayPart, 7*3600, 30, { addressId: Students[0].Address.AddressID }, toRoute, function(data) {
+        console.log(data);
+    })
+    console.log('list', list);
 
     let proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", JSON.stringify(toJson)]);
 
