@@ -266,7 +266,7 @@ class MapsHandler:
 
                 RequestStartTime = time.time()
 
-                results = od.distance_matrix(self.OpenRouteClient, Points, sources=sources, profile="driving-hgv",\
+                results = od.distance_matrix(self.OpenRouteClient, Points, sources=sources,\
                  metrics=["duration","distance"])
 
                 RequestEndTime = time.time()
