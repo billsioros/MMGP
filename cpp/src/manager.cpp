@@ -251,8 +251,6 @@ double Manager::distance(
     std::ostream& logger
 )
 {
-    logger << "<MSG>: Retrieving distance of " << A << " and " << B << std::endl;
-
     SQLite::Statement stmt(database,
         "SELECT Duration "\
         "FROM " + daypart + "Distance "\
