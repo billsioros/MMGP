@@ -88,8 +88,10 @@ _cost(std::numeric_limits<double>().max())
 {
 }
 
-void Manager::load(SQLite::Database& database, Student& depot)
+void Manager::load(SQLite::Database& database, Student& depot, std::ostream& logger)
 {
+    logger << "<MSG>: Loading depot..." << std::endl;
+
     SQLite::Statement stmt(database, "SELECT AddressID, GPS_X, GPS_Y FROM Depot");
 
     stmt.executeStep();
@@ -105,9 +107,12 @@ void Manager::load(SQLite::Database& database, Student& depot)
 void Manager::load(
     SQLite::Database& database,
     std::vector<Student>& students,
-    const std::string& daypart
+    const std::string& daypart,
+    std::ostream& logger
 )
 {
+    logger << "<MSG>: Loading students..." << std::endl;
+
     #ifdef __DEBUG_MANAGER__
     SQLite::Statement stmt(database,
         "SELECT Student.StudentID, Student.AddressID, "\
@@ -137,7 +142,11 @@ void Manager::load(
         Student student;
         student._studentId = _studentId; student._addressId = _addressId;
         if (!set.insert(student).second)
+        {
+            logger << "<WRN>: Duplicate student " << student << std::endl;
+
             continue;
+        }
 
         std::bitset<5> _days;
         for (; current < 7; current++)
@@ -154,10 +163,14 @@ void Manager::load(
 
         students.emplace_back(_studentId, _addressId, _days, _position, _timewindow);
     }
+
+    logger << "<MSG>: " << students.size() << " students successfully loaded" << std::endl;
 }
 
-void Manager::load(SQLite::Database& database, Buses& buses)
+void Manager::load(SQLite::Database& database, Buses& buses, std::ostream& logger)
 {
+    logger << "<MSG>: Loading buses..." << std::endl;
+
     #ifdef __DEBUG_MANAGER__
     SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
     #else
@@ -173,6 +186,8 @@ void Manager::load(SQLite::Database& database, Buses& buses)
             stmt.getColumn(2).getUInt()
         );
     }
+
+    logger << "<MSG>: " << buses.size() << " buses successfully loaded" << std::endl;
 }
 
 nlohmann::json Manager::json(
@@ -232,7 +247,8 @@ double Manager::distance(
     SQLite::Database& database,
     const Student& A,
     const Student& B,
-    const std::string& daypart
+    const std::string& daypart,
+    std::ostream& logger
 )
 {
     SQLite::Statement stmt(database,

@@ -80,17 +80,17 @@ int main(int argc, char * argv[])
     {
         SQLite::Database database(dbname);
 
-        Manager::load(database, students, dayPart);
+        Manager::load(database, students, dayPart, std::cerr);
 
-        Manager::load(database, buses);
+        Manager::load(database, buses, std::cerr);
 
-        Manager::load(database, depot);
+        Manager::load(database, depot, std::cerr);
         
         for (const auto& A : students)
             for (const auto& B : students)
                 if (A != B)
                     dmatrix[A][B] = (A == depot ? 0.0 : serviceTime)
-                                  + Manager::distance(database, A, B, dayPart);
+                                  + Manager::distance(database, A, B, dayPart, std::cerr);
     }
     catch (std::exception& e)
     {
@@ -111,7 +111,9 @@ int main(int argc, char * argv[])
         return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
     };
 
-    auto beg = std::chrono::system_clock().now();
+    std::cerr << "<MSG>: Clustering students..." << std::endl;
+
+    auto beg = std::chrono::high_resolution_clock::now();
 
     std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
     (
@@ -124,14 +126,18 @@ int main(int argc, char * argv[])
         [](const Manager::Student& student) { return 1.0; }
     );
 
-    auto end = std::chrono::system_clock().now();
+    auto end = std::chrono::high_resolution_clock::now();
 
-    std::cerr
-    << "<MSG>: Elapsed time: "
-    << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
-    << " seconds (Student Clustering)" << std::endl;
+    double diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
 
-    beg = std::chrono::system_clock().now();
+    std::cerr << "<MSG>: " << diff << " seconds elapsed" << std::endl;
+
+    std::cerr << "<MSG>: Optimizing routes..." << std::endl;
+
+    beg = std::chrono::high_resolution_clock::now();
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
@@ -170,12 +176,14 @@ int main(int argc, char * argv[])
                 << " minutes" << std::endl;
     }
 
-    end = std::chrono::system_clock().now();
+    end = std::chrono::high_resolution_clock::now();
 
-    std::cerr
-    << "<MSG>: Elapsed time: "
-    << std::chrono::duration_cast<std::chrono::seconds>(end - beg).count()
-    << " seconds (Route Optimization)" << std::endl;
+    diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    std::cerr << "<MSG>: " << diff << " seconds elapsed" << std::endl;
 
     nlohmann::json json = Manager::json(dayPart, schedules);
 
@@ -211,13 +219,13 @@ TSP::path<Manager::Student> tsp
     path = TSP::nearestNeighbor<Manager::Student>(depot, students, cost);
 
     #ifdef __TEST_TSP__
-    std::cout << "NN: " << path.first << std::endl;
+    std::cerr << "NN: " << path.first << std::endl;
     #endif
 
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
     #ifdef __TEST_TSP__
-    std::cout << "OPT2: " << path.first << std::endl;
+    std::cerr << "OPT2: " << path.first << std::endl;
     #endif
 
     path = Annealing::simulated<TSP::path<Manager::Student>>(
@@ -247,13 +255,13 @@ TSP::path<Manager::Student> tsp
     );
 
     #ifdef __TEST_TSP__
-    std::cout << "SA: " << path.first << std::endl;
+    std::cerr << "SA: " << path.first << std::endl;
     #endif
 
     path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
 
     #ifdef __TEST_TSP__
-    std::cout << "OPT2-SA: " << path.first << std::endl;
+    std::cerr << "OPT2-SA: " << path.first << std::endl;
     #endif
 
     return path;
