@@ -142,9 +142,9 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
         double fst, snd;
 
-        wstudent.get("longitude", fst);
-        wstudent.get("latitude",  snd);
-        student._position = { fst, snd };
+        // wstudent.get("longitude", fst);
+        // wstudent.get("latitude",  snd);
+        // student._position = { fst, snd };
 
         wstudent.get("earliest", fst);
         wstudent.get("latest",   snd);
@@ -160,10 +160,6 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 void Worker::work(uv_work_t * request)
 {
-    v8::Isolate * iso = v8::Isolate::GetCurrent();
-
-    v8::HandleScope scope(iso);
-
     Worker * worker = static_cast<Worker *>(request->data);
 
     using DVector = std::unordered_map<Manager::Student, double>;
