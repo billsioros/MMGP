@@ -91,13 +91,13 @@ function GenerateScheduleButtons() {
 
     switch(DayPart) {
         case "Morning":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
             break;
         case "Noon":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
             break;
         case "Study":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) = 1 Order By BusSchedule"
             let buses = GetActiveBus();
             for (let i = 0; i < buses.length; i++)
                 buses[i].classList.remove("active")
@@ -365,7 +365,7 @@ function SearchSchedule() {
 
     loading.nextElementSibling.innerHTML = "Searching";
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+    let sql = "Select * From Student, Address, Schedule Where Schedule.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and (";
 
     for (let i = 0; i < busSchedules.length; i++) {
         let busSchedule = busSchedules[i];
@@ -441,7 +441,7 @@ function AddSchedule() {
 
     loading.nextElementSibling.innerHTML = "Adding"
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+    let sql = "Select * From Student, Address, Schedule Where Schedule.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and (";
 
     for (let i = 0; i < busSchedules.length; i++) {
         let busSchedule = busSchedules[i];
@@ -514,19 +514,7 @@ function CalculateScheduleDuration() {
             earliest: 0,
             latest: 0,
         })
-
-        toRoute.push({
-            timewindow: [0, 0],
-            addressId: student.Address.AddressID,
-            studentId: student.ID
-        })
     }
-
-    let route = require("../../addons/route/build/Release/route.node");
-
-    route(DBFile, Students[0].DayPart, 7*3600, 30, { addressId: Students[0].Address.AddressID }, toRoute, function(data) {
-        console.log(data);
-    });
 
     let proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", JSON.stringify(toJson)]);
 
@@ -557,8 +545,23 @@ function CalculateScheduleDuration() {
 
 }
 
-function SolveScheduleTSP() {
-    
+function SolveScheduleTSP(Students) {
+    toRoute = []
+
+    for (let i = 0; i < Students.length - 1; i++) {
+        let student = Students[i]
+        toRoute.push({
+            timewindow: [0, 0],
+            addressId: student.Address.AddressID,
+            studentId: student.ID
+        })
+    }
+
+    let route = require("../../addons/route/build/Release/route.node");
+
+    route(DBFile, Students[0].DayPart, 7*3600, 30, { addressId: Students[0].Address.AddressID }, toRoute, function(data) {
+        console.log(data);
+    });
 }
 
     // #endregion //
@@ -1200,8 +1203,8 @@ function OnMorePress() {
     else {
         id = children[0].innerHTML;
 
-        let sql = "Select * From Student, Address\
-        Where Student.AddressID = Address.AddressID and\
+        let sql = "Select * From Student, Address, Schedule\
+        Where Student.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and\
         Student.StudentID = \"" + id + "\"";
 
         id = "\"" + id + "\"";
@@ -1234,10 +1237,10 @@ function SearchStudents() {
     const DayPart = document.getElementById("DayPartBar").value;
 
     const SearchValues = [FirstName, LastName, Class, Level, DayPart, Street, Number, Municipal, ZipCode];
-    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Student.DayPart",
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Schedule.DayPart",
      "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
 
-    let toSearch = "Where  Student.AddressID = Address.AddressID"
+    let toSearch = "Where (Student.AddressID = Address.AddressID or Schedule.AddressID = Address.AddressID) and Student.StudentID = Schedule.StudentID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1268,7 +1271,7 @@ function SearchStudents() {
     loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
-            From Student, Address " + toSearch + " Order By Student.LastName";
+            From Student, Address, Schedule " + toSearch + " Order By Student.LastName";
     
 
     // Execute query and get Students
