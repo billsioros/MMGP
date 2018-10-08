@@ -5,19 +5,23 @@
 #include "cmeans.hpp"
 #include <vector>
 #include <memory>
+#include <chrono>
 
 #include "wrapper.hpp"
 #include <node.h>
 #include <uv.h>
 
-#include <iostream>
-#define logger std::cerr
+#include "log.hpp"
 
 namespace VRP_GROUP
 {
 
 struct Worker
 {
+    Log log;
+    
+    std::string err;
+
     uv_work_t request;
     v8::Persistent<v8::Function> callback;
 
@@ -27,6 +31,8 @@ struct Worker
 
     static void work(uv_work_t *);
     static void completed(uv_work_t *, int);
+
+    Worker(const std::string& name) : log(name) {}
 };
 
 void group(const v8::FunctionCallbackInfo<v8::Value>& args)
@@ -39,13 +45,13 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
     {
         iso->ThrowException
         (
-            v8::Exception::TypeError
+            v8::Exception::SyntaxError
             (
                 v8::String::NewFromUtf8
                 (
                     iso,
                     (
-                        "TypeError: function requires 3 arguements "\
+                        "function requires 3 arguements "\
                         "(" + std::to_string(args.Length()) + " given)"
                     ).c_str()
                 )
@@ -64,7 +70,7 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     iso,
-                    "TypeError: Invalid arguement(s) "\
+                    "Invalid arguement(s) "\
                     "[ group(dbname, dayPart, callback) ]"
                 )
             )
@@ -73,9 +79,10 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }   
 
-    logger << "<MSG>: Initializing worker thread..." << std::endl;
+    Worker * worker = new Worker("group");
 
-    Worker * worker = new Worker;
+    worker->log(Log::Code::Message, "Initializing worker thread...");
+
     worker->request.data = worker;
     worker->callback.Reset(iso, args[2].As<v8::Function>());
 
@@ -94,24 +101,29 @@ void Worker::work(uv_work_t * request)
     std::vector<Manager::Student> students;
     Manager::Buses buses;
 
-    logger << "<MSG>: Worker thread loading students and buses..." << std::endl;
+    worker->log(Log::Code::Message, "Worker thread loading students and buses...");
 
     try
     {
         SQLite::Database database(worker->dbname);
 
-        Manager::load(database, students, worker->dayPart, logger);
+        Manager::load(database, students, worker->dayPart, worker->log);
 
-        Manager::load(database, buses, logger);
+        Manager::load(database, buses, worker->log);
     }
     catch (std::exception& e)
     {
-        logger << "<ERR>: SQLiteCpp Exception ( " << e.what() << " )" << std::endl;
+        const std::string msg
+        (
+            "database=" + dbname + " day-part=" + dayPart + " sqlitecpp-exception=" + e.what()
+        );
 
+        worker->log(Log::Code::Error, worker->err = msg);
+        
         return;
     }
 
-    logger << "<MSG>: Worker thread initiating clustering..." << std::endl;;
+    worker->log(Log::Code::Message, "Worker thread initiating clustering...");
 
     auto beg = std::chrono::high_resolution_clock::now();
 
@@ -163,6 +175,38 @@ void Worker::work(uv_work_t * request)
         }
     );
 
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
+
+    const std::size_t total = std::accumulate
+    (
+        groups.begin(),
+        groups.end(),
+        0UL,
+        [](std::size_t currentSum, const Cluster<Manager::Student>& group)
+        {
+            return currentSum + group.elements().size();
+        }
+    );
+
+    if (students.size() != total)
+    {
+        const std::string msg
+        (
+            "assertion-failed=\"The number of students before and after clustering differs\""
+        );
+
+        worker->log(Log::Code::Error, worker->err = msg);
+        
+        return;
+    }
+
     std::size_t busId = std::numeric_limits<std::size_t>().max();
     for (const auto& group : groups)
     {
@@ -176,26 +220,17 @@ void Worker::work(uv_work_t * request)
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    double diff = static_cast<double>
-    (
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
-    ) / 1000.0;
-
-    std::cerr << "<MSG>: " << diff << " seconds elapsed" << std::endl;
 }
 
 void Worker::completed(uv_work_t * request, int status)
 {
-    logger << "<MSG>: Packaging results..." << std::endl;
-
     v8::Isolate * iso = v8::Isolate::GetCurrent();
 
     v8::HandleScope scope(iso);
 
     Worker * worker = static_cast<Worker *>(request->data);
+
+    worker->log(Log::Code::Message, "Packaging results...");
 
     Wrapper::Array wschedules(iso);
 
@@ -244,12 +279,18 @@ void Worker::completed(uv_work_t * request, int status)
         wschedules.set(sid, wbuses);
     }
 
-    logger << "<MSG>: Invoking callback..." << std::endl;
+    worker->log(Log::Code::Message, "Invoking callback...");
 
-    v8::Local<v8::Value> argv[] = { wschedules.raw() };
+    v8::Local<v8::Value> argv[] =
+    {
+        worker->err.empty()
+        ? v8::Null(iso).As<v8::Value>()
+        : v8::Exception::Error(v8::String::NewFromUtf8(iso, worker->err.c_str())),
+        wschedules.raw()
+    };
     
     v8::Local<v8::Function>::New(iso, worker->callback)->
-        Call(iso->GetCurrentContext()->Global(), 1, argv);
+        Call(iso->GetCurrentContext()->Global(), 2, argv);
 
     worker->callback.Reset(); delete worker;
 }
