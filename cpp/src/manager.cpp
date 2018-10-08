@@ -252,20 +252,37 @@ double Manager::distance(
     SQLite::Database& database,
     const Student& A,
     const Student& B,
-    const std::string& daypart
+    const std::string& daypart,
+    Log& log
 )
 {
-    SQLite::Statement stmt(database,
-        "SELECT Duration "\
-        "FROM " + daypart + "Distance "\
-        "WHERE AddressID_1 = ? AND AddressID_2 = ?");
+    try
+    {
+        SQLite::Statement stmt(database,
+            "SELECT Duration "\
+            "FROM " + daypart + "Distance "\
+            "WHERE AddressID_1 = ? AND AddressID_2 = ?");
 
-    stmt.bind(1, A._addressId);
-    stmt.bind(2, B._addressId);
+        stmt.bind(1, A._addressId);
+        stmt.bind(2, B._addressId);
 
-    stmt.executeStep();
-    
-    return stmt.getColumn(0).getDouble();
+        stmt.executeStep();
+        
+        return stmt.getColumn(0).getDouble();
+    }
+    catch (std::exception& e)
+    {
+        log
+        (
+            Log::Code::Error,
+            "Unable to retrieve the distance between " +
+            static_cast<std::string>(A) +
+            " and " +
+            static_cast<std::string>(B)
+        );
+        
+        throw;
+    }
 }
 
 Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)

@@ -68,7 +68,14 @@ namespace Manager
 
     nlohmann::json json(const std::string&, const Schedules&);
 
-    double distance(SQLite::Database&, const Student&, const Student&, const std::string&);
+    double distance
+    (
+        SQLite::Database&,
+        const Student&,
+        const Student&,
+        const std::string&,
+        Log&
+    );
 }
 
 Manager::Student operator+(const Manager::Student&, const Manager::Student&);
