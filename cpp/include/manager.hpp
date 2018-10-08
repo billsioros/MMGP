@@ -4,6 +4,7 @@
 #include "vector2.hpp"
 #include "Database.h"
 #include "json.hpp"
+#include "log.hpp"
 #include <vector>           // std::vector
 #include <bitset>           // std::bitset
 #include <string>           // std::string
@@ -34,6 +35,8 @@ namespace Manager
         Student& operator=(const Student&);
         Student& operator=(const Student&&);
 
+        operator std::string() const;
+        
         friend bool operator==(const Student& A, const Student& B)
         {
             return A._studentId == B._studentId && A._addressId == B._addressId;
@@ -59,19 +62,13 @@ namespace Manager
     using Buses     = std::vector<Bus>;
     using Schedules = std::vector<Buses>;
 
-    void load(SQLite::Database&, Student&, std::ostream&);
-    void load(SQLite::Database&, std::vector<Student>&, const std::string&, std::ostream&);
-    void load(SQLite::Database&, std::vector<Bus>&, std::ostream&);
+    void load(SQLite::Database&, Student&, Log&);
+    void load(SQLite::Database&, std::vector<Student>&, const std::string&, Log&);
+    void load(SQLite::Database&, std::vector<Bus>&, Log&);
 
     nlohmann::json json(const std::string&, const Schedules&);
 
-    double distance(
-        SQLite::Database&,
-        const Student&,
-        const Student&,
-        const std::string&,
-        std::ostream&
-    );
+    double distance(SQLite::Database&, const Student&, const Student&, const std::string&);
 }
 
 Manager::Student operator+(const Manager::Student&, const Manager::Student&);
