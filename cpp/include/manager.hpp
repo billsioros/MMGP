@@ -30,10 +30,10 @@ namespace Manager
             const Vector2&
         );
         Student(const Student&);
-        Student(const Student&&);
+        Student(Student&&) noexcept;
 
         Student& operator=(const Student&);
-        Student& operator=(const Student&&);
+        Student& operator=(Student&&) noexcept;
 
         operator std::string() const;
         

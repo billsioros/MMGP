@@ -42,7 +42,7 @@ _timewindow(other._timewindow)
 {
 }
 
-Manager::Student::Student(const Manager::Student&& other)
+Manager::Student::Student(Manager::Student&& other) noexcept
 :
 _studentId(std::move(other._studentId)),
 _addressId(std::move(other._addressId)),
@@ -63,7 +63,7 @@ Manager::Student& Manager::Student::operator=(const Student& other)
     return *this;
 }
 
-Manager::Student& Manager::Student::operator=(const Student&& other)
+Manager::Student& Manager::Student::operator=(Student&& other) noexcept
 {
     _studentId   = std::move(other._studentId);
     _addressId   = std::move(other._addressId);
