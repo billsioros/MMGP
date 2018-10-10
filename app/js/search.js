@@ -1745,7 +1745,6 @@ function PlotSchedules(Students, Schedules) {
 
 // Executes sql in a python process and handles data returned in callback parameter //
 function ExecuteSQLToProc(sql, callback) {
-    console.log(sql);
     let toJson = {
         Database: DBFile,
         sql: sql
