@@ -11,23 +11,52 @@ button {
 
 body {
     display: grid;
-    grid-template-areas:    'sidebar header'
-                            'sidebar main';
-    grid-template-columns: 20% 80%;
+    grid-template-areas:    'header'
+                            'main';
+    /* grid-template-columns: 30px auto; */
     grid-template-rows: 50px auto;
 
-    width: 100vw;
+    width: auto;
     height: 100vh;
     margin: 0 auto;
 
     word-break: break-word;
+
+    transition: .4s;
+    margin-left: calc(20vw + 30px);
 }
 
 
+/* Side Nav Bar */
+#SideNavBar {
+    height: 100%;
+    width: 30px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    transition: 0.4s;
+    background-color: rgb(32, 32, 34);
+    display: grid;
+}
+
+#Show\/HideButton {
+    background-color: rgb(40, 40, 40);
+    border: none;  
+    border-radius: 5px;
+    width: 100%;
+    height: 1fr;
+    margin: 0 auto;
+}
+
+#Show\/HideImage {
+    width: 8px;
+    height: 12px;
+}
+
 main {
     background-color: #3b3b3b;
-    
-    grid-row: 2 / 3;
+    grid-column: 2 / 3;
     
     display: grid;
     grid-template-areas: "tabs"
@@ -38,6 +67,7 @@ main {
 }
 
 #SearchTabHeader {
+    grid-area: header;
     background-color: #252526;
     
     grid-column: 2 / 3;
@@ -66,20 +96,31 @@ main {
 }
 
 .InfoMapTabGroup {
-    margin: 1px 0;
+    margin: 1px 0px;
 }
 
+
 /* Side Bar */
+.SideBar * {
+    transition: 0.5s;
+}
 
 .SideBar {
     background-color: #222223;
-
-    grid-area: sidebar;
 
     overflow-x: hidden;
     overflow-y: scroll;
 
     word-break: normal;
+
+    height: 100%;
+    width: 20vw;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    transition: 0.4s;
+    margin-left: 30px;
 }
 
 .SideBarHeader {
@@ -270,7 +311,11 @@ main {
     
     overflow: hidden;
     word-break: normal;
+
+    /* position: fixed; */
 }
+
+
 
 #CalculateDurationButton .loadingGif {
     border: none;
@@ -403,3 +448,4 @@ main {
 .MoreButton:active {
     background-color: rgb(65, 64, 64);
 }
+

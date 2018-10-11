@@ -1996,6 +1996,73 @@ function CacheDOM() {
     MainInfo = document.getElementsByClassName("MainInfo")[0];
 }
 
+function OpenSideBar() {
+    this.onclick = CloseSideBar
+    
+
+    let sidebar = document.getElementsByClassName("SideBar")[0]
+    
+    sidebar.style.width = "20vw";
+    document.getElementsByTagName("body")[0].style.marginLeft = "calc(20vw + 30px)";
+
+    setTimeout(() => {
+        for (let i = 0; i < sidebar.childElementCount; i++) {
+            sidebar.children[i].style.opacity = "1";
+        }
+        this.children[0].src = "../images/General/hide.png"
+
+        let prevActive = null;
+
+        let tab = SearchTabGroup.activeTab();
+        if (tab) {
+            if (tab.subTabGroup) {
+                prevActive = tab.subTabGroup.currentActive;
+            }
+            if (prevActive === 1) {
+                MainInfo.innerHTML = "";
+        
+                CreateMap(tab);
+                PlotStudents(tab);
+            }
+        }
+        
+    },  410);
+}
+
+function CloseSideBar() {
+    this.onclick = OpenSideBar;
+    
+
+    let sidebar = document.getElementsByClassName("SideBar")[0]
+
+    for (let i = 0; i < sidebar.childElementCount; i++) {
+        sidebar.children[i].style.opacity = "0";
+    }
+    setTimeout(() => {
+        sidebar.style.width = "0";
+        document.getElementsByTagName("body")[0].style.marginLeft = "30px";
+        this.children[0].src = "../images/General/show.png"
+
+        setTimeout(() => {
+            let prevActive = null;
+
+            let tab = SearchTabGroup.activeTab();
+            if (tab) {
+                if (tab.subTabGroup) {
+                    prevActive = tab.subTabGroup.currentActive;
+                }
+                if (prevActive === 1) {
+                    MainInfo.innerHTML = "";
+            
+                    CreateMap(tab);
+                    PlotStudents(tab);
+                }
+            }
+        }, 400);
+        
+    }, 400);
+}
+
 // #endregion //
 
 
@@ -2041,6 +2108,8 @@ function OnCreateWindow() {
     document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
+
+    document.getElementById("Show\/HideButton").onclick = CloseSideBar;
 }
 
 // #endregion //

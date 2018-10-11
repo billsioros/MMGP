@@ -46,6 +46,28 @@ function createWindow() {
 
     initPrintWindow();
 
+    let fs = require("fs");
+    let data = fs.readFileSync(settings)
+    let settingsObj = JSON.parse(data)
+
+    let native = false;
+    
+    if (settingsObj.Connection.Active === "Native") {
+        native = true;
+    }
+
+    let oldYear = false;
+    let newYear = false;
+    let bothYears = false;
+    if( settingsObj.Current_Year.Active === "Old") {
+        oldYear = true;
+    }
+    else if (settingsObj.Current_Year.Active === "New") {
+        newYear = true;
+    }
+    else {
+        bothYears = true;
+    }
 
     // and Load the index.html of the app
     win.loadFile("html/index.html")
@@ -63,13 +85,12 @@ function createWindow() {
         {
             label: "Connection - Year",
             submenu: [
-                {label: 'Connect to Native Client', click() {setActiveConnection("Native");}},
-                {label: 'Connect to Native-Laptop Client', click() {setActiveConnection("Native-Laptop");}},
-                {label: 'Connect to Network Client', click() {setActiveConnection("Network");}},
+                {type: "radio", checked: native, label: 'Native Client' , click() {setActiveConnection("Native");}},
+                {type: "radio", checked: !native, label: 'Network Client', click() {setActiveConnection("Network");}},
                 {type:"separator"},
-                {label: 'Change to "Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents(true);}},
-                {label: 'Change to "New" Year', click() {setActiveCurrentYear("New"); UpdateStudents(true);}},
-                {label: 'Change to show Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents(true);}}
+                {type: "radio", checked: oldYear, label: '"Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents(true);}},
+                {type: "radio", checked: newYear, label: '"New" Year', click() {setActiveCurrentYear("New"); UpdateStudents(true);}},
+                {type: "radio", checked: bothYears, label: 'Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents(true);}}
             ]
         },
         {
