@@ -9,6 +9,7 @@
                 "../../cpp/src/wrapper.cpp",
                 "../../cpp/src/vector2.cpp",
                 "../../cpp/src/manager.cpp",
+                "../../cpp/src/log.cpp",
                 "../../cpp/SQLiteCpp/src/Backup.cpp",
                 "../../cpp/SQLiteCpp/src/Column.cpp",
                 "../../cpp/SQLiteCpp/src/Database.cpp",

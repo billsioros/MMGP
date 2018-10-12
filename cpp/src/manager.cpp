@@ -74,6 +74,11 @@ Manager::Student& Manager::Student::operator=(const Student&& other)
     return *this;
 }
 
+Manager::Student::operator std::string() const
+{
+    return "[ " + _studentId + " " + _addressId + " ]";
+}
+
 // Bus Struct:
 Manager::Bus::Bus(
     const std::string& _busId,
@@ -88,9 +93,9 @@ _cost(std::numeric_limits<double>().max())
 {
 }
 
-void Manager::load(SQLite::Database& database, Student& depot, std::ostream& logger)
+void Manager::load(SQLite::Database& database, Student& depot, Log& log)
 {
-    logger << "<MSG>: Loading depot..." << std::endl;
+    log(Log::Code::Message, "Loading depot...");
 
     SQLite::Statement stmt(database, "SELECT AddressID, GPS_X, GPS_Y FROM Depot");
 
@@ -108,10 +113,10 @@ void Manager::load(
     SQLite::Database& database,
     std::vector<Student>& students,
     const std::string& daypart,
-    std::ostream& logger
+    Log& log
 )
 {
-    logger << "<MSG>: Loading students..." << std::endl;
+    log(Log::Code::Message, "Loading students...");
 
     #ifdef __DEBUG_MANAGER__
     SQLite::Statement stmt(database,
@@ -142,8 +147,8 @@ void Manager::load(
         Student student;
         student._studentId = _studentId; student._addressId = _addressId;
         if (!set.insert(student).second)
-        {
-            logger << "<WRN>: Duplicate student " << student << std::endl;
+        {           
+            log(Log::Code::Warning, "Duplicate student " + static_cast<std::string>(student));
 
             continue;
         }
@@ -164,12 +169,12 @@ void Manager::load(
         students.emplace_back(_studentId, _addressId, _days, _position, _timewindow);
     }
 
-    logger << "<MSG>: " << students.size() << " students successfully loaded" << std::endl;
+    log(Log::Code::Message, std::to_string(students.size()) + " students successfully loaded");
 }
 
-void Manager::load(SQLite::Database& database, Buses& buses, std::ostream& logger)
+void Manager::load(SQLite::Database& database, Buses& buses, Log& log)
 {
-    logger << "<MSG>: Loading buses..." << std::endl;
+    log(Log::Code::Message, "Loading buses...");
 
     #ifdef __DEBUG_MANAGER__
     SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
@@ -187,7 +192,7 @@ void Manager::load(SQLite::Database& database, Buses& buses, std::ostream& logge
         );
     }
 
-    logger << "<MSG>: " << buses.size() << " buses successfully loaded" << std::endl;
+    log(Log::Code::Message, std::to_string(buses.size()) + " buses successfully loaded");
 }
 
 nlohmann::json Manager::json(
@@ -248,20 +253,36 @@ double Manager::distance(
     const Student& A,
     const Student& B,
     const std::string& daypart,
-    std::ostream& logger
+    Log& log
 )
 {
-    SQLite::Statement stmt(database,
-        "SELECT Duration "\
-        "FROM " + daypart + "Distance "\
-        "WHERE AddressID_1 = ? AND AddressID_2 = ?");
+    try
+    {
+        SQLite::Statement stmt(database,
+            "SELECT Duration "\
+            "FROM " + daypart + "Distance "\
+            "WHERE AddressID_1 = ? AND AddressID_2 = ?");
 
-    stmt.bind(1, A._addressId);
-    stmt.bind(2, B._addressId);
+        stmt.bind(1, A._addressId);
+        stmt.bind(2, B._addressId);
 
-    stmt.executeStep();
-    
-    return stmt.getColumn(0).getDouble();
+        stmt.executeStep();
+        
+        return stmt.getColumn(0).getDouble();
+    }
+    catch (std::exception& e)
+    {
+        log
+        (
+            Log::Code::Error,
+            "Unable to retrieve the distance between " +
+            static_cast<std::string>(A) +
+            " and " +
+            static_cast<std::string>(B)
+        );
+        
+        throw;
+    }
 }
 
 Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)

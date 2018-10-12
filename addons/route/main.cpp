@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <chrono>
 
 #include "wrapper.hpp"
 #include <node.h>
@@ -34,14 +35,17 @@
 //       ]
 // }
 
-#include <iostream>
-#define logger std::cerr
+#include "log.hpp"
 
 namespace VRP_ROUTE
 {
 
 struct Worker
 {
+    Log log;
+
+    std::string err;
+
     uv_work_t request;
     v8::Persistent<v8::Function> callback;
 
@@ -54,6 +58,8 @@ struct Worker
 
     static void work(uv_work_t *);
     static void completed(uv_work_t *, int);
+
+    Worker(const std::string& name) : log(name) {}
 };
 
 void route(const v8::FunctionCallbackInfo<v8::Value>& args)
@@ -66,13 +72,13 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     {
         iso->ThrowException
         (
-            v8::Exception::TypeError
+            v8::Exception::SyntaxError
             (
                 v8::String::NewFromUtf8
                 (
                     iso,
                     (
-                        "TypeError: function requires 7 arguements "\
+                        "function requires 7 arguements "\
                         "(" + std::to_string(args.Length()) + " given)"
                     ).c_str()
                 )
@@ -98,7 +104,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
                 v8::String::NewFromUtf8
                 (
                     iso,
-                    "TypeError: Invalid arguement(s) "\
+                    "Invalid arguement(s) "\
                     "[ "\
                         "route"\
                         "("\
@@ -112,9 +118,10 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         args.GetReturnValue().Set(v8::Undefined(iso)); return;
     }
 
-    logger << "<MSG>: Initializing worker thread..." << std::endl;
+    Worker * worker = new Worker("route");
+    
+    worker->log(Log::Code::Message, "Initializing worker thread...");
 
-    Worker * worker = new Worker;
     worker->request.data = worker;
     worker->callback.Reset(iso, args[6].As<v8::Function>());
 
@@ -140,15 +147,11 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         wstudent.get("studentId", student._studentId);
         wstudent.get("addressId", student._addressId);
 
-        double fst, snd;
+        double earliest, latest;
+        wstudent.get("earliest", earliest);
+        wstudent.get("latest",   latest);
 
-        // wstudent.get("longitude", fst);
-        // wstudent.get("latitude",  snd);
-        // student._position = { fst, snd };
-
-        wstudent.get("earliest", fst);
-        wstudent.get("latest",   snd);
-        student._timewindow = { fst, snd };
+        student._timewindow = { earliest, latest };
 
         worker->students.emplace_back(student);
     }
@@ -171,7 +174,9 @@ void Worker::work(uv_work_t * request)
         return dmatrix[A][B];
     };
 
-    logger << "<MSG>: Worker thread initializing distance matrix..." << std::endl;
+    worker->log(Log::Code::Message, "Worker thread initializing distance matrix...");
+
+    auto beg = std::chrono::high_resolution_clock::now();
 
     try
     {
@@ -181,17 +186,33 @@ void Worker::work(uv_work_t * request)
             for (const auto& B : worker->students)
                 if (A != B)
                     dmatrix[A][B] = (A == worker->depot ? 0.0 : worker->serviceTime)
-                                  + Manager::distance(database, A, B, worker->dayPart, logger);
+                                  + Manager::distance(database, A, B, worker->dayPart, worker->log);
     }
     catch (std::exception& e)
     {
-        logger << "<ERR>: SQLiteCpp Exception ( " << e.what() << " )" << std::endl;
+        const std::string msg
+        (
+            "database=" + dbname + " day-part=" + dayPart + " sqlitecpp-exception=" + e.what()
+        );
+
+        worker->log(Log::Code::Error, worker->err = msg);
 
         return;
     }
 
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
+
     // Local Optimization
-    logger << "<MSG>: Optimizing Route..." << std::endl;
+    worker->log(Log::Code::Message, "Optimizing Route...");
+
+    beg = std::chrono::high_resolution_clock::now();
 
     worker->path = TSP::nearestNeighbor<Manager::Student>
     (
@@ -287,21 +308,46 @@ void Worker::work(uv_work_t * request)
         TLI,
         TNP
     );
+
+    // Remove depot instances
+    worker->path.second.erase(worker->path.second.begin());
+    worker->path.second.erase(worker->path.second.end());
+
+    end = std::chrono::high_resolution_clock::now();
+
+    diff = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+    ) / 1000.0;
+
+    worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
+
+    if (worker->students.size() != worker->path.second.size())
+    {
+        const std::string msg
+        (
+            "assertion-failed=\"The number of students before and after routing differs\""
+        );
+
+        worker->log(Log::Code::Error, worker->err = msg);
+
+        return;
+    }
 }
 
 void Worker::completed(uv_work_t * request, int status)
 {
-    logger << "<MSG>: Packaging results..." << std::endl;
-
     v8::Isolate * iso = v8::Isolate::GetCurrent();
 
     v8::HandleScope scope(iso);
 
     Worker * worker = static_cast<Worker *>(request->data);
 
-    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.second.size() - 2UL);
+    worker->log(Log::Code::Message, "Packaging results...");
 
-    for (std::size_t sid = 1UL; sid < worker->path.second.size() - 1UL; sid++)
+    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.second.size());
+
+    for (std::size_t sid = 0UL; sid < worker->path.second.size(); sid++)
     {
         const Manager::Student& student = worker->path.second[sid];
 
@@ -318,12 +364,18 @@ void Worker::completed(uv_work_t * request, int status)
     wpath.set("students", wstudents);
     wpath.set("cost",     worker->path.first);
 
-    v8::Local<v8::Value> argv[] = { wpath.raw() };
+    v8::Local<v8::Value> argv[] =
+    {
+        worker->err.empty()
+        ? v8::Null(iso).As<v8::Value>()
+        : v8::Exception::Error(v8::String::NewFromUtf8(iso, worker->err.c_str())),
+        wpath.raw()
+    };
 
-    logger << "<MSG>: Invoking callback..." << std::endl;
+    worker->log(Log::Code::Message, "Invoking callback...");
 
     v8::Local<v8::Function>::New(iso, worker->callback)->
-        Call(iso->GetCurrentContext()->Global(), 1, argv);
+        Call(iso->GetCurrentContext()->Global(), 2, argv);
 
     worker->callback.Reset(); delete worker;
 }

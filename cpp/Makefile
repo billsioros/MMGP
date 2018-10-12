@@ -13,8 +13,9 @@ PATH_SQL_SRC = ./SQLiteCpp/src
 PATH_JSN_INC = ./nlohmann
 
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
-MNGR_DEP = $(PATH_SQL_INC)/Database.h $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_INC)/, vector2.hpp manager.hpp) $(PATH_SRC)/manager.cpp
-MAIN_DEP = $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp annealing.hpp) $(PATH_SRC)/main.cpp
+MNGR_DEP = $(PATH_SQL_INC)/Database.h $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_INC)/, vector2.hpp manager.hpp log.hpp) $(PATH_SRC)/manager.cpp
+LOG__DEP = $(PATH_INC)/log.hpp $(PATH_SRC)/log.cpp
+MAIN_DEP = $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp annealing.hpp log.hpp) $(PATH_SRC)/main.cpp
 
 BACK_DEP = $(addprefix $(PATH_SQL_INC)/, Backup.h Exception.h) $(PATH_SQL_SRC)/Backup.cpp
 CLMN_DEP = $(PATH_SQL_INC)/Column.h $(PATH_SQL_SRC)/Column.cpp
@@ -23,7 +24,7 @@ EXCP_DEP = $(PATH_SQL_INC)/Exception.h $(PATH_SQL_SRC)/Exception.cpp
 STMT_DEP = $(addprefix $(PATH_SQL_INC)/, Statement.h Database.h Column.h Assertion.h Exception.h) $(PATH_SQL_SRC)/Statement.cpp
 TRNS_DEP = $(addprefix $(PATH_SQL_INC)/, Transaction.h Database.h Assertion.h) $(PATH_SQL_SRC)/Transaction.cpp
 
-NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o manager.o main.o Backup.o Column.o Database.o Exception.o Statement.o Transaction.o)
+NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o manager.o main.o log.o Backup.o Column.o Database.o Exception.o Statement.o Transaction.o)
 
 .PHONY: all
 all:
@@ -43,6 +44,9 @@ $(PATH_BIN)/vector2.o: $(VEC2_DEP)
 
 $(PATH_BIN)/manager.o: $(MNGR_DEP)
 	$(CC) -I $(PATH_INC) -I $(PATH_SQL_INC) -I $(PATH_JSN_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/manager.cpp -c -o $(PATH_BIN)/manager.o
+
+$(PATH_BIN)/log.o: $(LOG__DEP)
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/log.cpp -c -o $(PATH_BIN)/log.o
 
 $(PATH_BIN)/main.o: $(MAIN_DEP)
 	$(CC) -I $(PATH_JSN_INC) -I $(PATH_INC) -I $(PATH_SQL_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/main.cpp -c -o $(PATH_BIN)/main.o
