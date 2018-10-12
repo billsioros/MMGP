@@ -738,10 +738,13 @@ function DisplayBusMap(Students) {
 
         studentsToPlot.push({
             Name: student.Name,
-            Addresses: [student.Address],
-            Order: index.toString(),
-            Times: [student.ScheduleTime],
-            Schedules: [student.BusSchedule]
+            Schedules: [{
+                ScheduleID: student.ScheduleID,
+                Address: student.Address,
+                Time: student.ScheduleTime,
+                BusSchedule: student.BusSchedule
+            }],
+            Order: index.toString()
         })
 
         index++;
@@ -873,28 +876,16 @@ function DisplayStudentSearchMap(Students) {
 
         // *Subject to change* //
         // Add all addresses to one array, so it is easier to plot them all together.
-        let Addresses = [];
-        Addresses.push.apply(Addresses, student.MorningAddresses);
-        Addresses.push.apply(Addresses, student.NoonAddresses);
-        Addresses.push.apply(Addresses, student.StudyAddresses);
-
         let Schedules = [];
-        Schedules.push.apply(Schedules, student.MorningBuses);
-        Schedules.push.apply(Schedules, student.NoonBuses);
-        Schedules.push.apply(Schedules, student.StudyBuses);
-
-        let Times = [];
-        Times.push.apply(Times, student.MorningTimes);
-        Times.push.apply(Times, student.NoonTimes);
-        Times.push.apply(Times, student.StudyTimes);
+        Schedules.push.apply(Schedules, student.MorningSchedules);
+        Schedules.push.apply(Schedules, student.NoonSchedules);
+        Schedules.push.apply(Schedules, student.StudySchedules);
 
         studentsToPlot.push({
             Name: student.LastName + ' ' + student.FirstName,
-            Addresses: Addresses,
             Schedules: Schedules,
-            Times: Times,
             Order: ""
-         });
+        });
     }
 
     return studentsToPlot;
@@ -941,7 +932,6 @@ function DisplayStudentCard(student) {
         p = document.createElement("p");
         p.innerHTML = student.ClassLevel;
         GInfo.appendChild(p);
-
 
         StCard.appendChild(GInfo);
     }
@@ -1055,16 +1045,10 @@ function DisplayStudentCard(student) {
 
             table.appendChild(firstRow);
 
-            
-            let Addresses = dayPart + 'Addresses';
-            let Notes = dayPart + 'Notes';
-            let Days = dayPart + 'Days';
-            let Buses = dayPart + 'Buses';
-            let Orders = dayPart + 'Order';
-            let Times = dayPart + 'Time';
+            let DayPartSchedules = dayPart + "Schedules";
             
             // If dayPart does not exist in students create a "p" with nothing in it
-            if (student[Addresses].length === 0) {
+            if (student[DayPartSchedules].length === 0) {
                 let p = document.createElement("p");
                 p.className = "RowData";
                 p.innerHTML = "-";
@@ -1072,15 +1056,16 @@ function DisplayStudentCard(student) {
             }
 
 
-            for (i = 0; i < student[Addresses].length; i++) {
+            for (i = 0; i < student[DayPartSchedules].length; i++) {
                 let row = document.createElement("div");
                 row.className = "SchedulesTableRow TableRow";
 
+                let schedule = student[DayPartSchedules][i];
                 // Bus Number
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Buses][i])
-                    p.innerHTML = student[Buses][i];
+                if (schedule.BusSchedule)
+                    p.innerHTML = schedule.BusSchedule;
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p)
@@ -1088,16 +1073,16 @@ function DisplayStudentCard(student) {
                 // Schedule Order (at what index student will be picked up)
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Orders][i])
-                    p.innerHTML = student[Orders][i];
+                if (schedule.ScheduleOrder)
+                    p.innerHTML = schedule.ScheduleOrder;
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p);
 
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Times][i])
-                    p.innerHTML = student[Times][i];
+                if (schedule.ScheduleTime)
+                    p.innerHTML = schedule.ScheduleTime;
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p);
@@ -1105,26 +1090,26 @@ function DisplayStudentCard(student) {
                 // Address
                 p = document.createElement("p");
                 p.className = "RowData";
-                p.innerHTML = student[Addresses][i].FullAddress;
+                p.innerHTML = schedule.Address.FullAddress;
                 row.appendChild(p);
 
                 // Notes
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Notes][i])
-                    p.innerHTML = student[Notes][i];
+                if (schedule.Notes)
+                    p.innerHTML = schedule.Notes;
                 else
                     p.innerHTML = "-";
                 row.appendChild(p);
                 
                 // Days
                 let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-                
+
                 for (let j = 0; j < WeekDays.length; j++) {
                     p = document.createElement("p");
                     p.className = "RowData";
 
-                    if (student[Days][i][WeekDays[j]] === 1)
+                    if (schedule.Days[WeekDays[j]] === 1)
                         p.className += " OnDay";
                     else 
                         p.className += " OffDay";
@@ -1155,28 +1140,16 @@ function DisplayStudentMap(student) {
 
     // *Subject to change* //
     // Add all addresses to one array, so it is easier to plot them all together.
-    let Addresses = [];
-    Addresses.push.apply(Addresses, student.MorningAddresses);
-    Addresses.push.apply(Addresses, student.NoonAddresses);
-    Addresses.push.apply(Addresses, student.StudyAddresses);
-
     let Schedules = [];
-    Schedules.push.apply(Schedules, student.MorningBuses);
-    Schedules.push.apply(Schedules, student.NoonBuses);
-    Schedules.push.apply(Schedules, student.StudyBuses);
+    Schedules.push.apply(Schedules, student.MorningSchedules);
+    Schedules.push.apply(Schedules, student.NoonSchedules);
+    Schedules.push.apply(Schedules, student.StudySchedules);
 
-    let Times = [];
-    Times.push.apply(Times, student.MorningTimes);
-    Times.push.apply(Times, student.NoonTimes);
-    Times.push.apply(Times, student.StudyTimes);
-
-    studentsToPlot.push( {
+    studentsToPlot.push({
         Name: student.LastName + ' ' + student.FirstName,
-        Addresses: Addresses,
         Schedules: Schedules,
-        Times: Times,
         Order: ""
-     });
+    });
 
     return studentsToPlot;
 }
@@ -1223,6 +1196,8 @@ function OnMorePress() {
             newSearchTab.activate(false);
         });
     }
+
+    OpenBottomBar();
 }
 
 function SearchStudents() {
@@ -1244,7 +1219,7 @@ function SearchStudents() {
     const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Schedule.DayPart",
      "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
 
-    let toSearch = "Where (Student.AddressID = Address.AddressID or Schedule.AddressID = Address.AddressID) and Student.StudentID = Schedule.StudentID"
+    let toSearch = "Where Schedule.AddressID = Address.AddressID and Student.StudentID = Schedule.StudentID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1436,6 +1411,13 @@ function OnSearchTabPress() {
     DisplaySearchTab(pressedTab);
     pressedTab.activate(false);
 
+    if (pressedTab.type !== "StudentCard") {
+        CloseBottomBar();
+    }
+    else {
+        OpenBottomBar();
+    }
+
     CheckDisabledScheduleButton(pressedTab)
 
     ReassignAllButtons();
@@ -1496,8 +1478,8 @@ function CreateMap(tab) {
 
     for (let i = 0; i < Students.length; i++) {
         let student = Students[i];
-        for (let j = 0; j < student.Addresses.length; j++) {
-            let address = student.Addresses[j];
+        for (let j = 0; j < student.Schedules.length; j++) {
+            let address = student.Schedules[j].Address;
             coords.push([address.Latitude, address.Longitude]);
         }
     }
@@ -1548,10 +1530,10 @@ function PlotStudents(tab) {
         let student = Students[i];
         let studentName = student.Name;
 
-        for (let j = 0; j < student.Addresses.length; j++) {
-            let address = student.Addresses[j];
-            let schedule = student.Schedules[j];
-            let time = student.Times[j];
+        for (let j = 0; j < student.Schedules.length; j++) {
+            let address = student.Schedules[j].Address;
+            let schedule = student.Schedules[j].BusSchedule;
+            let time = student.Schedules[j].ScheduleTime;
             let key = address.Latitude + "," + address.Longitude;
             let found = false;
 
@@ -1652,9 +1634,9 @@ function PlotSchedules(Students, Schedules) {
         let student = Students[i];
         let studentName = student.Name;
 
-        for (let j = 0; j < student.Addresses.length; j++) {
-            let address = student.Addresses[j];
-            let schedule = student.Schedules[j];
+        for (let j = 0; j < student.Schedules.length; j++) {
+            let address = student.Schedules[j].Address;
+            let schedule = student.Schedules[j].BusSchedule;
             let key = address.Latitude + "," + address.Longitude;
             let found = false;
 
@@ -1688,12 +1670,12 @@ function PlotSchedules(Students, Schedules) {
             }
             else {
                 plottedAddresses[key] = {
-                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule + "\n" + student.Times[j],
+                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule + "\n" + student.Schedules[j].Time,
                     names: [studentName],
                     address: address,
                     schedule: schedule,
                     order: student.Order,
-                    time: student.Time
+                    time: student.Schedules[j].Time
                 };
             }
         }
@@ -1814,81 +1796,61 @@ function StudentJsonRead(json_file) {
                 OtherPhone1: row.OtherPhone1,
                 OtherPhone2: row.OtherPhone2,
 
-                MorningAddresses: [],
-                MorningDays: [],
-                MorningNotes: [],
-                MorningBuses: [],
-                MorningOrder: [],
-                MorningTime: [],
+                MorningSchedules: [],
 
-                NoonAddresses: [],
-                NoonDays: [],
-                NoonNotes: [],
-                NoonBuses: [],
-                NoonOrder: [],
-                NoonTime: [],
+                NoonSchedules: [],
 
-                StudyAddresses: [],                   
-                StudyDays: [],
-                StudyNotes: [],
-                StudyBuses: [],
-                StudyOrder: [],
-                StudyTime: []
+                StudySchedules: [],
+
             };
             
-            let key = row.DayPart + 'Addresses';
-            student[key].push({ FullAddress: row.FullAddress,
-                                AddressID: row.AddressID,
-                                Longitude: row.GPS_X,
-                                Latitude: row.GPS_Y } );
-
-            key = row.DayPart + 'Days';
-            student[key].push( {    Monday: row.Monday,
-                                Tuesday: row.Tuesday,
-                                Wednesday: row.Wednesday,
-                                Thursday: row.Thursday,
-                                Friday: row.Friday }  );
-            
-            key = row.DayPart + 'Notes';
-            student[key].push(row.FullNote);
-
-            key = row.DayPart + 'Buses';
-            student[key].push(row.BusSchedule);
-            
-            key = row.DayPart + "Order";
-            student[key].push(row.ScheduleOrder);
-
-            key = row.DayPart + "Time";
-            student[key].push(row.ScheduleTime)
+            student[row.DayPart + "Schedules"].push({
+                ScheduleID: row.ScheduleID,
+                Address: {
+                    FullAddress: row.FullAddress,
+                    AddressID: row.AddressID,
+                    Longitude: row.GPS_X,
+                    Latitude: row.GPS_Y
+                },
+                Days: {
+                    Monday: row.Monday,
+                    Tuesday: row.Tuesday,
+                    Wednesday: row.Wednesday,
+                    Thursday: row.Thursday,
+                    Friday: row.Friday
+                },
+                Notes: row.FullNote,
+                BusSchedule: row.BusSchedule,
+                ScheduleOrder: row.ScheduleOrder,
+                ScheduleTime: row.ScheduleTime
+            });
 
             Students[id] = student;
         }
         else {
             // Ιf student exists save only its DIFFERENT addresses, days, notes, buses PER daypart.
-            let key = row.DayPart + 'Addresses';
-            Students[id][key].push({    FullAddress: row.FullAddress,
-                                        StudentID: row.AddressID,
-                                        Longitude: row.GPS_X,
-                                        Latitude: row.GPS_Y } );
 
-            key = row.DayPart + 'Days';
-            Students[id][key].push( {   Monday: row.Monday,
-                                        Tuesday: row.Tuesday,
-                                        Wednesday: row.Wednesday,
-                                        Thursday: row.Thursday,
-                                        Friday: row.Friday }  );
-            
-            key = row.DayPart + 'Notes';
-            Students[id][key].push(row.Notes);
+            Students[id][row.DayPart + "Schedules"].push({
+                ScheduleID: row.ScheduleID,
+                Address: {
+                    FullAddress: row.FullAddress,
+                    AddressID: row.AddressID,
+                    Longitude: row.GPS_X,
+                    Latitude: row.GPS_Y
+                },
+                Days: {
+                    Monday: row.Monday,
+                    Tuesday: row.Tuesday,
+                    Wednesday: row.Wednesday,
+                    Thursday: row.Thursday,
+                    Friday: row.Friday
+                },
+                Notes: row.FullNote,
+                BusSchedule: row.BusSchedule,
+                ScheduleOrder: row.ScheduleOrder,
+                ScheduleTime: row.ScheduleTime
+            });
 
-            key = row.DayPart + 'Buses';
-            Students[id][key].push(row.BusSchedule)
-
-            key = row.DayPart + "Order";
-            Students[id][key].push(row.ScheduleOrder);
-
-            key = row.DayPart + "Time";
-            Students[id][key].push(row.ScheduleTime)
         }
     }
 
@@ -1934,6 +1896,7 @@ function ScheduleJsonRead(json_file) {
             OtherPhone2: row.OtherPhone2,
 
             DayPart: row.DayPart,
+            ScheduleID: row.ScheduleID,
 
             Address: {
                 FullAddress: row.FullAddress,
@@ -1999,6 +1962,10 @@ function CacheDOM() {
     InfoMapTabHeader = document.getElementsByClassName("InfoMapTabGroup")[0];
     MainInfo = document.getElementsByClassName("MainInfo")[0];
 }
+// #endregion //
+
+
+// #region Navigation Bars
 
 function OpenSideBar() {
     this.onclick = CloseSideBar
@@ -2007,6 +1974,7 @@ function OpenSideBar() {
     let sidebar = document.getElementsByClassName("SideBar")[0]
     
     sidebar.style.width = "20vw";
+    document.getElementById("BottomNavBar").style.width = "calc(80vw - 30px)";
     document.getElementsByTagName("body")[0].style.marginLeft = "calc(20vw + 30px)";
 
     setTimeout(() => {
@@ -2049,6 +2017,7 @@ function CloseSideBar() {
         sidebar.style.overflowY = "hidden";
         sidebar.style.width = "0";
         document.getElementsByTagName("body")[0].style.marginLeft = "30px";
+        document.getElementById("BottomNavBar").style.width = "100vw";
         this.children[0].src = "../images/General/show.png"
 
         setTimeout(() => {
@@ -2071,7 +2040,17 @@ function CloseSideBar() {
     }, 400);
 }
 
-// #endregion //
+function OpenBottomBar() {
+    document.getElementById("BottomNavBar").style.height = "60px";
+}
+
+function CloseBottomBar() {
+    document.getElementById("BottomNavBar").style.height = "0";
+}
+
+// #endregion
+
+
 
 
 
