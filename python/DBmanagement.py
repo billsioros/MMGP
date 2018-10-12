@@ -47,27 +47,11 @@ class DBManager:
                     AddressID       varchar(255),       \
                     Level           varchar(255),       \
                     Class           varchar(255),       \
-                    Monday          bit,                \
-                    Tuesday         bit,                \
-                    Wednesday       bit,                \
-                    Thursday        bit,                \
-                    Friday          bit,                \
-                    DayPart         varchar(255),       \
-                    FullNote        varchar(255),       \
-                    EarlyPickup     varchar(255),       \
-                    LatePickup      varchar(255),       \
-                    EarlyDrop       varchar(255),       \
-                    LateDrop        varchar(255),       \
-                    Around          varchar(255),       \
-                    AltAddress      varchar(255),       \
-                    Comment         text,               \
-                    BusSchedule     varchar(255),       \
-                    ScheduleOrder   int,                \
-                    ScheduleTime    varchar(255),       \
                     Phone           varchar(255),       \
                     Mobile          varchar(255),       \
                     OtherPhone1     varchar(255),       \
                     OtherPhone2     varchar(255),       \
+                    Primary Key (StudentID),            \
                     Foreign Key (AddressID) References Address(AddressID)  )"
         self.Cursor.execute(sql)
 
@@ -85,6 +69,32 @@ class DBManager:
                     TranslatedAddress   varchar(255),       \
                     FormattedAddress    varchar(255),       \
                     Primary Key (AddressID)         )"
+        self.Cursor.execute(sql)
+
+        sql = "Create Table Schedule (                  \
+                    ScheduleID  varchar(255),           \
+                    StudentID   varchar(255),           \
+                    AddressID   varchar(255),           \
+                    Monday          bit,                \
+                    Tuesday         bit,                \
+                    Wednesday       bit,                \
+                    Thursday        bit,                \
+                    Friday          bit,                \
+                    DayPart         varchar(255),       \
+                    FullNote        varchar(255),       \
+                    EarlyPickup     varchar(255),       \
+                    LatePickup      varchar(255),       \
+                    EarlyDrop       varchar(255),       \
+                    LateDrop        varchar(255),       \
+                    Around          varchar(255),       \
+                    AltAddress      varchar(255),       \
+                    Comment         text,               \
+                    BusSchedule     varchar(255),       \
+                    ScheduleOrder   int,                \
+                    ScheduleTime    varchar(255),       \
+                    Primary Key (ScheduleID),           \
+                    Foreign Key (AddressID) References Address(AddressID),  \
+                    Foreign Key (StudentID) References Student(StudentID)   )"
         self.Cursor.execute(sql)
 
         sql = "Create Table MorningDistance (               \
@@ -187,6 +197,7 @@ class DBManager:
         requests = 0
         # Pull Addresses from Database
         Addresses = self.GetAddresses()
+        ExistingStudents = self.GetStudents()
 
         # Delete the whole students table but not the addresses table                                       - [Update]
         # Check all the new students for previously found addresses                                         - [New, Update]
@@ -194,13 +205,16 @@ class DBManager:
         # Insert all students with new addresses (whether they have GPS coords or not)                      - [New, Update]
         # Delete any address that is not connected to a student after the new entries finish being inserted - [Update]
 
-        self.Cursor.execute("Delete From Student")
+        self.Cursor.execute("Delete From Schedule")
         if overwrite:
             self.Cursor.execute("Delete From Address")
+            self.Cursor.execute("Delete From Student")
+
+        InsertedSchedules = dict()
 
         # Tables is list of lists of Rows of Data
         for RowList, DayPart in Tables:
-            NoGPS = list()
+            NoGPS = list()       
 
             # Insert All Records that already have GPS coordinates
             for Row in RowList:
@@ -232,59 +246,72 @@ class DBManager:
 
                 # Add student to the database
                 # Format Some Values
-                if Row["Class"]:
-                    Row["Class"] = Row["Class"].replace('-', "")
-                    Row["Class"].strip()
-                    if Row["Class"] == "":
-                        Row["Class"] = None
 
-                if "Notes":
-                    self.__InitParser()
-                    NotesDict = self._Parser.Parse("Notes")
-                    EarlyPickup = NotesDict["Early Pickup"]
-                    LatePickup = NotesDict["Late Pickup"]
-                    EarlyDrop = NotesDict["Early Drop"]
-                    LateDrop = NotesDict["Late Drop"]
-                    AltAddress = NotesDict["Address"]
-                    Comment = NotesDict["Comments"]
-                    Around = NotesDict["Around"]
-                else:
-                    EarlyPickup = None
-                    LatePickup = None
-                    EarlyDrop = None
-                    LateDrop = None
-                    AltAddress = None
-                    Comment = None
-                    Around = None
+                if not ExistingStudents.has_key(Row["ID"]):
+                    if Row["Class"]:
+                        Row["Class"] = Row["Class"].replace('-', "")
+                        Row["Class"].strip()
+                        if Row["Class"] == "":
+                            Row["Class"] = None
 
-                if Row["Phone"] != None:
-                    Row["Phone"].strip(" ")
-                    if Row["Phone"] == "":
-                        Row["Phone"] = None
+                    if Row["Phone"] != None:
+                        Row["Phone"].strip(" ")
+                        if Row["Phone"] == "":
+                            Row["Phone"] = None
 
-                if Row["Mobile"] != None:
-                    Row["Mobile"].strip(" ")
-                    if Row["Mobile"] == "":
-                        Row["Mobile"] = None
+                    if Row["Mobile"] != None:
+                        Row["Mobile"].strip(" ")
+                        if Row["Mobile"] == "":
+                            Row["Mobile"] = None
 
-                if Row["OtherPhone1"] != None:
-                    Row["OtherPhone1"].strip(" ")
-                    if Row["OtherPhone1"] == "":
-                        Row["OtherPhone1"] = None
+                    if Row["OtherPhone1"] != None:
+                        Row["OtherPhone1"].strip(" ")
+                        if Row["OtherPhone1"] == "":
+                            Row["OtherPhone1"] = None
 
-                if Row["OtherPhone2"] != None:
-                    Row["OtherPhone2"].strip(" ")
-                    if Row["OtherPhone2"] == "":
-                        Row["OtherPhone2"] = None
+                    if Row["OtherPhone2"] != None:
+                        Row["OtherPhone2"].strip(" ")
+                        if Row["OtherPhone2"] == "":
+                            Row["OtherPhone2"] = None
 
-                StudentList = [Row["ID"], Row["LastName"], Row["FirstName"], HashAddress, Row["Level"], Row["Class"], 
-                Row["Mon"], Row["Tue"], Row["Wen"], Row["Thu"], Row["Fri"], DayPart,
-                Row["Notes"], EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, 
-                Row["BusSchedule"], Row["ScheduleOrder"], Row["ScheduleTime"],
-                Row["Phone"], Row["Mobile"], Row["OtherPhone1"], Row["OtherPhone2"]]
-                
-                self.Cursor.execute("Insert Into Student     \
-                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", StudentList)
+                    StudentList =  [Row["ID"], Row["LastName"], Row["FirstName"], HashAddress, Row["Level"], Row["Class"], 
+                                    Row["Phone"], Row["Mobile"], Row["OtherPhone1"], Row["OtherPhone2"]]
+                    
+                    self.Cursor.execute("Insert Into Student    \
+                                    Values (?,?,?,?,?,?,?,?,?,?)", StudentList)
+
+                    ExistingStudents[Row["ID"]] = 1
+
+
+
+                if not InsertedSchedules.has_key(Row["ScheduleID"]):
+                    if "Notes":
+                        self.__InitParser()
+                        NotesDict = self._Parser.Parse("Notes")
+                        EarlyPickup = NotesDict["Early Pickup"]
+                        LatePickup = NotesDict["Late Pickup"]
+                        EarlyDrop = NotesDict["Early Drop"]
+                        LateDrop = NotesDict["Late Drop"]
+                        AltAddress = NotesDict["Address"]
+                        Comment = NotesDict["Comments"]
+                        Around = NotesDict["Around"]
+                    else:
+                        EarlyPickup = None
+                        LatePickup = None
+                        EarlyDrop = None
+                        LateDrop = None
+                        AltAddress = None
+                        Comment = None
+                        Around = None
+
+                    ScheduleList = [Row["ScheduleID"], Row["ID"], HashAddress, Row["Mon"], Row["Tue"], Row["Wen"], Row["Thu"], Row["Fri"], DayPart,
+                                    Row["Notes"], EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, 
+                                    Row["BusSchedule"], Row["ScheduleOrder"], Row["ScheduleTime"]]
+
+                    self.Cursor.execute("Insert Into Schedule   \
+                                    Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", ScheduleList)
+                    
+                    InsertedSchedules[Row["ScheduleID"]] = 1
 
 
             # Insert All Records that do not have GPS coordinates
@@ -323,6 +350,7 @@ class DBManager:
 
                         self.Cursor.execute("Insert Into Address    \
                                             Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+
         self.__DiscardAddresses()
 
 
@@ -369,9 +397,9 @@ class DBManager:
                 " Select Address.AddressID, Address.GPS_X, Address.GPS_Y    \
                 From Address                                                \
                 Where exists (  Select *                                    \
-                                From Student                                \
-                                Where Student.AddressID = Address.AddressID \
-                                and Student.DayPart = ?)", [DayPart])
+                                From Student, Schedule                      \
+                                Where Schedule.AddressID = Address.AddressID and Student.StudentID = Schedule.StudentID \
+                                and Schedule.DayPart = ?)", [DayPart])
 
         Addresses = self.Cursor.fetchall()
 
@@ -494,12 +522,25 @@ class DBManager:
         sql = "Select * From Student"
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
-        Students = list()
-        for row in Rows:
-            Students.append(row)
+
+        Students = dict()
+        for Row in Rows:
+            Students[Row["StudentID"]] = Row
 
         return Students
 
+
+    def GetSchedules(self):
+        self.Connect(self.FileName)
+        sql = "Select * From Schedule"
+        self.Cursor.execute(sql)
+        Rows = self.Cursor.fetchall()
+
+        Students = dict()
+        for Row in Rows:
+            Students[Row["ScheduleID"]] = Row
+
+        return Students
 
     # Fix this!!
     def GetDistances(self, DayPart):

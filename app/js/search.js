@@ -91,13 +91,13 @@ function GenerateScheduleButtons() {
 
     switch(DayPart) {
         case "Morning":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
             break;
         case "Noon":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
             break;
         case "Study":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) = 1 Order By BusSchedule"
             let buses = GetActiveBus();
             for (let i = 0; i < buses.length; i++)
                 buses[i].classList.remove("active")
@@ -365,7 +365,7 @@ function SearchSchedule() {
 
     loading.nextElementSibling.innerHTML = "Searching";
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+    let sql = "Select * From Student, Address, Schedule Where Schedule.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and (";
 
     for (let i = 0; i < busSchedules.length; i++) {
         let busSchedule = busSchedules[i];
@@ -441,7 +441,7 @@ function AddSchedule() {
 
     loading.nextElementSibling.innerHTML = "Adding"
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+    let sql = "Select * From Student, Address, Schedule Where Schedule.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and (";
 
     for (let i = 0; i < busSchedules.length; i++) {
         let busSchedule = busSchedules[i];
@@ -514,35 +514,7 @@ function CalculateScheduleDuration() {
             earliest: 0,
             latest: 0,
         })
-
-        toRoute.push({
-            timewindow: [0, 0],
-            addressId: student.Address.AddressID,
-            studentId: student.ID
-        })
     }
-
-    let route = require("../../addons/route/build/Release/route.node");
-
-    route
-    (
-        DBFile,
-        Students[0].DayPart,
-        7 * 3600,
-        30,
-        { addressId: Students[0].Address.AddressID },
-        toRoute,
-        function(err, data)
-        {
-            if (err)
-            {
-                alert(err);
-                return;
-            }
-
-            console.log(data);
-        }
-    );
 
     let proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", JSON.stringify(toJson)]);
 
@@ -573,8 +545,27 @@ function CalculateScheduleDuration() {
 
 }
 
-function SolveScheduleTSP() {
-    
+function SolveScheduleTSP(Students) {
+    toRoute = []
+
+    for (let i = 0; i < Students.length - 1; i++) {
+        let student = Students[i]
+        toRoute.push({
+            timewindow: [0, 0],
+            addressId: student.Address.AddressID,
+            studentId: student.ID
+        })
+    }
+
+    let route = require("../../addons/route/build/Release/route.node");
+
+    route(DBFile, Students[0].DayPart, 7*3600, 30, { addressId: Students[0].Address.AddressID }, toRoute, function(err, data) {
+        if (err) {
+          alert(err);
+          return;
+        }
+        console.log(data);
+    });
 }
 
     // #endregion //
@@ -1216,8 +1207,8 @@ function OnMorePress() {
     else {
         id = children[0].innerHTML;
 
-        let sql = "Select * From Student, Address\
-        Where Student.AddressID = Address.AddressID and\
+        let sql = "Select * From Student, Address, Schedule\
+        Where Student.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and\
         Student.StudentID = \"" + id + "\"";
 
         id = "\"" + id + "\"";
@@ -1250,10 +1241,10 @@ function SearchStudents() {
     const DayPart = document.getElementById("DayPartBar").value;
 
     const SearchValues = [FirstName, LastName, Class, Level, DayPart, Street, Number, Municipal, ZipCode];
-    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Student.DayPart",
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Schedule.DayPart",
      "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
 
-    let toSearch = "Where  Student.AddressID = Address.AddressID"
+    let toSearch = "Where (Student.AddressID = Address.AddressID or Schedule.AddressID = Address.AddressID) and Student.StudentID = Schedule.StudentID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1284,7 +1275,7 @@ function SearchStudents() {
     loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
-            From Student, Address " + toSearch + " Order By Student.LastName";
+            From Student, Address, Schedule " + toSearch + " Order By Student.LastName";
     
 
     // Execute query and get Students
@@ -1758,7 +1749,6 @@ function PlotSchedules(Students, Schedules) {
 
 // Executes sql in a python process and handles data returned in callback parameter //
 function ExecuteSQLToProc(sql, callback) {
-    console.log(sql);
     let toJson = {
         Database: DBFile,
         sql: sql
@@ -2010,6 +2000,77 @@ function CacheDOM() {
     MainInfo = document.getElementsByClassName("MainInfo")[0];
 }
 
+function OpenSideBar() {
+    this.onclick = CloseSideBar
+    
+
+    let sidebar = document.getElementsByClassName("SideBar")[0]
+    
+    sidebar.style.width = "20vw";
+    document.getElementsByTagName("body")[0].style.marginLeft = "calc(20vw + 30px)";
+
+    setTimeout(() => {
+        
+        for (let i = 0; i < sidebar.childElementCount; i++) {
+            sidebar.children[i].style.opacity = "1";
+        }
+        this.children[0].src = "../images/General/hide.png"
+        sidebar.style.overflowY = "scroll";
+
+        let prevActive = null;
+
+        let tab = SearchTabGroup.activeTab();
+        if (tab) {
+            if (tab.subTabGroup) {
+                prevActive = tab.subTabGroup.currentActive;
+            }
+            if (prevActive === 1) {
+                MainInfo.innerHTML = "";
+        
+                CreateMap(tab);
+                PlotStudents(tab);
+            }
+        }
+        
+    },  410);
+}
+
+function CloseSideBar() {
+    this.onclick = OpenSideBar;
+    
+
+    let sidebar = document.getElementsByClassName("SideBar")[0]
+    
+    for (let i = 0; i < sidebar.childElementCount; i++) {
+        sidebar.children[i].style.opacity = "0";
+    }
+    
+    setTimeout(() => {
+        sidebar.style.overflowY = "hidden";
+        sidebar.style.width = "0";
+        document.getElementsByTagName("body")[0].style.marginLeft = "30px";
+        this.children[0].src = "../images/General/show.png"
+
+        setTimeout(() => {
+            let prevActive = null;
+
+            let tab = SearchTabGroup.activeTab();
+            if (tab) {
+                if (tab.subTabGroup) {
+                    prevActive = tab.subTabGroup.currentActive;
+                }
+                if (prevActive === 1) {
+                    MainInfo.innerHTML = "";
+            
+                    CreateMap(tab);
+                    PlotStudents(tab);
+                }
+            }
+        }, 400);
+        
+    }, 400);
+}
+
 // #endregion //
 
 
@@ -2055,6 +2116,8 @@ function OnCreateWindow() {
     document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
+
+    document.getElementById("Show\/HideButton").onclick = CloseSideBar;
 }
 
 // #endregion //

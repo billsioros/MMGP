@@ -7,6 +7,7 @@ from DBmanagement import DBManager as DBM
 import json
 
 jsonRequest = sys.argv[1]
+print jsonRequest
 
 # Connection
 
@@ -59,7 +60,8 @@ for tableName in TableNames:
 RowLists = dict()
 
 StudentColumns = ["ID", "LastName", "FirstName", "Road", "Num", "ZipCode", "Prefec", "Muni", "Area", "Notes", "Level", "Class",\
-            "BusSchedule", "ScheduleOrder", "ScheduleTime", "Mon", "Tue", "Wen", "Thu", "Fri", "GPSX", "GPSY", "Phone", "Mobile", "OtherPhone1", "OtherPhone2"]
+            "ScheduleID", "BusSchedule", "ScheduleOrder", "ScheduleTime", "Mon", "Tue", "Wen", "Thu", "Fri", "GPSX", "GPSY", \
+            "Phone", "Mobile", "OtherPhone1", "OtherPhone2"]
 
 for tableName, key in izip(TableNames, RowListKeys):
       sql = "Select                             \
@@ -75,6 +77,7 @@ for tableName, key in izip(TableNames, RowListKeys):
                   sched.SchNotes,               \
                   sched.LevelDescription,       \
                   sched.ClassDescription,       \
+                  sched.SchCode,                \
                   sched.ScheduleName,           \
                   sched.SchStudentOrder,        \
                   sched.SchStudentTime,         \
