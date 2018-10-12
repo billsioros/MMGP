@@ -14,6 +14,8 @@ let settings = datadir + "MMGP_settings.json"
 let DBFile = datadir + "MMGP_data.db"
 let closing = false
 
+let OpenProcesses = {};
+
 // #endregion   //
 
 
@@ -24,7 +26,12 @@ function initPrintWindow() {
     if (closing) {
         printwin = null;
     }
-    printwin = new BrowserWindow({width:1640, height:840, title:"MMGP_Print", opacity: 1.0});
+    printwin = new BrowserWindow({
+        width:1640, 
+        height:840, 
+        title:"MMGP_Print", 
+        opacity: 1.0,
+        frame: false});
     printwin.loadFile("html/printer.html")
     printwin.maximize();
     printwin.hide();
@@ -79,7 +86,7 @@ function createWindow() {
                 {label: 'Run MMGP Algorithm'},        
                 {type: 'separator'},
                 {label: 'Hide Print Window', click() {printwin.hide()}},
-                {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {app.quit()}}
+                {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {KillSubProcesses(); app.quit()}}
             ]
         },
         {
@@ -138,7 +145,6 @@ function createWindow() {
             ]
         }
     ])
-
     Menu.setApplicationMenu(menu);
 
     // Emitted when the window is closed.
@@ -148,7 +154,9 @@ function createWindow() {
         // when you should delete the corresponding element.
         win = null
         closing = true;
-        printwin.close()
+        printwin.close();
+        KillSubProcesses();
+        app.quit();
     })
 }
 
@@ -195,6 +203,7 @@ function CreateDatabase() {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "Creation.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -208,6 +217,8 @@ function CreateDatabase() {
         dialog.showErrorBox("Creation Error", data.toString());
         console.error(data.toString());
     })
+
+    
 }
 
 function BackupDatabase() {
@@ -241,6 +252,7 @@ function BackupDatabase() {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "BackupDatabase.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -298,6 +310,7 @@ function RestoreDatabase() {
 
         spawn = require("child_process").spawn;
         var proc = spawn('python', [pythondir + "RestoreDatabase.py", JSON.stringify(toJson)]);
+        OpenProcesses[proc.pid] = proc;
 
         proc.on('close', function(code) {
             progressBar.setCompleted();
@@ -349,6 +362,7 @@ function UpdateStudents(overwrite=false) {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "UpdateStudents.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -392,6 +406,7 @@ function UpdateBuses() {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "UpdateBuses.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -582,6 +597,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     }
 
     updistproc = spawn('python', [pythondir + "UpdateDistances.py", JSON.stringify(toJson)]);
+    OpenProcesses[updistproc.pid] = updistproc;
 
     var progressBar = undefined
 
@@ -660,8 +676,10 @@ app.on('window-all-closed', () => {
 
     // On macOS it is common for applications and their menu bar
     // to stay active until the used quits explicitly with Cmd + Q
+    
     if (process.platform !== 'darwin') {
-        app.quit()
+        KillSubProcesses();
+        app.quit()  
     }
 })
 
@@ -673,6 +691,13 @@ app.on('activate', () => {
     }
 })
 
+
+function KillSubProcesses() {
+    let pids = Object.keys(OpenProcesses);
+    for (let i = 0; i < pids.length; i++) {
+        OpenProcesses[pids[i]].kill();
+    }
+}
 // #endregion
 
 

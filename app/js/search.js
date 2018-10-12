@@ -2006,10 +2006,12 @@ function OpenSideBar() {
     document.getElementsByTagName("body")[0].style.marginLeft = "calc(20vw + 30px)";
 
     setTimeout(() => {
+        
         for (let i = 0; i < sidebar.childElementCount; i++) {
             sidebar.children[i].style.opacity = "1";
         }
         this.children[0].src = "../images/General/hide.png"
+        sidebar.style.overflowY = "scroll";
 
         let prevActive = null;
 
@@ -2034,11 +2036,13 @@ function CloseSideBar() {
     
 
     let sidebar = document.getElementsByClassName("SideBar")[0]
-
+    
     for (let i = 0; i < sidebar.childElementCount; i++) {
         sidebar.children[i].style.opacity = "0";
     }
+    
     setTimeout(() => {
+        sidebar.style.overflowY = "hidden";
         sidebar.style.width = "0";
         document.getElementsByTagName("body")[0].style.marginLeft = "30px";
         this.children[0].src = "../images/General/show.png"

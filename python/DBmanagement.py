@@ -397,9 +397,9 @@ class DBManager:
                 " Select Address.AddressID, Address.GPS_X, Address.GPS_Y    \
                 From Address                                                \
                 Where exists (  Select *                                    \
-                                From Student                                \
-                                Where Student.AddressID = Address.AddressID \
-                                and Student.DayPart = ?)", [DayPart])
+                                From Student, Schedule                      \
+                                Where Schedule.AddressID = Address.AddressID and Student.StudentID = Schedule.StudentID \
+                                and Schedule.DayPart = ?)", [DayPart])
 
         Addresses = self.Cursor.fetchall()
 
