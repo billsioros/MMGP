@@ -6,7 +6,6 @@
 #include "json.hpp"
 #include "log.hpp"
 #include <vector>           // std::vector
-#include <bitset>           // std::bitset
 #include <string>           // std::string
 #include <vector>           // std::vector
 #include <iosfwd>           // std::ostream
@@ -17,7 +16,6 @@ namespace Manager
     {
         std::string    _studentId;
         std::string    _addressId;
-        std::bitset<5> _days;
         Vector2        _position;
         Vector2        _timewindow;
 
@@ -25,7 +23,6 @@ namespace Manager
         Student(
             const std::string&,
             const std::string&,
-            const std::bitset<5>&,
             const Vector2&,
             const Vector2&
         );

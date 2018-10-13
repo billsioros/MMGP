@@ -4,7 +4,6 @@
 #include "Database.h"
 #include "json.hpp"
 #include <vector>           // std::vector
-#include <bitset>           // std::bitset
 #include <string>           // std::string
 #include <fstream>          // std::ostream
 #include <iomanip>          // std::setw
@@ -20,7 +19,6 @@ Manager::Student::Student()
 Manager::Student::Student(
     const std::string& _studentId,
     const std::string& _addressId,
-    const std::bitset<5>& _days,
     const Vector2& _position,
     const Vector2& _timewindow
 )
@@ -36,7 +34,6 @@ Manager::Student::Student(const Manager::Student& other)
 :
 _studentId(other._studentId),
 _addressId(other._addressId),
-_days(other._days),
 _position(other._position),
 _timewindow(other._timewindow)
 {
@@ -46,7 +43,6 @@ Manager::Student::Student(Manager::Student&& other) noexcept
 :
 _studentId(std::move(other._studentId)),
 _addressId(std::move(other._addressId)),
-_days(std::move(other._days)),
 _position(std::move(other._position)),
 _timewindow(std::move(other._timewindow))
 {
@@ -56,7 +52,6 @@ Manager::Student& Manager::Student::operator=(const Student& other)
 {
     _studentId   = other._studentId;
     _addressId   = other._addressId;
-    _days        = other._days;
     _position    = other._position;
     _timewindow  = other._timewindow;
 
@@ -67,7 +62,6 @@ Manager::Student& Manager::Student::operator=(Student&& other) noexcept
 {
     _studentId   = std::move(other._studentId);
     _addressId   = std::move(other._addressId);
-    _days        = std::move(other._days);
     _position    = std::move(other._position);
     _timewindow  = std::move(other._timewindow);
 
@@ -128,7 +122,6 @@ void Manager::load(
     #else
     SQLite::Statement stmt(database,
         "SELECT Student.StudentID, Student.AddressID, "\
-        "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
         "Address.GPS_X, Address.GPS_Y "\
         "FROM Student, Address "\
         "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ?");
@@ -153,10 +146,6 @@ void Manager::load(
             continue;
         }
 
-        std::bitset<5> _days;
-        for (; current < 7; current++)
-            _days.set(current - 2, stmt.getColumn(current).getText()[0] == '1');
-
         const double x = stmt.getColumn(current++).getDouble();
         const double y = stmt.getColumn(current++).getDouble();
         const Vector2 _position(x, y);
@@ -166,7 +155,7 @@ void Manager::load(
             0.0  // stmt.getColumn(current++).getDouble()
         );
 
-        students.emplace_back(_studentId, _addressId, _days, _position, _timewindow);
+        students.emplace_back(_studentId, _addressId, _position, _timewindow);
     }
 
     log(Log::Code::Message, std::to_string(students.size()) + " students successfully loaded");
@@ -288,9 +277,6 @@ double Manager::distance(
 Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)
 {
     Manager::Student student;
-    
-    for (std::size_t i = 0; i < A._days.size(); i++)
-        student._days[i] = A._days[i] || B._days[i];
 
     student._position   = A._position   + B._position;
     student._timewindow = A._timewindow + B._timewindow;
@@ -302,7 +288,7 @@ Manager::Student operator/(const Manager::Student& _student, double factor)
 {
     Manager::Student student;
 
-    student._position = _student._position / factor;
+    student._position   = _student._position / factor;
     student._timewindow = _student._timewindow / factor;
 
     return student;
