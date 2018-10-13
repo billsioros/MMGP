@@ -1,5 +1,6 @@
 ::-webkit-scrollbar {
     width: 12px;
+    background: rgb(75, 75, 75); 
 }
  
 /* Handle */

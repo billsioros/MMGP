@@ -1089,12 +1089,14 @@ function DisplayStudentCard(student) {
 
                 // Address
                 p = document.createElement("p");
+                p.contentEditable = "true";
                 p.className = "RowData";
                 p.innerHTML = schedule.Address.FullAddress;
                 row.appendChild(p);
 
                 // Notes
                 p = document.createElement("p");
+                p.contentEditable = "true";
                 p.className = "RowData";
                 if (schedule.Notes)
                     p.innerHTML = schedule.Notes;
@@ -1217,9 +1219,9 @@ function SearchStudents() {
 
     const SearchValues = [FirstName, LastName, Class, Level, DayPart, Street, Number, Municipal, ZipCode];
     const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Schedule.DayPart",
-     "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
+     "studAd.Road", "studAd.Number", "studAd.Municipal", "studAd.ZipCode"];
 
-    let toSearch = "Where Schedule.AddressID = Address.AddressID and Student.StudentID = Schedule.StudentID"
+    let toSearch = "Where Schedule.AddressID = schedAd.AddressID and Student.AddressID = studAd.AddressID and Student.StudentID = Schedule.StudentID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1250,7 +1252,7 @@ function SearchStudents() {
     loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
-            From Student, Address, Schedule " + toSearch + " Order By Student.LastName";
+            From Student, Address as studAd, Address as schedAd, Schedule " + toSearch + " Order By Student.LastName";
     
 
     // Execute query and get Students
@@ -1324,6 +1326,19 @@ function OnSearchClearStudent() {
     StudentClearButton.onclick = ClearSearchBars;
 }
 
+function OnEnterSearchStudents(event) {
+    if (!event) event = window.event;
+    if (event.key === "Enter") {
+        SearchStudents();
+    }
+}
+
+function KeyDownSearchBars() {
+    let bars = document.getElementsByClassName("SearchBar");
+    for (let i = 0; i < bars.length; i++) {
+        bars[i].onkeydown = OnEnterSearchStudents;
+    }
+}
 
 // #endregion //
 
@@ -1822,7 +1837,11 @@ function StudentJsonRead(json_file) {
                 Notes: row.FullNote,
                 BusSchedule: row.BusSchedule,
                 ScheduleOrder: row.ScheduleOrder,
-                ScheduleTime: row.ScheduleTime
+                ScheduleTime: row.ScheduleTime,
+                Early: row.Early,
+                Late: row.Late,
+                Around: row.Around,
+                DayPart: row.DayPart
             });
 
             Students[id] = student;
@@ -1848,7 +1867,11 @@ function StudentJsonRead(json_file) {
                 Notes: row.FullNote,
                 BusSchedule: row.BusSchedule,
                 ScheduleOrder: row.ScheduleOrder,
-                ScheduleTime: row.ScheduleTime
+                ScheduleTime: row.ScheduleTime,
+                Early: row.Early,
+                Late: row.Late,
+                Around: row.Around,
+                DayPart: row.DayPart
             });
 
         }
@@ -1916,7 +1939,11 @@ function ScheduleJsonRead(json_file) {
             Notes: row.FullNote,
             BusSchedule: row.BusSchedule,
             ScheduleTime: row.ScheduleTime,
-            ScheduleOrder: row.ScheduleOrder
+            ScheduleOrder: row.ScheduleOrder,
+            Early: row.Early,
+            Late: row.Late,
+            Around: row.Around,
+            DayPart: row.DayPart
         }
 
         Students.push(student);
@@ -2052,16 +2079,15 @@ function CloseBottomBar() {
 
 
 
-
-
-// #region Printer-Loader       //
+// #region Editors-Printer-Loader       //
 
     // Printer
 function PrintHandler() {
     // Sends message to main process to print MainInfo. //
-    const ipcRenderer= require('electron').ipcRenderer;
+    const ipcRenderer = require('electron').ipcRenderer;
 
     function sendCommandToPrinter(content, title, type) {
+        // this sends tom main
         ipcRenderer.send("printPDF", content, title, type);
     }
 
@@ -2071,6 +2097,16 @@ function PrintHandler() {
         sendCommandToPrinter(MainInfo.innerHTML, title, type);
     });
 }
+
+function StudentEditorHandler() {
+    const ipcRenderer = require('electron').ipcRenderer;
+
+    document.getElementById("EditButton").addEventListener("click", () => {
+        let Student = SearchTabGroup.activeTab().students;
+        ipcRenderer.send("OpenStudentEditor", Student);
+    });
+}
+
 
     // Loader
 function OnCreateWindow() {
@@ -2086,7 +2122,9 @@ function OnCreateWindow() {
     
     GenerateBusButtons();
     OnSearchClearStudent();
+    KeyDownSearchBars();
     PrintHandler();
+    StudentEditorHandler();
     CacheDOM();
 
     // Create a SearchTabGroup and hold it to a global variable for use.    //

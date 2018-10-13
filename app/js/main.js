@@ -145,7 +145,7 @@ function createWindow() {
             ]
         }
     ])
-    Menu.setApplicationMenu(menu);
+    win.setMenu(menu)
 
     // Emitted when the window is closed.
     win.on('closed', () => {
@@ -753,3 +753,22 @@ ipcMain.on("CanceledPrinting", (event) => {
 // #endregion   //
 
 
+// #region Message Getter for Editing //
+
+ipcMain.on("OpenStudentEditor", (event, Student) => {
+    let editwindow = new BrowserWindow({
+        width: 560, 
+        height: 900, 
+        title: Student.LastName + " " + Student.FirstName, 
+        opacity: 1.0,
+        autoHideMenuBar: true
+    });
+
+    editwindow.loadFile("html/studenteditor.html");
+    setTimeout(() => {
+        editwindow.webContents.send("LoadStudent", Student);
+    }, 1000);
+    
+})
+
+// #endregion

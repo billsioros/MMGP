@@ -82,12 +82,9 @@ class DBManager:
                     Friday          bit,                \
                     DayPart         varchar(255),       \
                     FullNote        varchar(255),       \
-                    EarlyPickup     varchar(255),       \
-                    LatePickup      varchar(255),       \
-                    EarlyDrop       varchar(255),       \
-                    LateDrop        varchar(255),       \
+                    Early           varchar(255),       \
+                    Late            varchar(255),       \
                     Around          varchar(255),       \
-                    AltAddress      varchar(255),       \
                     Comment         text,               \
                     BusSchedule     varchar(255),       \
                     ScheduleOrder   int,                \
@@ -288,28 +285,22 @@ class DBManager:
                     if "Notes":
                         self.__InitParser()
                         NotesDict = self._Parser.Parse("Notes")
-                        EarlyPickup = NotesDict["Early Pickup"]
-                        LatePickup = NotesDict["Late Pickup"]
-                        EarlyDrop = NotesDict["Early Drop"]
-                        LateDrop = NotesDict["Late Drop"]
-                        AltAddress = NotesDict["Address"]
+                        Early = NotesDict["Early Pickup"]
+                        Late = NotesDict["Late Pickup"]
                         Comment = NotesDict["Comments"]
                         Around = NotesDict["Around"]
                     else:
-                        EarlyPickup = None
-                        LatePickup = None
-                        EarlyDrop = None
-                        LateDrop = None
-                        AltAddress = None
+                        Early = None
+                        Late = None
                         Comment = None
                         Around = None
 
                     ScheduleList = [Row["ScheduleID"], Row["ID"], HashAddress, Row["Mon"], Row["Tue"], Row["Wen"], Row["Thu"], Row["Fri"], DayPart,
-                                    Row["Notes"], EarlyPickup, LatePickup, EarlyDrop, LateDrop, Around, AltAddress, Comment, 
+                                    Row["Notes"], Early, Late, Around, Comment, 
                                     Row["BusSchedule"], Row["ScheduleOrder"], Row["ScheduleTime"]]
 
                     self.Cursor.execute("Insert Into Schedule   \
-                                    Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", ScheduleList)
+                                    Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", ScheduleList)
                     
                     InsertedSchedules[Row["ScheduleID"]] = 1
 

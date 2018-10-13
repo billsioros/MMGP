@@ -78,7 +78,8 @@ body {
     transition: 0.3s;
 }
 
-#EditButton, #SaveButton {
+#BottomNavBar > button {
+/* #EditButton, #SaveButton { */
     background-color: inherit;
 
     border: none;  
@@ -93,10 +94,17 @@ body {
     float: right;
 }
 
-#EditButton:hover, #SaveButton:hover {
-    background-color: rgb(40, 40, 43);
+#BottomNavBar > button:hover {
+/* #EditButton:hover, #SaveButton:hover { */
+    background-color: rgb(51, 51, 54);
     transition: 0.5s;
 }
+
+#BottomNavBar > button:active {
+    /* #EditButton:hover, #SaveButton:hover { */
+        background-color: rgb(27, 27, 29);
+        transition: 0.5s;
+    }
 
 #EditImage, #SaveImage {
     width: 35px;

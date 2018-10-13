@@ -1,0 +1,45 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Student Editor</title>
+
+    <!-- Style -->
+    <link rel="stylesheet" type="text/css" href="../css/studenteditor.css">
+    <link rel="stylesheet" type="text/css" href="../css/scrollbar.css">
+    <script type="text/javascript" src="../js/studenteditor.js"></script>
+</head>
+<body>
+    <script>
+        const ipcRenderer = require("electron").ipcRenderer;
+
+        ipcRenderer.on("LoadStudent", (event, Student) => {
+            LoadStudents(Student);
+        });
+    </script>
+
+    <header id="StudentNameHeader" class="MainHeader"></header>
+
+    <div id="Schedules">
+        <header class="ScheduleHeader">Morning Schedules</header>
+        <div id="MorningSchedules" class="ScheduleTables">
+    
+        </div>
+    
+        <header class="ScheduleHeader">Noon Schedules</header>
+        <div id="NoonSchedules" class="ScheduleTables">
+    
+        </div>
+    
+        <header class="ScheduleHeader">Study Schedules</header>
+        <div id="StudySchedules" class="ScheduleTables">
+    
+        </div>
+    </div>
+    
+
+    <div id="BottomNavBar">
+        <button type=button id="SaveButton" title="Save", onclick="Save()">
+            <img id="SaveImage" src="../images/General/save.png">
+        </button>
+    </div>
+
+</body>
