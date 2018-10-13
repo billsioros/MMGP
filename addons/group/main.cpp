@@ -118,7 +118,7 @@ void Worker::work(uv_work_t * request)
     {
         const std::string msg
         (
-            "database=" + dbname + " day-part=" + dayPart + " sqlitecpp-exception=" + e.what()
+            "database=" + worker->dbname + " day-part=" + worker->dayPart + " sqlitecpp-exception=" + e.what()
         );
 
         worker->log(Log::Code::Error, worker->err = msg);

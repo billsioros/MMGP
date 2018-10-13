@@ -3,37 +3,15 @@
 #include "Statement.h"
 #include "manager.hpp"
 #include "tsp.hpp"
-#include "annealing.hpp"
 #include <unordered_map>
 #include <vector>
 #include <string>
 #include <chrono>
+#include <stdexcept>
 
 #include "wrapper.hpp"
 #include <node.h>
 #include <uv.h>
-
-// A JSON holding all necessary information for the tsptw solver
-// {
-//      "serviceTime": 30.0,                            # 30 seconds
-//      "departureTime": 27000.0,                       # 7:30 AM
-//      "dayPart": "Morning",                           # Morning / Noon / Study
-//      "depot": "XXXXXXXXXXXXXXXXXXXXXXXX",            # AddressId
-//      "students":
-//       [
-//            {
-//                 "timewindow": [ 27000.0, 28800.0 ],  # [ 7.30 AM, 8.00 AM ]
-//                 "addressId": "XXXXXXXXXXXXXXXXXXXXXXXX",
-//                 "studentId": "YYYYYYYYYYYY"
-//            },
-//            ...
-//            {
-//                 "timewindow": [ 27900.0, 29700.0 ],  # [ 7.45 AM, 8.15 AM ]
-//                 "addressId": "XXXXXXXXXXXXXXXXXXXXXXXX",
-//                 "studentId": "YYYYYYYYYYYY"
-//            }
-//       ]
-// }
 
 #include "log.hpp"
 
@@ -54,7 +32,7 @@ struct Worker
     Manager::Student depot;
     std::vector<Manager::Student> students;
 
-    TSP::path<Manager::Student> path;
+    tsptw<Manager::Student> path;
 
     static void work(uv_work_t *);
     static void completed(uv_work_t *, int);
@@ -91,7 +69,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     if
     (
         !args[0]->IsString() || !args[1]->IsString() ||
-        !args[2]->IsNumber() || !args[3]->IsNumber() ||
+        !args[2]->IsObject() || !args[3]->IsNumber() ||
         !args[4]->IsObject() ||
         !args[5]->IsArray()  ||
         !args[6]->IsFunction()
@@ -128,8 +106,41 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     worker->dbname  = *v8::String::Utf8Value(args[0].As<v8::String>());
     worker->dayPart = *v8::String::Utf8Value(args[1].As<v8::String>());
 
-    worker->departureTime = args[2].As<v8::Number>()->NumberValue();
-    worker->serviceTime   = args[3].As<v8::Number>()->NumberValue();
+    auto extractTime = [](const Wrapper::Object& wobj)
+    {
+        double hour, minute;
+
+        wobj.get("hour",   hour);
+        wobj.get("minute", minute);
+
+        if (hour < 0.0 || hour > 23.0)
+            throw std::invalid_argument
+            (
+                "\"hour\"=" + std::to_string(hour) + " is not in the range [00, 23]"
+            );
+
+        if (minute < 0.0 || minute > 59.0)
+            throw std::invalid_argument
+            (
+                "\"minute\"=" + std::to_string(minute) + " is not in the range [00, 59]"
+            );
+
+        return hour * 3600.0 + minute * 60.0;
+    };
+
+    try
+    {
+        worker->departureTime = extractTime
+        (
+            Wrapper::Object(iso, args[2].As<v8::Object>())
+        );
+    }
+    catch (std::exception& e)
+    {
+        worker->log(Log::Code::Error, worker->err = e.what());
+    }
+
+    worker->serviceTime = args[3].As<v8::Number>()->NumberValue();
 
     Wrapper::Object wstudent(iso, args[4].As<v8::Object>());
 
@@ -147,11 +158,32 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         wstudent.get("studentId", student._studentId);
         wstudent.get("addressId", student._addressId);
 
-        double earliest, latest;
-        wstudent.get("earliest", earliest);
-        wstudent.get("latest",   latest);
+        double earliestSeconds = 0.0, latestSeconds = 0.0;
 
-        student._timewindow = { earliest, latest };
+        Wrapper::Object twindow(iso);
+        wstudent.get("earliest", twindow);
+
+        try
+        {
+            earliestSeconds = extractTime(twindow);
+        }
+        catch (std::exception& e)
+        {
+            worker->log(Log::Code::Error, worker->err = e.what());
+        }
+
+        wstudent.get("latest", twindow);
+
+        try
+        {
+            latestSeconds = extractTime(twindow);
+        }
+        catch (std::exception& e)
+        {
+            worker->log(Log::Code::Error, worker->err = e.what());
+        }
+        
+        student._timewindow = { earliestSeconds, latestSeconds };
 
         worker->students.emplace_back(student);
     }
@@ -165,19 +197,17 @@ void Worker::work(uv_work_t * request)
 {
     Worker * worker = static_cast<Worker *>(request->data);
 
-    using DVector = std::unordered_map<Manager::Student, double>;
-    using DMatrix = std::unordered_map<Manager::Student, DVector>;
-
-    DMatrix dmatrix;
-    auto distance = [&dmatrix](const Manager::Student& A, const Manager::Student& B)
-    {
-        return dmatrix[A][B];
-    };
+    if (!worker->err.empty())
+        return;
 
     worker->log(Log::Code::Message, "Worker thread initializing distance matrix...");
 
     auto beg = std::chrono::high_resolution_clock::now();
 
+    using DVector = std::unordered_map<Manager::Student, double>;
+    using DMatrix = std::unordered_map<Manager::Student, DVector>;
+
+    DMatrix dmatrix;
     try
     {
         SQLite::Database database(worker->dbname);
@@ -192,7 +222,7 @@ void Worker::work(uv_work_t * request)
     {
         const std::string msg
         (
-            "database=" + dbname + " day-part=" + dayPart + " sqlitecpp-exception=" + e.what()
+            "database=" + worker->dbname + " day-part=" + worker->dayPart + " sqlitecpp-exception=" + e.what()
         );
 
         worker->log(Log::Code::Error, worker->err = msg);
@@ -214,104 +244,37 @@ void Worker::work(uv_work_t * request)
 
     beg = std::chrono::high_resolution_clock::now();
 
-    worker->path = TSP::nearestNeighbor<Manager::Student>
-    (
-        worker->depot,
-        worker->students,
-        distance
-    );
-
-    worker->path = TSP::opt2<Manager::Student>
-    (
-        worker->path.second.front(),
-        worker->path.second,
-        distance
-    );
-
-    // Compressed Annealing
-    auto penalty = [&](const TSP::path<Manager::Student>& path)
+    try
     {
-        double penalty = 0.0, arrival = worker->departureTime;
-        for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
-        {
-            const Manager::Student& previous = path.second[j];
-            const Manager::Student& current  = path.second[j + 1UL];
-
-            arrival += distance(previous, current);
-
-            const double startOfService = std::max<double>
-            (
-                arrival,
-                current._timewindow.x()
-            );
-
-            penalty += std::max<double>
-            (
-                0.0,
-                startOfService + worker->serviceTime - current._timewindow.y()
-            );
-        }
-
-        return penalty;
-    };
-
-    auto shift1 = [&distance](const TSP::path<Manager::Student>& current)
+        worker->path = tsptw<Manager::Student>
+        (
+            worker->depot,
+            worker->students,
+            [&worker](const Manager::Student& s)
+            {
+                return s == worker->depot ? 0.0 : 30.0;
+            },
+            [&dmatrix](const Manager::Student& A, const Manager::Student& B)
+            {
+                return dmatrix[A][B];
+            },
+            worker->departureTime,
+            [](const Manager::Student& s)
+            {
+                return std::make_pair(s._timewindow.x(), s._timewindow.y());
+            }
+        );
+    }
+    catch (std::exception& e)
     {
-        TSP::path<Manager::Student> next(0.0, current.second);
+        worker->log(Log::Code::Error, worker->err = e.what());
 
-        const std::size_t i = 1UL + std::rand() % (next.second.size() - 2UL);
-        const std::size_t j = 1UL + std::rand() % (next.second.size() - 2UL);
+        return;
+    }
 
-        const Manager::Student v(next.second[i]);
-        next.second.erase(next.second.begin() + i);
-        next.second.insert(next.second.begin() + j, v);
-
-        next.first = TSP::totalCost<Manager::Student>(next.second, distance);
-
-        return next;
-    };
-
-    auto cost = [](const TSP::path<Manager::Student>& path)
-    {
-        return path.first;
-    };
-
-    // Parameter Initialization (Robust Set provided by the authors):
-    const double COOLING    = 0.95,    // (1)  Cooling Coefficient
-                ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
-                PRESSURE0   = 0.0,     // (3)  Initial Pressure
-                COMPRESSION = 0.06,    // (4)  Compression Coefficient
-                PCR         = 0.9999;  // (5)  Pressure Cap Ratio
-
-    const std::size_t IPT = 30000UL,    // (6)  Iterations per temperature
-                    MTC   = 100UL,      // (7)  Minimum number of temperature changes
-                    ITC   = 75UL,       // (8)  Maximum idle temperature changes
-                    TLI   = IPT,        // (9)  Trial loop of iterations
-                    TNP   = 5000UL;     // (10) Trial neighbour pairs
-
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-    worker->path = Annealing::compressed<TSP::path<Manager::Student>>
-    (
-        worker->path,
-        shift1,
-        cost,
-        penalty,
-        COOLING,
-        ACCEPTANCE,
-        PRESSURE0,
-        COMPRESSION,
-        PCR,
-        IPT,
-        MTC,
-        ITC,
-        TLI,
-        TNP
-    );
-
-    // Remove depot instances
-    worker->path.second.erase(worker->path.second.begin());
-    worker->path.second.erase(worker->path.second.end());
+    worker->path = worker->path.nneighbour();
+    worker->path = worker->path.opt2();
+    worker->path = worker->path.cannealing();
 
     end = std::chrono::high_resolution_clock::now();
 
@@ -322,7 +285,7 @@ void Worker::work(uv_work_t * request)
 
     worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
 
-    if (worker->students.size() != worker->path.second.size())
+    if (worker->students.size() != worker->path.elements().size())
     {
         const std::string msg
         (
@@ -343,13 +306,29 @@ void Worker::completed(uv_work_t * request, int status)
 
     Worker * worker = static_cast<Worker *>(request->data);
 
+    if (!worker->err.empty())
+    {
+        v8::Local<v8::Value> argv[] =
+        {
+            v8::Exception::Error(v8::String::NewFromUtf8(iso, worker->err.c_str())),
+            v8::Undefined(iso).As<v8::Value>()
+        };
+
+        worker->log(Log::Code::Message, "Invoking callback...");
+
+        v8::Local<v8::Function>::New(iso, worker->callback)->
+            Call(iso->GetCurrentContext()->Global(), 2, argv);
+
+        worker->callback.Reset(); delete worker; return;
+    }
+
     worker->log(Log::Code::Message, "Packaging results...");
 
-    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.second.size());
+    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.elements().size());
 
-    for (std::size_t sid = 0UL; sid < worker->path.second.size(); sid++)
+    for (std::size_t sid = 0UL; sid < worker->path.elements().size(); sid++)
     {
-        const Manager::Student& student = worker->path.second[sid];
+        const Manager::Student& student = worker->path.elements()[sid];
 
         Wrapper::Object wstudent = Wrapper::Object(iso);
 
@@ -362,13 +341,12 @@ void Worker::completed(uv_work_t * request, int status)
     Wrapper::Object wpath(iso);
 
     wpath.set("students", wstudents);
-    wpath.set("cost",     worker->path.first);
+    wpath.set("cost",     worker->path.cost());
+    wpath.set("penalty",  worker->path.penalty());
 
     v8::Local<v8::Value> argv[] =
     {
-        worker->err.empty()
-        ? v8::Null(iso).As<v8::Value>()
-        : v8::Exception::Error(v8::String::NewFromUtf8(iso, worker->err.c_str())),
+        v8::Null(iso).As<v8::Value>(),
         wpath.raw()
     };
 

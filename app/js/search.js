@@ -551,7 +551,8 @@ function SolveScheduleTSP(Students) {
     for (let i = 0; i < Students.length - 1; i++) {
         let student = Students[i]
         toRoute.push({
-            timewindow: [0, 0],
+            earliest: { hour: 0, minute: 0 },
+            latest:   { hour: 0, minute: 0 },
             addressId: student.Address.AddressID,
             studentId: student.ID
         })
@@ -559,13 +560,21 @@ function SolveScheduleTSP(Students) {
 
     let route = require("../../addons/route/build/Release/route.node");
 
-    route(DBFile, Students[0].DayPart, 7*3600, 30, { addressId: Students[0].Address.AddressID }, toRoute, function(err, data) {
-        if (err) {
-          alert(err);
-          return;
-        }
-        console.log(data);
-    });
+    route
+    (
+      DBFile,
+      Students[0].DayPart,
+      { hour: 7, minute: 30 },
+      30,
+      { addressId: Students[0].Address.AddressID },
+      toRoute,
+      (err, data) => {
+        if (err)
+          alert(err)
+        
+        console.log(data)
+      }
+    );
 }
 
     // #endregion //

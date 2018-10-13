@@ -18,7 +18,7 @@
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
 
-TSP::path<Manager::Student> tsp
+tsp<Manager::Student> route
 (
     const Manager::Student&,
     const std::vector<Manager::Student>&,
@@ -164,16 +164,9 @@ int main(int argc, char * argv[])
         for (const auto& element : group.elements())
             bus._students.push_back(*element);
 
-        TSP::path<Manager::Student> route = tsp
-        (
-            depot,
-            bus._students,
-            cost
-        );
+        tsp<Manager::Student> path = route(depot, bus._students, cost);
 
-        bus._students = route.second; bus._cost = route.first;
-
-        bus._students.erase(bus._students.begin()); bus._students.pop_back();
+        bus._students = path.elements(); bus._cost = path.cost();
 
         std::stringstream ss;
 
@@ -183,7 +176,7 @@ int main(int argc, char * argv[])
         << '.'
         << std::setw(2) << std::setfill('0') << busId
         << ": "
-        << std::fixed << std::setprecision(4) << route.first / 60.00
+        << std::fixed << std::setprecision(4) << path.cost() / 60.00
         << " minutes";
 
         log(Log::Code::Message, ss.str());
@@ -213,58 +206,38 @@ int main(int argc, char * argv[])
     return 0;
 }
 
-TSP::path<Manager::Student> tsp
+tsp<Manager::Student> route
 (
     const Manager::Student& depot,
     const std::vector<Manager::Student>& students,
     const std::function<double(const Manager::Student&, const Manager::Student&)>& cost
 )
 {
-    TSP::path<Manager::Student> path;
+    tsp<Manager::Student> path
+    (
+        depot,
+        students,
+        [&depot](const Manager::Student& s) { return s == depot ? 0.0 : 30.0; },
+        cost
+    );
     
-    path = TSP::nearestNeighbor<Manager::Student>(depot, students, cost);
+    path = path.nneighbour();
 
     #ifdef __TEST_TSP__
-    std::cerr << "NN: " << path.first << std::endl;
+    std::cerr << "NN: " << path.cost() << std::endl;
     #endif
 
-    path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
+    path = path.opt2();
 
     #ifdef __TEST_TSP__
     std::cerr << "OPT2: " << path.first << std::endl;
     #endif
 
-    path = Annealing::simulated<TSP::path<Manager::Student>>(
-        path,
-        [&cost](const TSP::path<Manager::Student>& current)
-        {
-            TSP::path<Manager::Student> next(0.0, current.second);
-
-            const std::size_t i = 1UL + std::rand() % (next.second.size() - 2UL);
-            const std::size_t j = 1UL + std::rand() % (next.second.size() - 2UL);
-
-            const Manager::Student temp(next.second[i]);
-            next.second[i] = next.second[j];
-            next.second[j] = temp;
-
-            next.first = TSP::totalCost<Manager::Student>(next.second, cost);
-
-            return next;
-        },
-        [](const TSP::path<Manager::Student>& path)
-        {
-            return path.first;
-        },
-        1000000000.0,
-        0.0015,
-        1000000UL
-    );
-
     #ifdef __TEST_TSP__
     std::cerr << "SA: " << path.first << std::endl;
     #endif
 
-    path = TSP::opt2<Manager::Student>(path.second.front(), path.second, cost);
+    path = path.opt2();
 
     #ifdef __TEST_TSP__
     std::cerr << "OPT2-SA: " << path.first << std::endl;
