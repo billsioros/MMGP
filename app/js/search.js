@@ -516,7 +516,8 @@ function CalculateScheduleDuration() {
         })
 
         toRoute.push({
-            timewindow: [0, 0],
+            earliest: { hour: 0, minute: 0},
+            latest: { hour: 0, minute: 0},
             addressId: student.Address.AddressID,
             studentId: student.ID
         })
@@ -528,7 +529,7 @@ function CalculateScheduleDuration() {
     (
         DBFile,
         Students[0].DayPart,
-        7 * 3600,
+        { hour: 7, minute: 30 },
         30,
         { addressId: Students[0].Address.AddressID },
         toRoute,
