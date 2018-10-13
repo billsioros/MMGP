@@ -54,7 +54,7 @@ struct Worker
     Manager::Student depot;
     std::vector<Manager::Student> students;
 
-    TSP::path<Manager::Student> path;
+    tsptw<Manager::Student> path;
 
     static void work(uv_work_t *);
     static void completed(uv_work_t *, int);
@@ -165,19 +165,14 @@ void Worker::work(uv_work_t * request)
 {
     Worker * worker = static_cast<Worker *>(request->data);
 
-    using DVector = std::unordered_map<Manager::Student, double>;
-    using DMatrix = std::unordered_map<Manager::Student, DVector>;
-
-    DMatrix dmatrix;
-    auto distance = [&dmatrix](const Manager::Student& A, const Manager::Student& B)
-    {
-        return dmatrix[A][B];
-    };
-
     worker->log(Log::Code::Message, "Worker thread initializing distance matrix...");
 
     auto beg = std::chrono::high_resolution_clock::now();
 
+    using DVector = std::unordered_map<Manager::Student, double>;
+    using DMatrix = std::unordered_map<Manager::Student, DVector>;
+
+    DMatrix dmatrix;
     try
     {
         SQLite::Database database(worker->dbname);
@@ -192,7 +187,7 @@ void Worker::work(uv_work_t * request)
     {
         const std::string msg
         (
-            "database=" + dbname + " day-part=" + dayPart + " sqlitecpp-exception=" + e.what()
+            "database=" + worker->dbname + " day-part=" + worker->dayPart + " sqlitecpp-exception=" + e.what()
         );
 
         worker->log(Log::Code::Error, worker->err = msg);
@@ -214,104 +209,26 @@ void Worker::work(uv_work_t * request)
 
     beg = std::chrono::high_resolution_clock::now();
 
-    worker->path = TSP::nearestNeighbor<Manager::Student>
+    worker->path = tsptw<Manager::Student>
     (
         worker->depot,
         worker->students,
-        distance
-    );
-
-    worker->path = TSP::opt2<Manager::Student>
-    (
-        worker->path.second.front(),
-        worker->path.second,
-        distance
-    );
-
-    // Compressed Annealing
-    auto penalty = [&](const TSP::path<Manager::Student>& path)
-    {
-        double penalty = 0.0, arrival = worker->departureTime;
-        for (std::size_t j = 0; j < path.second.size() - 1UL; j++)
+        [&worker](const Manager::Student& s)
         {
-            const Manager::Student& previous = path.second[j];
-            const Manager::Student& current  = path.second[j + 1UL];
-
-            arrival += distance(previous, current);
-
-            const double startOfService = std::max<double>
-            (
-                arrival,
-                current._timewindow.x()
-            );
-
-            penalty += std::max<double>
-            (
-                0.0,
-                startOfService + worker->serviceTime - current._timewindow.y()
-            );
+            return s == worker->depot ? 0.0 : 30.0;
+        },
+        [&dmatrix](const Manager::Student& A, const Manager::Student& B)
+        {
+            return dmatrix[A][B];
+        },
+        worker->departureTime,
+        [](const Manager::Student& s)
+        {
+            return s._timewindow;
         }
-
-        return penalty;
-    };
-
-    auto shift1 = [&distance](const TSP::path<Manager::Student>& current)
-    {
-        TSP::path<Manager::Student> next(0.0, current.second);
-
-        const std::size_t i = 1UL + std::rand() % (next.second.size() - 2UL);
-        const std::size_t j = 1UL + std::rand() % (next.second.size() - 2UL);
-
-        const Manager::Student v(next.second[i]);
-        next.second.erase(next.second.begin() + i);
-        next.second.insert(next.second.begin() + j, v);
-
-        next.first = TSP::totalCost<Manager::Student>(next.second, distance);
-
-        return next;
-    };
-
-    auto cost = [](const TSP::path<Manager::Student>& path)
-    {
-        return path.first;
-    };
-
-    // Parameter Initialization (Robust Set provided by the authors):
-    const double COOLING    = 0.95,    // (1)  Cooling Coefficient
-                ACCEPTANCE  = 0.94,    // (2)  Initial Acceptance Ratio
-                PRESSURE0   = 0.0,     // (3)  Initial Pressure
-                COMPRESSION = 0.06,    // (4)  Compression Coefficient
-                PCR         = 0.9999;  // (5)  Pressure Cap Ratio
-
-    const std::size_t IPT = 30000UL,    // (6)  Iterations per temperature
-                    MTC   = 100UL,      // (7)  Minimum number of temperature changes
-                    ITC   = 75UL,       // (8)  Maximum idle temperature changes
-                    TLI   = IPT,        // (9)  Trial loop of iterations
-                    TNP   = 5000UL;     // (10) Trial neighbour pairs
-
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-    worker->path = Annealing::compressed<TSP::path<Manager::Student>>
-    (
-        worker->path,
-        shift1,
-        cost,
-        penalty,
-        COOLING,
-        ACCEPTANCE,
-        PRESSURE0,
-        COMPRESSION,
-        PCR,
-        IPT,
-        MTC,
-        ITC,
-        TLI,
-        TNP
-    );
-
-    // Remove depot instances
-    worker->path.second.erase(worker->path.second.begin());
-    worker->path.second.erase(worker->path.second.end());
+    ).nneighbour();
+    worker->path = worker->path.opt2();
+    worker->path = worker->path.cannealing();
 
     end = std::chrono::high_resolution_clock::now();
 
@@ -322,7 +239,7 @@ void Worker::work(uv_work_t * request)
 
     worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
 
-    if (worker->students.size() != worker->path.second.size())
+    if (worker->students.size() != worker->path.elements().size())
     {
         const std::string msg
         (
@@ -345,11 +262,11 @@ void Worker::completed(uv_work_t * request, int status)
 
     worker->log(Log::Code::Message, "Packaging results...");
 
-    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.second.size());
+    Wrapper::Array wstudents = Wrapper::Array(iso, worker->path.elements().size());
 
-    for (std::size_t sid = 0UL; sid < worker->path.second.size(); sid++)
+    for (std::size_t sid = 0UL; sid < worker->path.elements().size(); sid++)
     {
-        const Manager::Student& student = worker->path.second[sid];
+        const Manager::Student& student = worker->path.elements()[sid];
 
         Wrapper::Object wstudent = Wrapper::Object(iso);
 
@@ -362,7 +279,8 @@ void Worker::completed(uv_work_t * request, int status)
     Wrapper::Object wpath(iso);
 
     wpath.set("students", wstudents);
-    wpath.set("cost",     worker->path.first);
+    wpath.set("cost",     worker->path.cost());
+    wpath.set("penalty",  worker->path.penalty());
 
     v8::Local<v8::Value> argv[] =
     {
