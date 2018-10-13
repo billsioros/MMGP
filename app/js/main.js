@@ -14,6 +14,8 @@ let settings = datadir + "MMGP_settings.json"
 let DBFile = datadir + "MMGP_data.db"
 let closing = false
 
+let OpenProcesses = {};
+
 // #endregion   //
 
 
@@ -24,7 +26,12 @@ function initPrintWindow() {
     if (closing) {
         printwin = null;
     }
-    printwin = new BrowserWindow({width:1640, height:840, title:"MMGP_Print", opacity: 1.0});
+    printwin = new BrowserWindow({
+        width:1640, 
+        height:840, 
+        title:"MMGP_Print", 
+        opacity: 1.0,
+        frame: false});
     printwin.loadFile("html/printer.html")
     printwin.maximize();
     printwin.hide();
@@ -46,6 +53,28 @@ function createWindow() {
 
     initPrintWindow();
 
+    let fs = require("fs");
+    let data = fs.readFileSync(settings)
+    let settingsObj = JSON.parse(data)
+
+    let native = false;
+    
+    if (settingsObj.Connection.Active === "Native") {
+        native = true;
+    }
+
+    let oldYear = false;
+    let newYear = false;
+    let bothYears = false;
+    if( settingsObj.Current_Year.Active === "Old") {
+        oldYear = true;
+    }
+    else if (settingsObj.Current_Year.Active === "New") {
+        newYear = true;
+    }
+    else {
+        bothYears = true;
+    }
 
     // and Load the index.html of the app
     win.loadFile("html/index.html")
@@ -57,19 +86,18 @@ function createWindow() {
                 {label: 'Run MMGP Algorithm'},        
                 {type: 'separator'},
                 {label: 'Hide Print Window', click() {printwin.hide()}},
-                {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {app.quit()}}
+                {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {KillSubProcesses(); app.quit()}}
             ]
         },
         {
             label: "Connection - Year",
             submenu: [
-                {label: 'Connect to Native Client', click() {setActiveConnection("Native");}},
-                {label: 'Connect to Native-Laptop Client', click() {setActiveConnection("Native-Laptop");}},
-                {label: 'Connect to Network Client', click() {setActiveConnection("Network");}},
+                {type: "radio", checked: native, label: 'Native Client' , click() {setActiveConnection("Native");}},
+                {type: "radio", checked: !native, label: 'Network Client', click() {setActiveConnection("Network");}},
                 {type:"separator"},
-                {label: 'Change to "Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents(true);}},
-                {label: 'Change to "New" Year', click() {setActiveCurrentYear("New"); UpdateStudents(true);}},
-                {label: 'Change to show Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents(true);}}
+                {type: "radio", checked: oldYear, label: '"Old" Year', click() {setActiveCurrentYear("Old"); UpdateStudents(true);}},
+                {type: "radio", checked: newYear, label: '"New" Year', click() {setActiveCurrentYear("New"); UpdateStudents(true);}},
+                {type: "radio", checked: bothYears, label: 'Both "Old" and "New" Year', click() {setActiveCurrentYear("Both"); UpdateStudents(true);}}
             ]
         },
         {
@@ -117,7 +145,6 @@ function createWindow() {
             ]
         }
     ])
-
     Menu.setApplicationMenu(menu);
 
     // Emitted when the window is closed.
@@ -127,7 +154,9 @@ function createWindow() {
         // when you should delete the corresponding element.
         win = null
         closing = true;
-        printwin.close()
+        printwin.close();
+        KillSubProcesses();
+        app.quit();
     })
 }
 
@@ -174,6 +203,7 @@ function CreateDatabase() {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "Creation.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -187,6 +217,8 @@ function CreateDatabase() {
         dialog.showErrorBox("Creation Error", data.toString());
         console.error(data.toString());
     })
+
+    
 }
 
 function BackupDatabase() {
@@ -220,6 +252,7 @@ function BackupDatabase() {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "BackupDatabase.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -277,6 +310,7 @@ function RestoreDatabase() {
 
         spawn = require("child_process").spawn;
         var proc = spawn('python', [pythondir + "RestoreDatabase.py", JSON.stringify(toJson)]);
+        OpenProcesses[proc.pid] = proc;
 
         proc.on('close', function(code) {
             progressBar.setCompleted();
@@ -328,6 +362,7 @@ function UpdateStudents(overwrite=false) {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "UpdateStudents.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -371,6 +406,7 @@ function UpdateBuses() {
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "UpdateBuses.py", JSON.stringify(toJson)]);
+    OpenProcesses[proc.pid] = proc;
 
     proc.on('close', function(code) {
         progressBar.setCompleted();
@@ -561,6 +597,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     }
 
     updistproc = spawn('python', [pythondir + "UpdateDistances.py", JSON.stringify(toJson)]);
+    OpenProcesses[updistproc.pid] = updistproc;
 
     var progressBar = undefined
 
@@ -639,8 +676,10 @@ app.on('window-all-closed', () => {
 
     // On macOS it is common for applications and their menu bar
     // to stay active until the used quits explicitly with Cmd + Q
+    
     if (process.platform !== 'darwin') {
-        app.quit()
+        KillSubProcesses();
+        app.quit()  
     }
 })
 
@@ -652,6 +691,13 @@ app.on('activate', () => {
     }
 })
 
+
+function KillSubProcesses() {
+    let pids = Object.keys(OpenProcesses);
+    for (let i = 0; i < pids.length; i++) {
+        OpenProcesses[pids[i]].kill();
+    }
+}
 // #endregion
 
 

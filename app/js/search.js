@@ -91,13 +91,13 @@ function GenerateScheduleButtons() {
 
     switch(DayPart) {
         case "Morning":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) > 1 and BusSchedule Like '%Π%'";
             break;
         case "Noon":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) > 1 and BusSchedule Like '%Μ%'"
             break;
         case "Study":
-            sql = "Select distinct(BusSchedule) From Student Where Length(BusSchedule) = 1 Order By BusSchedule"
+            sql = "Select distinct(BusSchedule) From Schedule Where Length(BusSchedule) = 1 Order By BusSchedule"
             let buses = GetActiveBus();
             for (let i = 0; i < buses.length; i++)
                 buses[i].classList.remove("active")
@@ -365,7 +365,7 @@ function SearchSchedule() {
 
     loading.nextElementSibling.innerHTML = "Searching";
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+    let sql = "Select * From Student, Address, Schedule Where Schedule.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and (";
 
     for (let i = 0; i < busSchedules.length; i++) {
         let busSchedule = busSchedules[i];
@@ -441,7 +441,7 @@ function AddSchedule() {
 
     loading.nextElementSibling.innerHTML = "Adding"
 
-    let sql = "Select * From Student, Address Where Student.AddressID = Address.AddressID and (";
+    let sql = "Select * From Student, Address, Schedule Where Schedule.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and (";
 
     for (let i = 0; i < busSchedules.length; i++) {
         let busSchedule = busSchedules[i];
@@ -514,36 +514,7 @@ function CalculateScheduleDuration() {
             earliest: 0,
             latest: 0,
         })
-
-        toRoute.push({
-            earliest: { hour: 0, minute: 0},
-            latest: { hour: 0, minute: 0},
-            addressId: student.Address.AddressID,
-            studentId: student.ID
-        })
     }
-
-    let route = require("../../addons/route/build/Release/route.node");
-
-    route
-    (
-        DBFile,
-        Students[0].DayPart,
-        { hour: 7, minute: 30 },
-        30,
-        { addressId: Students[0].Address.AddressID },
-        toRoute,
-        function(err, data)
-        {
-            if (err)
-            {
-                alert(err);
-                return;
-            }
-
-            console.log(data);
-        }
-    );
 
     let proc = spawn('python', [pythondir + "CalculateScheduleDuration.py", JSON.stringify(toJson)]);
 
@@ -574,8 +545,36 @@ function CalculateScheduleDuration() {
 
 }
 
-function SolveScheduleTSP() {
-    
+function SolveScheduleTSP(Students) {
+    toRoute = []
+
+    for (let i = 0; i < Students.length - 1; i++) {
+        let student = Students[i]
+        toRoute.push({
+            earliest: { hour: 0, minute: 0 },
+            latest:   { hour: 0, minute: 0 },
+            addressId: student.Address.AddressID,
+            studentId: student.ID
+        })
+    }
+
+    let route = require("../../addons/route/build/Release/route.node");
+
+    route
+    (
+      DBFile,
+      Students[0].DayPart,
+      { hour: 7, minute: 30 },
+      30,
+      { addressId: Students[0].Address.AddressID },
+      toRoute,
+      (err, data) => {
+        if (err)
+          alert(err)
+        
+        console.log(data)
+      }
+    );
 }
 
     // #endregion //
@@ -748,10 +747,13 @@ function DisplayBusMap(Students) {
 
         studentsToPlot.push({
             Name: student.Name,
-            Addresses: [student.Address],
-            Order: index.toString(),
-            Times: [student.ScheduleTime],
-            Schedules: [student.BusSchedule]
+            Schedules: [{
+                ScheduleID: student.ScheduleID,
+                Address: student.Address,
+                Time: student.ScheduleTime,
+                BusSchedule: student.BusSchedule
+            }],
+            Order: index.toString()
         })
 
         index++;
@@ -883,28 +885,16 @@ function DisplayStudentSearchMap(Students) {
 
         // *Subject to change* //
         // Add all addresses to one array, so it is easier to plot them all together.
-        let Addresses = [];
-        Addresses.push.apply(Addresses, student.MorningAddresses);
-        Addresses.push.apply(Addresses, student.NoonAddresses);
-        Addresses.push.apply(Addresses, student.StudyAddresses);
-
         let Schedules = [];
-        Schedules.push.apply(Schedules, student.MorningBuses);
-        Schedules.push.apply(Schedules, student.NoonBuses);
-        Schedules.push.apply(Schedules, student.StudyBuses);
-
-        let Times = [];
-        Times.push.apply(Times, student.MorningTimes);
-        Times.push.apply(Times, student.NoonTimes);
-        Times.push.apply(Times, student.StudyTimes);
+        Schedules.push.apply(Schedules, student.MorningSchedules);
+        Schedules.push.apply(Schedules, student.NoonSchedules);
+        Schedules.push.apply(Schedules, student.StudySchedules);
 
         studentsToPlot.push({
             Name: student.LastName + ' ' + student.FirstName,
-            Addresses: Addresses,
             Schedules: Schedules,
-            Times: Times,
             Order: ""
-         });
+        });
     }
 
     return studentsToPlot;
@@ -951,7 +941,6 @@ function DisplayStudentCard(student) {
         p = document.createElement("p");
         p.innerHTML = student.ClassLevel;
         GInfo.appendChild(p);
-
 
         StCard.appendChild(GInfo);
     }
@@ -1065,16 +1054,10 @@ function DisplayStudentCard(student) {
 
             table.appendChild(firstRow);
 
-            
-            let Addresses = dayPart + 'Addresses';
-            let Notes = dayPart + 'Notes';
-            let Days = dayPart + 'Days';
-            let Buses = dayPart + 'Buses';
-            let Orders = dayPart + 'Order';
-            let Times = dayPart + 'Time';
+            let DayPartSchedules = dayPart + "Schedules";
             
             // If dayPart does not exist in students create a "p" with nothing in it
-            if (student[Addresses].length === 0) {
+            if (student[DayPartSchedules].length === 0) {
                 let p = document.createElement("p");
                 p.className = "RowData";
                 p.innerHTML = "-";
@@ -1082,15 +1065,16 @@ function DisplayStudentCard(student) {
             }
 
 
-            for (i = 0; i < student[Addresses].length; i++) {
+            for (i = 0; i < student[DayPartSchedules].length; i++) {
                 let row = document.createElement("div");
                 row.className = "SchedulesTableRow TableRow";
 
+                let schedule = student[DayPartSchedules][i];
                 // Bus Number
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Buses][i])
-                    p.innerHTML = student[Buses][i];
+                if (schedule.BusSchedule)
+                    p.innerHTML = schedule.BusSchedule;
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p)
@@ -1098,16 +1082,16 @@ function DisplayStudentCard(student) {
                 // Schedule Order (at what index student will be picked up)
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Orders][i])
-                    p.innerHTML = student[Orders][i];
+                if (schedule.ScheduleOrder)
+                    p.innerHTML = schedule.ScheduleOrder;
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p);
 
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Times][i])
-                    p.innerHTML = student[Times][i];
+                if (schedule.ScheduleTime)
+                    p.innerHTML = schedule.ScheduleTime;
                 else 
                     p.innerHTML = "-"
                 row.appendChild(p);
@@ -1115,26 +1099,26 @@ function DisplayStudentCard(student) {
                 // Address
                 p = document.createElement("p");
                 p.className = "RowData";
-                p.innerHTML = student[Addresses][i].FullAddress;
+                p.innerHTML = schedule.Address.FullAddress;
                 row.appendChild(p);
 
                 // Notes
                 p = document.createElement("p");
                 p.className = "RowData";
-                if (student[Notes][i])
-                    p.innerHTML = student[Notes][i];
+                if (schedule.Notes)
+                    p.innerHTML = schedule.Notes;
                 else
                     p.innerHTML = "-";
                 row.appendChild(p);
                 
                 // Days
                 let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-                
+
                 for (let j = 0; j < WeekDays.length; j++) {
                     p = document.createElement("p");
                     p.className = "RowData";
 
-                    if (student[Days][i][WeekDays[j]] === 1)
+                    if (schedule.Days[WeekDays[j]] === 1)
                         p.className += " OnDay";
                     else 
                         p.className += " OffDay";
@@ -1165,28 +1149,16 @@ function DisplayStudentMap(student) {
 
     // *Subject to change* //
     // Add all addresses to one array, so it is easier to plot them all together.
-    let Addresses = [];
-    Addresses.push.apply(Addresses, student.MorningAddresses);
-    Addresses.push.apply(Addresses, student.NoonAddresses);
-    Addresses.push.apply(Addresses, student.StudyAddresses);
-
     let Schedules = [];
-    Schedules.push.apply(Schedules, student.MorningBuses);
-    Schedules.push.apply(Schedules, student.NoonBuses);
-    Schedules.push.apply(Schedules, student.StudyBuses);
+    Schedules.push.apply(Schedules, student.MorningSchedules);
+    Schedules.push.apply(Schedules, student.NoonSchedules);
+    Schedules.push.apply(Schedules, student.StudySchedules);
 
-    let Times = [];
-    Times.push.apply(Times, student.MorningTimes);
-    Times.push.apply(Times, student.NoonTimes);
-    Times.push.apply(Times, student.StudyTimes);
-
-    studentsToPlot.push( {
+    studentsToPlot.push({
         Name: student.LastName + ' ' + student.FirstName,
-        Addresses: Addresses,
         Schedules: Schedules,
-        Times: Times,
         Order: ""
-     });
+    });
 
     return studentsToPlot;
 }
@@ -1217,8 +1189,8 @@ function OnMorePress() {
     else {
         id = children[0].innerHTML;
 
-        let sql = "Select * From Student, Address\
-        Where Student.AddressID = Address.AddressID and\
+        let sql = "Select * From Student, Address, Schedule\
+        Where Student.AddressID = Address.AddressID and Schedule.StudentID = Student.StudentID and\
         Student.StudentID = \"" + id + "\"";
 
         id = "\"" + id + "\"";
@@ -1233,6 +1205,8 @@ function OnMorePress() {
             newSearchTab.activate(false);
         });
     }
+
+    OpenBottomBar();
 }
 
 function SearchStudents() {
@@ -1251,10 +1225,10 @@ function SearchStudents() {
     const DayPart = document.getElementById("DayPartBar").value;
 
     const SearchValues = [FirstName, LastName, Class, Level, DayPart, Street, Number, Municipal, ZipCode];
-    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Student.DayPart",
+    const SearchFields = ["Student.FirstName", "Student.LastName", "Student.Class", "Student.Level", "Schedule.DayPart",
      "Address.Road", "Address.Number", "Address.Municipal", "Address.ZipCode"];
 
-    let toSearch = "Where  Student.AddressID = Address.AddressID"
+    let toSearch = "Where Schedule.AddressID = Address.AddressID and Student.StudentID = Schedule.StudentID"
 
     // Check if no filters are given.
     let empty = true;
@@ -1285,7 +1259,7 @@ function SearchStudents() {
     loading.nextElementSibling.innerHTML = "Searching"
 
     let sql = "Select *\
-            From Student, Address " + toSearch + " Order By Student.LastName";
+            From Student, Address, Schedule " + toSearch + " Order By Student.LastName";
     
 
     // Execute query and get Students
@@ -1446,6 +1420,13 @@ function OnSearchTabPress() {
     DisplaySearchTab(pressedTab);
     pressedTab.activate(false);
 
+    if (pressedTab.type !== "StudentCard") {
+        CloseBottomBar();
+    }
+    else {
+        OpenBottomBar();
+    }
+
     CheckDisabledScheduleButton(pressedTab)
 
     ReassignAllButtons();
@@ -1506,8 +1487,8 @@ function CreateMap(tab) {
 
     for (let i = 0; i < Students.length; i++) {
         let student = Students[i];
-        for (let j = 0; j < student.Addresses.length; j++) {
-            let address = student.Addresses[j];
+        for (let j = 0; j < student.Schedules.length; j++) {
+            let address = student.Schedules[j].Address;
             coords.push([address.Latitude, address.Longitude]);
         }
     }
@@ -1558,10 +1539,10 @@ function PlotStudents(tab) {
         let student = Students[i];
         let studentName = student.Name;
 
-        for (let j = 0; j < student.Addresses.length; j++) {
-            let address = student.Addresses[j];
-            let schedule = student.Schedules[j];
-            let time = student.Times[j];
+        for (let j = 0; j < student.Schedules.length; j++) {
+            let address = student.Schedules[j].Address;
+            let schedule = student.Schedules[j].BusSchedule;
+            let time = student.Schedules[j].ScheduleTime;
             let key = address.Latitude + "," + address.Longitude;
             let found = false;
 
@@ -1662,9 +1643,9 @@ function PlotSchedules(Students, Schedules) {
         let student = Students[i];
         let studentName = student.Name;
 
-        for (let j = 0; j < student.Addresses.length; j++) {
-            let address = student.Addresses[j];
-            let schedule = student.Schedules[j];
+        for (let j = 0; j < student.Schedules.length; j++) {
+            let address = student.Schedules[j].Address;
+            let schedule = student.Schedules[j].BusSchedule;
             let key = address.Latitude + "," + address.Longitude;
             let found = false;
 
@@ -1698,12 +1679,12 @@ function PlotSchedules(Students, Schedules) {
             }
             else {
                 plottedAddresses[key] = {
-                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule + "\n" + student.Times[j],
+                    title: "1) " + studentName + "\n" + address.FullAddress + "\n" + schedule + "\n" + student.Schedules[j].Time,
                     names: [studentName],
                     address: address,
                     schedule: schedule,
                     order: student.Order,
-                    time: student.Time
+                    time: student.Schedules[j].Time
                 };
             }
         }
@@ -1759,7 +1740,6 @@ function PlotSchedules(Students, Schedules) {
 
 // Executes sql in a python process and handles data returned in callback parameter //
 function ExecuteSQLToProc(sql, callback) {
-    console.log(sql);
     let toJson = {
         Database: DBFile,
         sql: sql
@@ -1825,81 +1805,61 @@ function StudentJsonRead(json_file) {
                 OtherPhone1: row.OtherPhone1,
                 OtherPhone2: row.OtherPhone2,
 
-                MorningAddresses: [],
-                MorningDays: [],
-                MorningNotes: [],
-                MorningBuses: [],
-                MorningOrder: [],
-                MorningTime: [],
+                MorningSchedules: [],
 
-                NoonAddresses: [],
-                NoonDays: [],
-                NoonNotes: [],
-                NoonBuses: [],
-                NoonOrder: [],
-                NoonTime: [],
+                NoonSchedules: [],
 
-                StudyAddresses: [],                   
-                StudyDays: [],
-                StudyNotes: [],
-                StudyBuses: [],
-                StudyOrder: [],
-                StudyTime: []
+                StudySchedules: [],
+
             };
             
-            let key = row.DayPart + 'Addresses';
-            student[key].push({ FullAddress: row.FullAddress,
-                                AddressID: row.AddressID,
-                                Longitude: row.GPS_X,
-                                Latitude: row.GPS_Y } );
-
-            key = row.DayPart + 'Days';
-            student[key].push( {    Monday: row.Monday,
-                                Tuesday: row.Tuesday,
-                                Wednesday: row.Wednesday,
-                                Thursday: row.Thursday,
-                                Friday: row.Friday }  );
-            
-            key = row.DayPart + 'Notes';
-            student[key].push(row.FullNote);
-
-            key = row.DayPart + 'Buses';
-            student[key].push(row.BusSchedule);
-            
-            key = row.DayPart + "Order";
-            student[key].push(row.ScheduleOrder);
-
-            key = row.DayPart + "Time";
-            student[key].push(row.ScheduleTime)
+            student[row.DayPart + "Schedules"].push({
+                ScheduleID: row.ScheduleID,
+                Address: {
+                    FullAddress: row.FullAddress,
+                    AddressID: row.AddressID,
+                    Longitude: row.GPS_X,
+                    Latitude: row.GPS_Y
+                },
+                Days: {
+                    Monday: row.Monday,
+                    Tuesday: row.Tuesday,
+                    Wednesday: row.Wednesday,
+                    Thursday: row.Thursday,
+                    Friday: row.Friday
+                },
+                Notes: row.FullNote,
+                BusSchedule: row.BusSchedule,
+                ScheduleOrder: row.ScheduleOrder,
+                ScheduleTime: row.ScheduleTime
+            });
 
             Students[id] = student;
         }
         else {
             // Ιf student exists save only its DIFFERENT addresses, days, notes, buses PER daypart.
-            let key = row.DayPart + 'Addresses';
-            Students[id][key].push({    FullAddress: row.FullAddress,
-                                        StudentID: row.AddressID,
-                                        Longitude: row.GPS_X,
-                                        Latitude: row.GPS_Y } );
 
-            key = row.DayPart + 'Days';
-            Students[id][key].push( {   Monday: row.Monday,
-                                        Tuesday: row.Tuesday,
-                                        Wednesday: row.Wednesday,
-                                        Thursday: row.Thursday,
-                                        Friday: row.Friday }  );
-            
-            key = row.DayPart + 'Notes';
-            Students[id][key].push(row.Notes);
+            Students[id][row.DayPart + "Schedules"].push({
+                ScheduleID: row.ScheduleID,
+                Address: {
+                    FullAddress: row.FullAddress,
+                    AddressID: row.AddressID,
+                    Longitude: row.GPS_X,
+                    Latitude: row.GPS_Y
+                },
+                Days: {
+                    Monday: row.Monday,
+                    Tuesday: row.Tuesday,
+                    Wednesday: row.Wednesday,
+                    Thursday: row.Thursday,
+                    Friday: row.Friday
+                },
+                Notes: row.FullNote,
+                BusSchedule: row.BusSchedule,
+                ScheduleOrder: row.ScheduleOrder,
+                ScheduleTime: row.ScheduleTime
+            });
 
-            key = row.DayPart + 'Buses';
-            Students[id][key].push(row.BusSchedule)
-
-            key = row.DayPart + "Order";
-            Students[id][key].push(row.ScheduleOrder);
-
-            key = row.DayPart + "Time";
-            Students[id][key].push(row.ScheduleTime)
         }
     }
 
@@ -1945,6 +1905,7 @@ function ScheduleJsonRead(json_file) {
             OtherPhone2: row.OtherPhone2,
 
             DayPart: row.DayPart,
+            ScheduleID: row.ScheduleID,
 
             Address: {
                 FullAddress: row.FullAddress,
@@ -2010,8 +1971,95 @@ function CacheDOM() {
     InfoMapTabHeader = document.getElementsByClassName("InfoMapTabGroup")[0];
     MainInfo = document.getElementsByClassName("MainInfo")[0];
 }
-
 // #endregion //
+
+
+// #region Navigation Bars
+
+function OpenSideBar() {
+    this.onclick = CloseSideBar
+    
+
+    let sidebar = document.getElementsByClassName("SideBar")[0]
+    
+    sidebar.style.width = "20vw";
+    document.getElementById("BottomNavBar").style.width = "calc(80vw - 30px)";
+    document.getElementsByTagName("body")[0].style.marginLeft = "calc(20vw + 30px)";
+
+    setTimeout(() => {
+        
+        for (let i = 0; i < sidebar.childElementCount; i++) {
+            sidebar.children[i].style.opacity = "1";
+        }
+        this.children[0].src = "../images/General/hide.png"
+        sidebar.style.overflowY = "scroll";
+
+        let prevActive = null;
+
+        let tab = SearchTabGroup.activeTab();
+        if (tab) {
+            if (tab.subTabGroup) {
+                prevActive = tab.subTabGroup.currentActive;
+            }
+            if (prevActive === 1) {
+                MainInfo.innerHTML = "";
+        
+                CreateMap(tab);
+                PlotStudents(tab);
+            }
+        }
+        
+    },  410);
+}
+
+function CloseSideBar() {
+    this.onclick = OpenSideBar;
+    
+
+    let sidebar = document.getElementsByClassName("SideBar")[0]
+    
+    for (let i = 0; i < sidebar.childElementCount; i++) {
+        sidebar.children[i].style.opacity = "0";
+    }
+    
+    setTimeout(() => {
+        sidebar.style.overflowY = "hidden";
+        sidebar.style.width = "0";
+        document.getElementsByTagName("body")[0].style.marginLeft = "30px";
+        document.getElementById("BottomNavBar").style.width = "100vw";
+        this.children[0].src = "../images/General/show.png"
+
+        setTimeout(() => {
+            let prevActive = null;
+
+            let tab = SearchTabGroup.activeTab();
+            if (tab) {
+                if (tab.subTabGroup) {
+                    prevActive = tab.subTabGroup.currentActive;
+                }
+                if (prevActive === 1) {
+                    MainInfo.innerHTML = "";
+            
+                    CreateMap(tab);
+                    PlotStudents(tab);
+                }
+            }
+        }, 400);
+        
+    }, 400);
+}
+
+function OpenBottomBar() {
+    document.getElementById("BottomNavBar").style.height = "60px";
+}
+
+function CloseBottomBar() {
+    document.getElementById("BottomNavBar").style.height = "0";
+}
+
+// #endregion
+
+
 
 
 
@@ -2056,6 +2104,8 @@ function OnCreateWindow() {
     document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
+
+    document.getElementById("Show\/HideButton").onclick = CloseSideBar;
 }
 
 // #endregion //
