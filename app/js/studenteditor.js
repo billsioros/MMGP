@@ -20,7 +20,6 @@ function LoadSchedules(Student, DayPart) {
     for (let i = 0; i < Student[DayPartSchedules].length; i++) {
         
         let Schedule = Student[DayPartSchedules][i];
-        console.log(Schedule);
 
         let DropOrPickup;
         if (Schedule.DayPart === "Morning")
@@ -126,7 +125,7 @@ function LoadSchedules(Student, DayPart) {
 
         for (let j = 0; j < WeekDays.length; j++) {
             let button = document.createElement("button");
-            button.className = "DayButton";
+            button.className = WeekDays[j] + " DayButton";
             button.innerHTML = Abbr[j];
             if (Schedule.Days[WeekDays[j]] === 1)
                 button.className += " OnDay";
@@ -175,7 +174,16 @@ function Save() {
             Schedule.Late = DomSchedule.querySelector(".LateContent").value;
             Schedule.Around = DomSchedule.querySelector(".AroundContent").value;
             Schedule.Notes = DomSchedule.querySelector(".NotesContent").value;
-            console.log('Schedule', Schedule);
+            
+            let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+            for (let j = 0; j < WeekDays.length; j++) {
+                if (DomSchedule.querySelector("." + WeekDays[j]).classList.contains("OnDay"))
+                    Schedule.Days[WeekDays[j]] = 1;
+                else
+                    Schedule.Days[WeekDays[j]] = 0;       
+            }
         }
     }
+
 }
