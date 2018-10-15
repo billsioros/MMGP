@@ -10,7 +10,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["${workspaceFolder}/data/Credentials.csv", "1"]
+            "args": ["{ \"Settings\":\"D:\\Users\\Giannis\\Desktop\\BusRouting\\MMGP\\app\\js/../../data/MMGP_settings.json\",\"Database\":\"D:\\Users\\Giannis\\Desktop\\BusRouting\\MMGP\\app\\js/../../data/MMGP_data.db\" }"]
         },
         {
             "name": "Python: Current File",

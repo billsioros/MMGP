@@ -7,15 +7,16 @@ from DBmanagement import DBManager as DBM
 import json
 
 jsonRequest = sys.argv[1]
-print jsonRequest
+# print jsonRequest
 
 # Connection
 
-data = json.loads(jsonRequest)
+# data = json.loads(jsonRequest)
 
-Settings = data["Settings"]
-Database = data["Database"]
-
+# Settings = data["Settings"]
+# Database = data["Database"]
+Settings =  "D:\\Users\\Giannis\\Desktop\\BusRouting\\MMGP\\app\\js/../../data/MMGP_settings.json"
+Database =  "D:\\Users\\Giannis\\Desktop\\BusRouting\\MMGP\\app\\js/../../data/MMGP_data.db"
 
 Active = GetSetting(Settings, [["Current_Year", "Active"]])
 Active = Active[0]

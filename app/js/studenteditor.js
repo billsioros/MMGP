@@ -61,44 +61,120 @@ function LoadSchedules(Student, DayPart) {
         lab.className = "ScheduleTimeLabel";
         lab.innerHTML = "Schedule Time";
         table.appendChild(lab);
+        let hourminute = document.createElement("div");
+        hourminute.className = "ScheduleTimeContent HourMinuteContent";
+
         input = document.createElement("input");
         input.type = "text";
-        input.className = "ScheduleTimeContent";
-        input.value = Schedule.ScheduleTime;
-        table.appendChild(input)
+        input.className = "ScheduleHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.ScheduleTime)
+            input.value = Schedule.ScheduleTime.charAt(0) + Schedule.ScheduleTime.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "ScheduleMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.ScheduleTime)
+            input.value = Schedule.ScheduleTime.charAt(3) + Schedule.ScheduleTime.charAt(4);
+        hourminute.appendChild(input);
+
+        table.appendChild(hourminute);
 
         // Early
         lab = document.createElement("label");
         lab.className = "EarlyLabel";
-        lab.innerHTML = "Early" + " " + DropOrPickup;
+        lab.innerHTML = "Early " + DropOrPickup;
         table.appendChild(lab);
+        hourminute = document.createElement("div");
+        hourminute.className = "EarlyContent HourMinuteContent";
+
         input = document.createElement("input");
         input.type = "text";
-        input.className = "EarlyContent";
-        input.value = Schedule.Early;
-        table.appendChild(input)
+        input.className = "EarlyHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.Early)
+            input.value = Schedule.Early.charAt(0) + Schedule.Early.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";    
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "EarlyMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.Early)
+            input.value = Schedule.Early.charAt(3) + Schedule.Early.charAt(4);
+        hourminute.appendChild(input);
+
+        table.appendChild(hourminute);
 
         // Late
         lab = document.createElement("label");
         lab.className = "LateLabel";
-        lab.innerHTML = "Late" + " " + DropOrPickup;
+        lab.innerHTML = "Late " + DropOrPickup;
         table.appendChild(lab);
+        hourminute = document.createElement("div");
+        hourminute.className = "LateContent HourMinuteContent";
+
         input = document.createElement("input");
         input.type = "text";
-        input.className = "LateContent";
-        input.value = Schedule.Late;
-        table.appendChild(input)
+        input.className = "LateHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.Late)
+            input.value = Schedule.Late.charAt(0) + Schedule.Late.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "LateMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.Late)
+            input.value = Schedule.Late.charAt(3) + Schedule.Late.charAt(4);
+        hourminute.appendChild(input);
+
+        table.appendChild(hourminute);
 
         // Around
         lab = document.createElement("label");
         lab.className = "AroundLabel";
-        lab.innerHTML = DropOrPickup + " " + "Around";
+        lab.innerHTML = "Around " + DropOrPickup;
         table.appendChild(lab);
+        hourminute = document.createElement("div");
+        hourminute.className = "AroundContent HourMinuteContent";
+
         input = document.createElement("input");
         input.type = "text";
-        input.className = "AroundContent";
-        input.value = Schedule.Around;
-        table.appendChild(input)
+        input.className = "AroundHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.Around)
+            input.value = Schedule.Around.charAt(0) + Schedule.Around.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "AroundMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.Around)
+            input.value = Schedule.Around.charAt(3) + Schedule.Around.charAt(4);
+        hourminute.appendChild(input);
+
+        table.appendChild(hourminute);
 
         // Note
         lab = document.createElement("label");
@@ -157,31 +233,125 @@ function Save() {
     
     let DayParts = ["Morning", "Noon", "Study"]
     let SchedulesToSave = [];
+    let FormatErrors = [];
+
     for (let j = 0; j < DayParts.length; j++) {
         let dayPart = DayParts[j];
 
         let DayPartSchedules = dayPart + "Schedules";
-
+        
         for (let i = 0; i < CurrentStudent[DayPartSchedules].length; i++) {
-            let Schedule = CurrentStudent[DayPartSchedules][i];
 
+            let Schedule = CurrentStudent[DayPartSchedules][i];
+            let ScheduleChanges = {ScheduleID: Schedule.ScheduleID};
             let DomSchedule = document.getElementById(Schedule.ScheduleID);
 
-            Schedule.Address.FullAddress = DomSchedule.querySelector(".AddressContent").value;
-            Schedule.BusSchedule = DomSchedule.querySelector(".BusScheduleContent").value;
-            Schedule.ScheduleTime = DomSchedule.querySelector(".ScheduleTimeContent").value;
-            Schedule.Early = DomSchedule.querySelector(".EarlyContent").value;
-            Schedule.Late = DomSchedule.querySelector(".LateContent").value;
-            Schedule.Around = DomSchedule.querySelector(".AroundContent").value;
-            Schedule.Notes = DomSchedule.querySelector(".NotesContent").value;
+            let change = DomSchedule.querySelector(".AddressContent").value;
+            if (Schedule.Address.FullAddress !== change) {
+                ScheduleChanges.Address = {};
+                ScheduleChanges.Address.FullAddress = change;
+            }
+
+            change = DomSchedule.querySelector(".BusScheduleContent").value;
+            if (Schedule.BusSchedule !== change && change) {
+                ScheduleChanges.BusSchedule = change;
+            }
+
+            change = DomSchedule.querySelector(".ScheduleTimeContent").value;
+            if (Schedule.ScheduleTime !== change && change) {
+                let error = false;
+                let errorMessage = "";
+                
+                if (change.length !== 3 && change.length !== 4) {
+                    error = true;
+                    errorMessage = "Schedule Time: Invalid Format: \"" + change + "\"";
+                }
+
+                if ( isNaN(parseInt(change[0])) ) {
+                    error = true;
+                    errorMessage = "Schedule Time: Invalid Format: \"" + change + "\"";
+                }
+                else {
+                    if ( isNaN(parseInt(change[1])) ) {
+                        if (!(change[2] === ":" || change[2] === "." || change[2] === ",")) {
+                            error = true;
+                            errorMessage = "Schedule Time: Invalid Format: \"" + change + "\"";
+                        }
+                        else {
+                            if ( isNaN(parseInt(change[3])) || isNaN(parseInt(change[3])) ) {
+                                error = true;
+                                errorMessage = "Schedule Time: Invalid Format: \"" + change + "\"";
+                            }
+                        }
+                    }
+                    else {
+                        if (!(change[2] === ":" || change[2] === "." || change[2] === ",")) {
+                            error = true;
+                            errorMessage = "Schedule Time: Invalid Format: \"" + change + "\"";
+                        }
+                        else {
+                            if ( isNaN(parseInt(change[3])) || isNaN(parseInt(change[3])) ) {
+                                error = true;
+                                errorMessage = "Schedule Time: Invalid Format: \"" + change + "\"";
+                            }
+                        }
+                    }
+                }
+
+                if (error)
+                    FormatErrors.push(errorMessage);
+                else
+                    ScheduleChanges.ScheduleTime = change;          
+            }
+            
+            change = DomSchedule.querySelector(".EarlyContent").value;
+            if (Schedule.Early !== change && change) {
+                ScheduleChanges.Early = change;
+            }
+
+            change = DomSchedule.querySelector(".LateContent").value;
+            if (Schedule.Late !== change && change) {
+                ScheduleChanges.Late = change;
+            }
+
+            change = DomSchedule.querySelector(".AroundContent").value;
+            if (Schedule.Around !== change && change) {
+                ScheduleChanges.Around = change;
+            }
+
+            change = DomSchedule.querySelector(".NotesContent").value;
+            if (Schedule.Notes !== change && change) {
+                ScheduleChanges.Notes = change;
+            }
+
             
             let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
+            // Always write days
+            let DaysChange = false;
+            ScheduleChanges.Days = {};
             for (let j = 0; j < WeekDays.length; j++) {
-                if (DomSchedule.querySelector("." + WeekDays[j]).classList.contains("OnDay"))
-                    Schedule.Days[WeekDays[j]] = 1;
-                else
-                    Schedule.Days[WeekDays[j]] = 0;       
+                let DayBit = DomSchedule.querySelector("." + WeekDays[j]).classList.contains("OnDay");
+                if (DayBit && Schedule.Days[WeekDays[j]]) {
+                    ScheduleChanges.Days[WeekDays[j]] = 1;
+                }
+                else if(!DayBit && !Schedule.Days[WeekDays[j]]) {
+                    ScheduleChanges.Days[WeekDays[j]] = 0;
+                }
+                else if (DayBit && !Schedule.Days[WeekDays[j]]) {
+                    ScheduleChanges.Days[WeekDays[j]] = 1;
+                    DaysChange = true;
+                }
+                else if (!DayBit && Schedule.Days[WeekDays[j]]) {
+                    ScheduleChanges.Days[WeekDays[j]] = 0;
+                    DaysChange = true;
+                }
+            }
+
+            if (Object.keys(ScheduleChanges).length !== 2 || DaysChange) {
+                SchedulesToSave.push(ScheduleChanges);
+
+                console.log(ScheduleChanges);
             }
         }
     }

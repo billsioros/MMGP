@@ -282,9 +282,9 @@ class DBManager:
 
 
                 if not InsertedSchedules.has_key(Row["ScheduleID"]):
-                    if "Notes":
+                    if Row["Notes"]:
                         self.__InitParser()
-                        NotesDict = self._Parser.Parse("Notes")
+                        NotesDict = self._Parser.Parse(Row["Notes"])
                         Early = NotesDict["Early Pickup"]
                         Late = NotesDict["Late Pickup"]
                         Comment = NotesDict["Comments"]
@@ -294,6 +294,20 @@ class DBManager:
                         Late = None
                         Comment = None
                         Around = None
+
+                    if Row["ScheduleTime"]:
+                        print "1 " + Row["ScheduleTime"] 
+                        if "." in Row["ScheduleTime"]:
+                            Row["ScheduleTime"] = Row["ScheduleTime"].replace(":", ".")
+                        if "," in Row["ScheduleTime"]:
+                            Row["ScheduleTime"] = Row["ScheduleTime"].replace(",", ".")
+
+                        index = Row["ScheduleTime"].find(":")
+                        if len(Row["ScheduleTime"][:index]) == 1:
+                            Row["ScheduleTime"] = "0" + Row["ScheduleTime"]
+
+                    else:
+                        Row["ScheduleTime"] = None
 
                     ScheduleList = [Row["ScheduleID"], Row["ID"], HashAddress, Row["Mon"], Row["Tue"], Row["Wen"], Row["Thu"], Row["Fri"], DayPart,
                                     Row["Notes"], Early, Late, Around, Comment, 

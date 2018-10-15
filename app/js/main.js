@@ -195,11 +195,11 @@ function CreateDatabase() {
 
     jsonfile = datadir + "tmp/createdatabase.json"
 
-    let toJson = {
+    let toJson = {    
         Settings: settings,
         Database: DBFile
     }
-
+    console.log('toJson', JSON.stringify(toJson));
 
     spawn = require("child_process").spawn;
     var proc = spawn('python', [pythondir + "Creation.py", JSON.stringify(toJson)]);
