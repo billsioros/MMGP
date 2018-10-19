@@ -12,8 +12,9 @@ PATH_SQL_SRC = ./SQLiteCpp/src
 
 PATH_JSN_INC = ./nlohmann
 
+TIME_DEP = $(PATH_INC)/timewindow.hpp $(PATH_SRC)/timewindow.cpp
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
-MNGR_DEP = $(PATH_SQL_INC)/Database.h $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_INC)/, vector2.hpp manager.hpp log.hpp) $(PATH_SRC)/manager.cpp
+MNGR_DEP = $(PATH_SQL_INC)/Database.h $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_INC)/, timewindow.hpp vector2.hpp manager.hpp log.hpp) $(PATH_SRC)/manager.cpp
 LOG__DEP = $(PATH_INC)/log.hpp $(PATH_SRC)/log.cpp
 MAIN_DEP = $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp annealing.hpp log.hpp) $(PATH_SRC)/main.cpp
 
@@ -24,7 +25,7 @@ EXCP_DEP = $(PATH_SQL_INC)/Exception.h $(PATH_SQL_SRC)/Exception.cpp
 STMT_DEP = $(addprefix $(PATH_SQL_INC)/, Statement.h Database.h Column.h Assertion.h Exception.h) $(PATH_SQL_SRC)/Statement.cpp
 TRNS_DEP = $(addprefix $(PATH_SQL_INC)/, Transaction.h Database.h Assertion.h) $(PATH_SQL_SRC)/Transaction.cpp
 
-NAME_DEP = $(addprefix $(PATH_BIN)/, vector2.o manager.o main.o log.o Backup.o Column.o Database.o Exception.o Statement.o Transaction.o)
+NAME_DEP = $(addprefix $(PATH_BIN)/, timewindow.o vector2.o manager.o main.o log.o Backup.o Column.o Database.o Exception.o Statement.o Transaction.o)
 
 .PHONY: all
 all:
@@ -38,6 +39,9 @@ all:
 
 $(PATH_BIN)/$(CCNAME): $(NAME_DEP)
 	$(CC) $(DEFLAGS) $(CCFLAGS) $(NAME_DEP) -lsqlite3 -o $(PATH_BIN)/$(CCNAME)
+
+$(PATH_BIN)/timewindow.o: $(TIME_DEP)
+	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/timewindow.cpp -c -o $(PATH_BIN)/timewindow.o
 
 $(PATH_BIN)/vector2.o: $(VEC2_DEP)
 	$(CC) -I $(PATH_INC) $(DEFLAGS) $(CCFLAGS) $(PATH_SRC)/vector2.cpp -c -o $(PATH_BIN)/vector2.o
