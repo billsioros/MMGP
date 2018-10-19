@@ -2,6 +2,7 @@
 #include "wrapper.hpp"
 #include <node.h>
 #include <string>
+#include <cstdint>
 
 // Object Implementation:
 Wrapper::Object::Object(v8::Isolate * iso)
@@ -47,6 +48,15 @@ void Wrapper::Object::set(const std::string& field, double val)
     );
 }
 
+void Wrapper::Object::set(const std::string& field, int32_t val)
+{
+    obj->Set
+    (
+        v8::String::NewFromUtf8(iso, field.c_str()),
+        v8::Integer::New(iso, val)
+    );
+}
+
 void Wrapper::Object::set(const std::string& field, const Object& wobject)
 {
     obj->Set
@@ -79,6 +89,14 @@ void Wrapper::Object::get(const std::string& field, double& val) const
     (
         v8::String::NewFromUtf8(iso, field.c_str())
     ).As<v8::Number>()->NumberValue();
+}
+
+void Wrapper::Object::get(const std::string& field, int32_t& val) const
+{
+    val = obj->Get
+    (
+        v8::String::NewFromUtf8(iso, field.c_str())
+    ).As<v8::Number>()->Int32Value();
 }
 
 void Wrapper::Object::get(const std::string& field, Object& wobject) const
@@ -135,6 +153,11 @@ void Wrapper::Array::set(std::size_t index, double val)
     arr->Set(index, v8::Number::New(iso, val));
 }
 
+void Wrapper::Array::set(std::size_t index, int32_t val)
+{
+    arr->Set(index, v8::Integer::New(iso, val));
+}
+
 void Wrapper::Array::set(std::size_t index, const Object& wobject)
 {
     arr->Set(index, wobject.obj);
@@ -156,6 +179,11 @@ void Wrapper::Array::get(std::size_t index, std::string& str) const
 void Wrapper::Array::get(std::size_t index, double& val) const
 {
     val = arr->Get(index).As<v8::Number>()->NumberValue();
+}
+
+void Wrapper::Array::get(std::size_t index, int32_t& val) const
+{
+    val = arr->Get(index).As<v8::Number>()->Int32Value();
 }
 
 void Wrapper::Array::get(std::size_t index, Object& wobject) const
