@@ -32,14 +32,8 @@ Timewindow::Timewindow(uint8_t lhours, uint8_t lminutes, uint8_t uhours, uint8_t
 :
 std::pair<uint32_t, uint32_t>(0U, 0U)
 {
-    if (lhours > 23U || uhours > 23U)
-        throw std::invalid_argument("hours should be in the range [00, 23]");
-
-    if (lminutes > 59U || uminutes > 59U)
-        throw std::invalid_argument("minutes should be in the range [00, 59]");
-
-    uint32_t lower = lhours * 3600U + lminutes * 60U;
-    uint32_t upper = uhours * 3600U + uminutes * 60U;
+    uint32_t lower = evaluate(lhours, lminutes);
+    uint32_t upper = evaluate(uhours, uminutes);
 
     if (lower > upper)
         throw std::invalid_argument("negative time interval detected");
@@ -49,13 +43,13 @@ std::pair<uint32_t, uint32_t>(0U, 0U)
 
 std::ostream& operator<<(std::ostream& os, const Timewindow& timewindow)
 {
-    uint16_t lhours, lminutes, uhours, uminutes;
+    uint8_t lhours, lminutes, uhours, uminutes;
 
-    lhours = timewindow.first  / 3600U;
-    uhours = timewindow.second / 3600U;
+    lhours = static_cast<uint8_t>(timewindow.first  / 3600U);
+    uhours = static_cast<uint8_t>(timewindow.second / 3600U);
 
-    lminutes = (timewindow.first  % 3600U) / 60U;
-    uminutes = (timewindow.second % 3600U) / 60U;
+    lminutes = static_cast<uint8_t>((timewindow.first  % 3600U) / 60U);
+    uminutes = static_cast<uint8_t>((timewindow.second % 3600U) / 60U);
 
     os
     << "["
@@ -69,4 +63,15 @@ std::ostream& operator<<(std::ostream& os, const Timewindow& timewindow)
     << "]";
 
     return os;
+}
+
+uint32_t Timewindow::evaluate(uint8_t hours, uint8_t minutes)
+{
+    if (hours > 23U)
+        throw std::invalid_argument("hours should be in the range [00, 23]");
+
+    if (minutes > 59U)
+        throw std::invalid_argument("minutes should be in the range [00, 59]");
+
+    return static_cast<uint32_t>(hours) * 3600U + static_cast<uint32_t>(minutes) * 60U;
 }

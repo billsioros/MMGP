@@ -12,4 +12,6 @@ struct Timewindow : public std::pair<uint32_t, uint32_t>
     Timewindow(uint8_t, uint8_t, uint8_t, uint8_t);
 
     friend std::ostream& operator<<(std::ostream&, const Timewindow&);
+
+    static uint32_t evaluate(uint8_t, uint8_t);
 };
