@@ -1,5 +1,6 @@
 
 #include "manager.hpp"
+#include "timewindow.hpp"
 #include "vector2.hpp"
 #include "Database.h"
 #include "json.hpp"
@@ -20,7 +21,7 @@ Manager::Student::Student(
     const std::string& _studentId,
     const std::string& _addressId,
     const Vector2& _position,
-    const Vector2& _timewindow
+    const Timewindow& _timewindow
 )
 :
 _studentId(_studentId),
@@ -150,9 +151,9 @@ void Manager::load(
         const double y = stmt.getColumn(current++).getDouble();
         const Vector2 _position(x, y);
 
-        const Vector2 _timewindow(
-            0.0, // stmt.getColumn(current++).getDouble(),
-            0.0  // stmt.getColumn(current++).getDouble()
+        const Timewindow _timewindow(
+            0U, // stmt.getColumn(current++).getDouble(),
+            0U  // stmt.getColumn(current++).getDouble()
         );
 
         students.emplace_back(_studentId, _addressId, _position, _timewindow);
@@ -221,12 +222,12 @@ nlohmann::json Manager::json(
                     nlohmann::json::object
                     (
                         {
-                            { "studentId", student._studentId      },
-                            { "addressId", student._addressId      },
-                            { "longitude", student._position.x()   },
-                            { "latitude",  student._position.y()   },
-                            { "earliest",  student._timewindow.x() },
-                            { "latest",    student._timewindow.y() }
+                            { "studentId", student._studentId         },
+                            { "addressId", student._addressId         },
+                            { "longitude", student._position.x()      },
+                            { "latitude",  student._position.y()      },
+                            { "earliest",  student._timewindow.first  },
+                            { "latest",    student._timewindow.second }
                         }
                     )
                 );
@@ -279,7 +280,6 @@ Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)
     Manager::Student student;
 
     student._position   = A._position   + B._position;
-    student._timewindow = A._timewindow + B._timewindow;
 
     return student;
 }
@@ -289,7 +289,6 @@ Manager::Student operator/(const Manager::Student& _student, double factor)
     Manager::Student student;
 
     student._position   = _student._position / factor;
-    student._timewindow = _student._timewindow / factor;
 
     return student;
 }
