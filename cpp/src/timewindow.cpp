@@ -53,13 +53,13 @@ std::ostream& operator<<(std::ostream& os, const Timewindow& timewindow)
 
     os
     << "["
-    << std::setw(2) << std::setfill('0') << lhours
+    << std::setw(2) << std::setfill('0') << +lhours
     << ":"
-    << std::setw(2) << std::setfill('0') << lminutes
+    << std::setw(2) << std::setfill('0') << +lminutes
     << ", "
-    << std::setw(2) << std::setfill('0') << uhours
+    << std::setw(2) << std::setfill('0') << +uhours
     << ":"
-    << std::setw(2) << std::setfill('0') << uminutes
+    << std::setw(2) << std::setfill('0') << +uminutes
     << "]";
 
     return os;
