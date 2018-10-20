@@ -113,20 +113,24 @@ void Manager::load(
 {
     log(Log::Code::Message, "Loading students...");
 
+    // SELECT Schedule.StudentID, Schedule.AddressID, Address.GPS_X, Address.GPS_Y FROM Schedule, Address, Student WHERE Student.StudentID = Schedule.StudentID AND Schedule.AddressID = Address.AddressID AND Schedule.DayPart = "Morning"
+
+    std::string query
+    (
+        "SELECT Schedule.StudentID, Schedule.AddressID, "\
+        /*"Monday, Tuesday, Wednesday, Thursday, Friday, "\*/
+        "Address.GPS_X, Address.GPS_Y "\
+        "FROM Schedule, Address, Student "\
+        "WHERE Student.StudentID = Schedule.StudentID "\
+        "AND Schedule.AddressID = Address.AddressID "\
+        "AND Schedule.DayPart = ?"
+    );
+
     #ifdef __DEBUG_MANAGER__
-    SQLite::Statement stmt(database,
-        "SELECT Student.StudentID, Student.AddressID, "\
-        "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
-        "Address.GPS_X, Address.GPS_Y "\
-        "FROM Student, Address "\
-        "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 200");
-    #else
-    SQLite::Statement stmt(database,
-        "SELECT Student.StudentID, Student.AddressID, "\
-        "Address.GPS_X, Address.GPS_Y "\
-        "FROM Student, Address "\
-        "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ?");
+        query += " LIMIT 200";
     #endif
+
+    SQLite::Statement stmt(database, query);
 
     stmt.bind(1, daypart);
 
@@ -141,7 +145,7 @@ void Manager::load(
         Student student;
         student._studentId = _studentId; student._addressId = _addressId;
         if (!set.insert(student).second)
-        {           
+        {
             log(Log::Code::Warning, "Duplicate student " + static_cast<std::string>(student));
 
             continue;
@@ -166,11 +170,13 @@ void Manager::load(SQLite::Database& database, Buses& buses, Log& log)
 {
     log(Log::Code::Message, "Loading buses...");
 
+    std::string query("SELECT * FROM BUS");
+
     #ifdef __DEBUG_MANAGER__
-    SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
-    #else
-    SQLite::Statement stmt(database, "SELECT * FROM BUS");
+        query += " LIMIT 2";
     #endif
+
+    SQLite::Statement stmt(database, query);
     
     while (stmt.executeStep())
     {
