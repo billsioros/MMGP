@@ -551,8 +551,8 @@ function SolveScheduleTSP(Students) {
     for (let i = 0; i < Students.length - 1; i++) {
         let student = Students[i]
         toRoute.push({
-            early: { hour: 0, minute: 0 },
-            late:   { hour: 0, minute: 0 },
+            early: "00.00",
+            late:  "23.59",
             addressId: student.Address.AddressID,
             studentId: student.ID
         })
@@ -564,7 +564,7 @@ function SolveScheduleTSP(Students) {
     (
       DBFile,
       Students[0].DayPart,
-      { hour: 7, minute: 30 },
+      "07.30",
       30,
       { addressId: Students[0].Address.AddressID },
       toRoute,

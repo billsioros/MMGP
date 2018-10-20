@@ -262,8 +262,8 @@ void Worker::completed(uv_work_t * request, int status)
                 wstudent.set("addressId", student._addressId);
                 wstudent.set("longitude", student._position.x());
                 wstudent.set("latitude",  student._position.y());
-                wstudent.set("early",  student._timewindow.first);
-                wstudent.set("late",    student._timewindow.second);
+                wstudent.set("early",     static_cast<const int32_t&>(student._timewindow.first));
+                wstudent.set("late",      static_cast<const int32_t&>(student._timewindow.second));
 
                 wstudents.set(pid, wstudent);
             }

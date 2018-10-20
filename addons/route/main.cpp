@@ -21,7 +21,7 @@ struct Worker
     v8::Persistent<v8::Function> callback;
 
     std::string dbname, dayPart;
-    double departureTime, serviceTime;
+    uint32_t departureTime, serviceTime;
     Manager::Student depot;
     std::vector<Manager::Student> students;
 
@@ -62,7 +62,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     if
     (
         !args[0]->IsString() || !args[1]->IsString() ||
-        !args[2]->IsObject() || !args[3]->IsNumber() ||
+        !args[2]->IsString() || !args[3]->IsNumber() ||
         !args[4]->IsObject() ||
         !args[5]->IsArray()  ||
         !args[6]->IsFunction()
@@ -99,33 +99,23 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     worker->dbname  = *v8::String::Utf8Value(args[0].As<v8::String>());
     worker->dayPart = *v8::String::Utf8Value(args[1].As<v8::String>());
 
-    auto extractTime = [](const Wrapper::Object& wobj)
-    {
-        int32_t hour, minute;
-
-        wobj.get("hour",   hour);
-        wobj.get("minute", minute);
-
-        return Timewindow::evaluate
-        (
-            static_cast<uint8_t>(hours),
-            static_cast<uint8_t>(minutes)
-        );
-    };
-
     try
     {
-        worker->departureTime = extractTime
+        worker->departureTime = Timewindow::evaluate
         (
-            Wrapper::Object(iso, args[2].As<v8::Object>())
+            *v8::String::Utf8Value(args[2].As<v8::String>())
         );
     }
     catch (std::exception& e)
     {
-        worker->log(Log::Code::Error, worker->err = e.what() + " (departure-time)");
+        worker->log
+        (
+            Log::Code::Error,
+            worker->err = std::string(e.what()) + " (departure-time)"
+        );
     }
 
-    worker->serviceTime = args[3].As<v8::Number>()->NumberValue();
+    worker->serviceTime = args[3].As<v8::Uint32>()->Uint32Value();
 
     Wrapper::Object wstudent(iso, args[4].As<v8::Object>());
 
@@ -143,13 +133,17 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         wstudent.get("studentId", student._studentId);
         wstudent.get("addressId", student._addressId);
 
-        Wrapper::Object lower(iso), upper(iso);
+        std::string lower, upper;
         wstudent.get("early", lower);
-        wstudent.get("late",   upper);
+        wstudent.get("late",  upper);
 
         try
         {
-            student._timewindow = Timewindow(extractTime(lower), extractTime(upper));
+            student._timewindow = Timewindow
+            (
+                Timewindow::evaluate(lower),
+                Timewindow::evaluate(upper)
+            );
 
             worker->students.emplace_back(student);
         }
@@ -158,7 +152,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
             worker->log
             (
                 Log::Code::Error,
-                worker->err = e.what() +
+                worker->err = std::string(e.what()) +
                 "(student=" + static_cast<std::string>(student) + ")"
             );
         }
