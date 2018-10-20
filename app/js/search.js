@@ -511,8 +511,8 @@ function CalculateScheduleDuration() {
             longitude: student.Address.Longitude,
             latitude: student.Address.Latitude,
             dayPart: student.DayPart,
-            earliest: 0,
-            latest: 0,
+            earliest: "00.00",
+            latest: "23.59"
         })
     }
 
@@ -543,6 +543,7 @@ function CalculateScheduleDuration() {
         console.error(data.toString());
     }) 
 
+    SolveScheduleTSP(Students);
 }
 
 function SolveScheduleTSP(Students) {

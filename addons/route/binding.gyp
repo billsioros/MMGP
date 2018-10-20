@@ -7,6 +7,7 @@
             [
                 "main.cpp",
                 "../../cpp/src/wrapper.cpp",
+                "../../cpp/src/timewindow.cpp",
                 "../../cpp/src/vector2.cpp",
                 "../../cpp/src/manager.cpp",
                 "../../cpp/src/log.cpp",
