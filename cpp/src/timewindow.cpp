@@ -75,3 +75,28 @@ uint32_t Timewindow::evaluate(uint8_t hours, uint8_t minutes)
 
     return static_cast<uint32_t>(hours) * 3600U + static_cast<uint32_t>(minutes) * 60U;
 }
+
+uint32_t Timewindow::evaluate(const std::string& timestamp, char delimeter)
+{
+    uint8_t values[2UL];
+    
+    std::size_t previous, current, index;
+    for
+    (
+        previous = 0UL, current = 0UL, index = 0UL;
+        (current = timestamp.find(delimeter, previous)) != std::string::npos && index < 2UL;
+        previous = current, index++
+    )
+    {
+        std::string token;
+        if ((token = timestamp.substr(previous, current)).length() != 2UL)
+            throw std::invalid_argument("timestamp field occupies more than two decimal places");
+
+        values[index] = 10U * static_cast<uint8_t>(token[0UL] - '0') + static_cast<uint8_t>(token[1UL] - '0');
+    }
+
+    if (index < 2UL || current != std::string::npos)
+        throw std::invalid_argument("a timestamp contains exactly two fields");
+
+    return evaluate(values[0], values[1]);
+}
