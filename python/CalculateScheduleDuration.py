@@ -58,3 +58,34 @@ Result = {
 }
 
 print json.dumps(Result, sort_keys=True, indent=4)
+
+def penalty(departureTime, depot, students):
+    def duration(A, B):
+        return -1
+
+    def serviceTime(A):
+        return 0 if A == depot else 20
+
+    def timewindow(A):
+        return (0, 86340)
+    
+    def partialCost(A, B):
+        return serviceTime(A) + duration(A, B)
+
+    def partialPenalty(arrivalTime, A, B):
+        arrivalTime += partialCost(A, B)
+
+        startOfService = max(arrivalTime, timewindow(B)[0])
+
+        return max(0, startOfService + serviceTime(B) - timewindow(B)[1])
+
+    arrivalTime = departureTime
+    totalPenalty = partialPenalty(arrivalTime, depot, students[0])
+
+    for j in xrange(0, len(students) - 1):
+        totalPenalty += partialPenalty(arrivalTime, students[j], students[j + 1])
+
+    totalPenalty += partialPenalty(arrivalTime, students[-1], depot)
+
+    return totalPenalty
+    
