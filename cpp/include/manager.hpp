@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "timewindow.hpp"
 #include "vector2.hpp"
 #include "Database.h"
 #include "json.hpp"
@@ -17,14 +18,14 @@ namespace Manager
         std::string    _studentId;
         std::string    _addressId;
         Vector2        _position;
-        Vector2        _timewindow;
+        Timewindow     _timewindow;
 
         Student();
         Student(
             const std::string&,
             const std::string&,
             const Vector2&,
-            const Vector2&
+            const Timewindow&
         );
         Student(const Student&);
         Student(Student&&) noexcept;

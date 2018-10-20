@@ -1,19 +1,11 @@
 
-#include "Database.h"
-#include "Statement.h"
+#include "SQLiteCpp.h"
 #include "manager.hpp"
 #include "cmeans.hpp"
 #include "tsp.hpp"
-#include "annealing.hpp"
-#include "json.hpp"
 #include "log.hpp"
-#include <vector>
 #include <iostream>
-#include <memory>
-#include <unordered_map>
 #include <chrono>
-#include <iomanip>
-#include <sstream>
 
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
@@ -230,17 +222,7 @@ tsp<Manager::Student> route
     path = path.opt2();
 
     #ifdef __TEST_TSP__
-    std::cerr << "OPT2: " << path.first << std::endl;
-    #endif
-
-    #ifdef __TEST_TSP__
-    std::cerr << "SA: " << path.first << std::endl;
-    #endif
-
-    path = path.opt2();
-
-    #ifdef __TEST_TSP__
-    std::cerr << "OPT2-SA: " << path.first << std::endl;
+    std::cerr << "OPT2: " << path.cost() << std::endl;
     #endif
 
     return path;

@@ -1,5 +1,6 @@
 
 #include "manager.hpp"
+#include "timewindow.hpp"
 #include "vector2.hpp"
 #include "Database.h"
 #include "json.hpp"
@@ -20,7 +21,7 @@ Manager::Student::Student(
     const std::string& _studentId,
     const std::string& _addressId,
     const Vector2& _position,
-    const Vector2& _timewindow
+    const Timewindow& _timewindow
 )
 :
 _studentId(_studentId),
@@ -112,20 +113,24 @@ void Manager::load(
 {
     log(Log::Code::Message, "Loading students...");
 
+    // SELECT Schedule.StudentID, Schedule.AddressID, Address.GPS_X, Address.GPS_Y FROM Schedule, Address, Student WHERE Student.StudentID = Schedule.StudentID AND Schedule.AddressID = Address.AddressID AND Schedule.DayPart = "Morning"
+
+    std::string query
+    (
+        "SELECT Schedule.StudentID, Schedule.AddressID, "\
+        /*"Monday, Tuesday, Wednesday, Thursday, Friday, "\*/
+        "Address.GPS_X, Address.GPS_Y "\
+        "FROM Schedule, Address, Student "\
+        "WHERE Student.StudentID = Schedule.StudentID "\
+        "AND Schedule.AddressID = Address.AddressID "\
+        "AND Schedule.DayPart = ?"
+    );
+
     #ifdef __DEBUG_MANAGER__
-    SQLite::Statement stmt(database,
-        "SELECT Student.StudentID, Student.AddressID, "\
-        "Student.Monday, Student.Tuesday, Student.Wednesday, Student.Thursday, Student.Friday, "\
-        "Address.GPS_X, Address.GPS_Y "\
-        "FROM Student, Address "\
-        "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ? LIMIT 200");
-    #else
-    SQLite::Statement stmt(database,
-        "SELECT Student.StudentID, Student.AddressID, "\
-        "Address.GPS_X, Address.GPS_Y "\
-        "FROM Student, Address "\
-        "WHERE Student.AddressID = Address.AddressID AND Student.DayPart = ?");
+        query += " LIMIT 200";
     #endif
+
+    SQLite::Statement stmt(database, query);
 
     stmt.bind(1, daypart);
 
@@ -140,8 +145,14 @@ void Manager::load(
         Student student;
         student._studentId = _studentId; student._addressId = _addressId;
         if (!set.insert(student).second)
-        {           
-            log(Log::Code::Warning, "Duplicate student " + static_cast<std::string>(student));
+        {
+            log
+            (
+                Log::Code::Warning,
+                std::string("duplicate detected (student=") +
+                static_cast<std::string>(student) +
+                ")"
+            );
 
             continue;
         }
@@ -150,10 +161,24 @@ void Manager::load(
         const double y = stmt.getColumn(current++).getDouble();
         const Vector2 _position(x, y);
 
-        const Vector2 _timewindow(
-            0.0, // stmt.getColumn(current++).getDouble(),
-            0.0  // stmt.getColumn(current++).getDouble()
-        );
+        uint32_t lower = 0U, upper = 0U;
+        // try
+        // {
+        //     lower = Timewindow::evaluate(stmt.getColumn(current++).getText());
+        //     upper = Timewindow::evaluate(stmt.getColumn(current++).getText());
+        // }
+        // catch (std::exception& e)
+        // {
+        //     throw std::invalid_argument
+        //     (
+        //         std::string(e.what()) +
+        //         " (student: " + static_cast<std::string>(student) + ")"
+        //     );
+
+        //     return;
+        // }
+
+        const Timewindow _timewindow(lower, upper);
 
         students.emplace_back(_studentId, _addressId, _position, _timewindow);
     }
@@ -165,11 +190,13 @@ void Manager::load(SQLite::Database& database, Buses& buses, Log& log)
 {
     log(Log::Code::Message, "Loading buses...");
 
+    std::string query("SELECT * FROM BUS");
+
     #ifdef __DEBUG_MANAGER__
-    SQLite::Statement stmt(database, "SELECT * FROM BUS LIMIT 2");
-    #else
-    SQLite::Statement stmt(database, "SELECT * FROM BUS");
+        query += " LIMIT 2";
     #endif
+
+    SQLite::Statement stmt(database, query);
     
     while (stmt.executeStep())
     {
@@ -221,12 +248,12 @@ nlohmann::json Manager::json(
                     nlohmann::json::object
                     (
                         {
-                            { "studentId", student._studentId      },
-                            { "addressId", student._addressId      },
-                            { "longitude", student._position.x()   },
-                            { "latitude",  student._position.y()   },
-                            { "earliest",  student._timewindow.x() },
-                            { "latest",    student._timewindow.y() }
+                            { "studentId", student._studentId         },
+                            { "addressId", student._addressId         },
+                            { "longitude", student._position.x()      },
+                            { "latitude",  student._position.y()      },
+                            { "early",  student._timewindow.first  },
+                            { "late",    student._timewindow.second }
                         }
                     )
                 );
@@ -279,7 +306,6 @@ Manager::Student operator+(const Manager::Student& A, const Manager::Student& B)
     Manager::Student student;
 
     student._position   = A._position   + B._position;
-    student._timewindow = A._timewindow + B._timewindow;
 
     return student;
 }
@@ -289,7 +315,6 @@ Manager::Student operator/(const Manager::Student& _student, double factor)
     Manager::Student student;
 
     student._position   = _student._position / factor;
-    student._timewindow = _student._timewindow / factor;
 
     return student;
 }

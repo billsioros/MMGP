@@ -3,6 +3,7 @@
 
 #include <node.h>
 #include <string>
+#include <cstdint>
 
 namespace Wrapper
 {
@@ -28,11 +29,13 @@ public:
 
     void set(const std::string&, const std::string&);
     void set(const std::string&, double);
+    void set(const std::string&, int32_t);
     void set(const std::string&, const Object&);
     void set(const std::string&, const Array&);
 
     void get(const std::string&, std::string&) const;
     void get(const std::string&, double&) const;
+    void get(const std::string&, int32_t&) const;
     void get(const std::string&, Object&) const;
     void get(const std::string&, Array&) const;
 };
@@ -56,11 +59,13 @@ public:
 
     void set(std::size_t, const std::string&);
     void set(std::size_t, double);
+    void set(std::size_t, int32_t);
     void set(std::size_t, const Object&);
     void set(std::size_t, const Array&);
 
     void get(std::size_t, std::string&) const;
     void get(std::size_t, double&) const;
+    void get(std::size_t, int32_t&) const;
     void get(std::size_t, Object&) const;
     void get(std::size_t, Array&) const;
 

@@ -511,8 +511,8 @@ function CalculateScheduleDuration() {
             longitude: student.Address.Longitude,
             latitude: student.Address.Latitude,
             dayPart: student.DayPart,
-            earliest: 0,
-            latest: 0,
+            earliest: "00.00",
+            latest: "23.59"
         })
     }
 
@@ -543,6 +543,7 @@ function CalculateScheduleDuration() {
         console.error(data.toString());
     }) 
 
+    SolveScheduleTSP(Students);
 }
 
 function SolveScheduleTSP(Students) {
@@ -551,8 +552,8 @@ function SolveScheduleTSP(Students) {
     for (let i = 0; i < Students.length - 1; i++) {
         let student = Students[i]
         toRoute.push({
-            earliest: { hour: 0, minute: 0 },
-            latest:   { hour: 0, minute: 0 },
+            early: "00.00",
+            late:  "23.59",
             addressId: student.Address.AddressID,
             studentId: student.ID
         })
@@ -564,7 +565,7 @@ function SolveScheduleTSP(Students) {
     (
       DBFile,
       Students[0].DayPart,
-      { hour: 7, minute: 30 },
+      "07.30",
       30,
       { addressId: Students[0].Address.AddressID },
       toRoute,
