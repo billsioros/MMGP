@@ -1,19 +1,12 @@
 
-#include "Database.h"
-#include "Statement.h"
+#include "SQLiteCpp.h"
 #include "manager.hpp"
 #include "tsp.hpp"
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <chrono>
-#include <stdexcept>
-
+#include "log.hpp"
 #include "wrapper.hpp"
+#include <chrono>
 #include <node.h>
 #include <uv.h>
-
-#include "log.hpp"
 
 namespace VRP_ROUTE
 {
@@ -108,24 +101,16 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
 
     auto extractTime = [](const Wrapper::Object& wobj)
     {
-        double hour, minute;
+        int32_t hour, minute;
 
         wobj.get("hour",   hour);
         wobj.get("minute", minute);
 
-        if (hour < 0.0 || hour > 23.0)
-            throw std::invalid_argument
-            (
-                "\"hour\"=" + std::to_string(hour) + " is not in the range [00, 23]"
-            );
-
-        if (minute < 0.0 || minute > 59.0)
-            throw std::invalid_argument
-            (
-                "\"minute\"=" + std::to_string(minute) + " is not in the range [00, 59]"
-            );
-
-        return hour * 3600.0 + minute * 60.0;
+        return Timewindow::evaluate
+        (
+            static_cast<uint8_t>(hours),
+            static_cast<uint8_t>(minutes)
+        );
     };
 
     try
@@ -137,7 +122,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     }
     catch (std::exception& e)
     {
-        worker->log(Log::Code::Error, worker->err = e.what());
+        worker->log(Log::Code::Error, worker->err = e.what() + " (departure-time)");
     }
 
     worker->serviceTime = args[3].As<v8::Number>()->NumberValue();
@@ -158,34 +143,25 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         wstudent.get("studentId", student._studentId);
         wstudent.get("addressId", student._addressId);
 
-        double earliestSeconds = 0.0, latestSeconds = 0.0;
-
-        Wrapper::Object twindow(iso);
-        wstudent.get("earliest", twindow);
-
-        try
-        {
-            earliestSeconds = extractTime(twindow);
-        }
-        catch (std::exception& e)
-        {
-            worker->log(Log::Code::Error, worker->err = e.what());
-        }
-
-        wstudent.get("latest", twindow);
+        Wrapper::Object lower(iso), upper(iso);
+        wstudent.get("early", lower);
+        wstudent.get("late",   upper);
 
         try
         {
-            latestSeconds = extractTime(twindow);
+            student._timewindow = Timewindow(extractTime(lower), extractTime(upper));
+
+            worker->students.emplace_back(student);
         }
         catch (std::exception& e)
         {
-            worker->log(Log::Code::Error, worker->err = e.what());
+            worker->log
+            (
+                Log::Code::Error,
+                worker->err = e.what() +
+                "(student=" + static_cast<std::string>(student) + ")"
+            );
         }
-        
-        student._timewindow = { earliestSeconds, latestSeconds };
-
-        worker->students.emplace_back(student);
     }
 
     uv_queue_work(uv_default_loop(), &worker->request, Worker::work, Worker::completed);
@@ -261,7 +237,7 @@ void Worker::work(uv_work_t * request)
             worker->departureTime,
             [](const Manager::Student& s)
             {
-                return std::make_pair(s._timewindow.x(), s._timewindow.y());
+                return s._timewindow;
             }
         );
     }

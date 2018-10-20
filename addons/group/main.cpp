@@ -1,20 +1,17 @@
 
-#define _USE_MATH_DEFINES
-#include <cmath>
+#if defined _WIN32 || defined _WIN64
+    #define _USE_MATH_DEFINES
+    #include <cmath>
+#endif
 
-#include "Database.h"
-#include "Statement.h"
+#include "SQLiteCpp.h"
 #include "manager.hpp"
 #include "cmeans.hpp"
-#include <vector>
-#include <memory>
-#include <chrono>
-
+#include "log.hpp"
 #include "wrapper.hpp"
+#include <chrono>
 #include <node.h>
 #include <uv.h>
-
-#include "log.hpp"
 
 namespace VRP_GROUP
 {
@@ -265,8 +262,8 @@ void Worker::completed(uv_work_t * request, int status)
                 wstudent.set("addressId", student._addressId);
                 wstudent.set("longitude", student._position.x());
                 wstudent.set("latitude",  student._position.y());
-                wstudent.set("earliest",  student._timewindow.x());
-                wstudent.set("latest",    student._timewindow.y());
+                wstudent.set("early",  student._timewindow.first);
+                wstudent.set("late",    student._timewindow.second);
 
                 wstudents.set(pid, wstudent);
             }

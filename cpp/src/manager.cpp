@@ -146,7 +146,13 @@ void Manager::load(
         student._studentId = _studentId; student._addressId = _addressId;
         if (!set.insert(student).second)
         {
-            log(Log::Code::Warning, "Duplicate student " + static_cast<std::string>(student));
+            log
+            (
+                Log::Code::Warning,
+                std::string("duplicate detected (student=") +
+                static_cast<std::string>(student) +
+                ")"
+            );
 
             continue;
         }
@@ -155,10 +161,24 @@ void Manager::load(
         const double y = stmt.getColumn(current++).getDouble();
         const Vector2 _position(x, y);
 
-        const Timewindow _timewindow(
-            0U, // stmt.getColumn(current++).getDouble(),
-            0U  // stmt.getColumn(current++).getDouble()
-        );
+        uint32_t lower = 0U, upper = 0U;
+        // try
+        // {
+        //     lower = Timewindow::evaluate(stmt.getColumn(current++).getText());
+        //     upper = Timewindow::evaluate(stmt.getColumn(current++).getText());
+        // }
+        // catch (std::exception& e)
+        // {
+        //     throw std::invalid_argument
+        //     (
+        //         std::string(e.what()) +
+        //         " (student: " + static_cast<std::string>(student) + ")"
+        //     );
+
+        //     return;
+        // }
+
+        const Timewindow _timewindow(lower, upper);
 
         students.emplace_back(_studentId, _addressId, _position, _timewindow);
     }
@@ -232,8 +252,8 @@ nlohmann::json Manager::json(
                             { "addressId", student._addressId         },
                             { "longitude", student._position.x()      },
                             { "latitude",  student._position.y()      },
-                            { "earliest",  student._timewindow.first  },
-                            { "latest",    student._timewindow.second }
+                            { "early",  student._timewindow.first  },
+                            { "late",    student._timewindow.second }
                         }
                     )
                 );

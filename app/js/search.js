@@ -551,8 +551,8 @@ function SolveScheduleTSP(Students) {
     for (let i = 0; i < Students.length - 1; i++) {
         let student = Students[i]
         toRoute.push({
-            earliest: { hour: 0, minute: 0 },
-            latest:   { hour: 0, minute: 0 },
+            early: { hour: 0, minute: 0 },
+            late:   { hour: 0, minute: 0 },
             addressId: student.Address.AddressID,
             studentId: student.ID
         })
