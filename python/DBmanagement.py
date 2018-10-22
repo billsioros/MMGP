@@ -59,7 +59,7 @@ class DBManager:
                     AddressID           varchar(255),       \
                     Road                varchar(255),       \
                     Number              varchar(255),       \
-                    ZipCode             int,                \
+                    ZipCode             varchar(255),       \
                     Prefecture          varchar(255),       \
                     Municipal           varchar(255),       \
                     Area                varchar(255),       \
@@ -290,13 +290,12 @@ class DBManager:
                         Comment = NotesDict["Comments"]
                         Around = NotesDict["Around"]
                     else:
-                        Early = None
-                        Late = None
+                        Early = "00.00"
+                        Late = "23.59"
                         Comment = None
                         Around = None
 
                     if Row["ScheduleTime"]:
-                        print "1 " + Row["ScheduleTime"] 
                         if "." in Row["ScheduleTime"]:
                             Row["ScheduleTime"] = Row["ScheduleTime"].replace(":", ".")
                         if "," in Row["ScheduleTime"]:

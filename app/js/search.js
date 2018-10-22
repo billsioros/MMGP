@@ -1823,6 +1823,10 @@ function StudentJsonRead(json_file) {
                 ScheduleID: row.ScheduleID,
                 Address: {
                     FullAddress: row.FullAddress,
+                    Road: row.Road,
+                    Number: row.Number,
+                    ZipCode: row.ZipCode,
+                    Municipal: row.Municipal,
                     AddressID: row.AddressID,
                     Longitude: row.GPS_X,
                     Latitude: row.GPS_Y
@@ -1854,6 +1858,10 @@ function StudentJsonRead(json_file) {
                 Address: {
                     FullAddress: row.FullAddress,
                     AddressID: row.AddressID,
+                    Road: row.Road,
+                    Number: row.Number,
+                    ZipCode: row.ZipCode,
+                    Municipal: row.Municipal,
                     Longitude: row.GPS_X,
                     Latitude: row.GPS_Y
                 },
@@ -1923,6 +1931,10 @@ function ScheduleJsonRead(json_file) {
 
             Address: {
                 FullAddress: row.FullAddress,
+                Road: row.Road,
+                Number: row.Number,
+                ZipCode: row.ZipCode,
+                Municipal: row.Municipal,
                 AddressID: row.AddressID,
                 Longitude: row.GPS_X,
                 Latitude: row.GPS_Y
@@ -2111,6 +2123,7 @@ function StudentEditorHandler() {
     // Loader
 function OnCreateWindow() {
     DBFile = datadir + "MMGP_data.db";
+    console.log(DBFile);
     spawn = require('child_process').spawn;
     fs = require('fs');
 
