@@ -5,12 +5,17 @@
     <!-- Style -->
     <link rel="stylesheet" type="text/css" href="../css/studenteditor.css">
     <link rel="stylesheet" type="text/css" href="../css/scrollbar.css">
+    <!-- Scripts -->
+    <script>
+        window.$ = window.jQuery = require("../js/jquery.min")
+    </script>
+
     <script type="text/javascript" src="../js/studenteditor.js"></script>
 </head>
 <body>
     <script>
         const ipcRenderer = require("electron").ipcRenderer;
-
+        
         ipcRenderer.on("LoadStudent", (event, Student) => {
             LoadStudents(Student);
         });

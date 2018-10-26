@@ -3,12 +3,14 @@
 let CurrentStudent;
 
 function LoadStudents(Student) {
-    document.getElementById("StudentNameHeader").innerHTML = Student.LastName + " " + Student.FirstName + ": " + Student.ClassLevel;
-    document.getElementsByTagName("title")[0].innerHTML = "Student Editor: " + Student.LastName + " " + Student.FirstName;
+    $(document).ready(function() {
+        $("#StudentNameHeader").text(Student.LastName + " " + Student.FirstName + ": " + Student.ClassLevel);
+        $("title").text("Student Editor: " + Student.LastName + " " + Student.FirstName);
 
-    let DayParts = ["Morning", "Noon", "Study"]
-    DayParts.forEach((dayPart) => {
-        LoadSchedules(Student, dayPart);
+        let DayParts = ["Morning", "Noon", "Study"]
+        DayParts.forEach((dayPart) => {
+            LoadSchedules(Student, dayPart);
+        });
     });
 
     CurrentStudent = Student;
