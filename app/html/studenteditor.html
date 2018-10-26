@@ -15,13 +15,18 @@
 <body>
     <script>
         const ipcRenderer = require("electron").ipcRenderer;
-        
+        const remote = require("electron").remote;
+
         ipcRenderer.on("LoadStudent", (event, Student) => {
             LoadStudents(Student);
         });
 
         ipcRenderer.on("Save", (event) => {
             Save();
+        })
+
+        ipcRenderer.on("SavedClose", (event) => {
+            remote.getCurrentWindow().close();
         })
     </script>
 

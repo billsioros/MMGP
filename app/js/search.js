@@ -5,6 +5,7 @@ let sqlite3;
 let DOMElementHistory;
 let spawn
 let fs
+const ipcRenderer = require("electron").ipcRenderer;
 
 // TabGroups
 let SearchTabGroup;
@@ -1199,7 +1200,7 @@ function OnMorePress() {
         });
     }
 
-    OpenBottomBar();
+    //OpenBottomBar();
 }
 
 function SearchStudents() {
@@ -1411,10 +1412,13 @@ function DisplaySearchTab(tab) {
     }
     
     tab.updateContents();
+
+    if (tab.type === "StudentCard") OpenBottomBar();
+    else CloseBottomBar();
 }
 
 // Click Handlers
-function OnSearchTabPress() {
+function OnSearchTabPress(event) {
     // When search Tab is pressed display it and activate it.   //
     // Note: Displaying here is important because buttons(onclicks) and maps cannot be stored in any other way. //
     let pressedTab = SearchTabGroup.getPressed(this);
@@ -1426,12 +1430,12 @@ function OnSearchTabPress() {
     DisplaySearchTab(pressedTab);
     pressedTab.activate(false);
 
-    if (pressedTab.type !== "StudentCard") {
-        CloseBottomBar();
-    }
-    else {
-        OpenBottomBar();
-    }
+    // if (pressedTab.type !== "StudentCard") {
+    //     CloseBottomBar();
+    // }
+    // else {
+    //     OpenBottomBar();
+    // }
 
     CheckDisabledScheduleButton(pressedTab)
 
@@ -1446,11 +1450,29 @@ function OnClearTabsPress() {
     MainInfo.innerHTML = "";
 
     CheckDisabledScheduleButton(null);
+    CloseBottomBar();
 }
 
 function OnCloseTabPress() {
     closing = true;
     let a = SearchTabGroup.closePressed(this);
+    if (SearchTabGroup.length === 0) {
+        InfoMapTabHeader.innerHTML = "";
+        MainInfo.innerHTML = "";
+    }
+    else {
+        DisplaySearchTab(SearchTabGroup.activeTab());
+        SearchTabGroup.activeTab().activate(false);
+        CheckDisabledScheduleButton(SearchTabGroup.activeTab())
+        ReassignAllButtons();
+    }
+}
+
+function CloseCurrentTab() {
+    let active = SearchTabGroup.activeTab();
+
+    active.close();
+
     if (SearchTabGroup.length === 0) {
         InfoMapTabHeader.innerHTML = "";
         MainInfo.innerHTML = "";
@@ -2091,28 +2113,19 @@ function CloseBottomBar() {
 
 
 
-// #region Editors-Printer-Loader       //
+// #region Editors-Printer-Loader & Event Handlers       //
 
     // Printer
 function PrintHandler() {
     // Sends message to main process to print MainInfo. //
-    const ipcRenderer = require('electron').ipcRenderer;
-
-    function sendCommandToPrinter(content, title, type) {
-        // this sends tom main
-        ipcRenderer.send("printPDF", content, title, type);
-    }
-
     document.getElementById("PrintButton").addEventListener("click", () => {
         let title = SearchTabGroup.activeTab().title;
         let type = SearchTabGroup.activeTab().type;
-        sendCommandToPrinter(MainInfo.innerHTML, title, type);
+        ipcRenderer.send("printPDF", MainInfo.innerHTML, title, type);
     });
 }
 
 function StudentEditorHandler() {
-    const ipcRenderer = require('electron').ipcRenderer;
-
     document.getElementById("EditButton").addEventListener("click", () => {
         let Student = SearchTabGroup.activeTab().students;
         ipcRenderer.send("OpenStudentEditor", Student);
@@ -2132,6 +2145,8 @@ function OnCreateWindow() {
 
     MarkerColors = data.colors;
     MarkerURL = data.url;
+
+    // ipcRenderer = require("electron").ipcRenderer;
     
     GenerateBusButtons();
     OnSearchClearStudent();
@@ -2143,11 +2158,32 @@ function OnCreateWindow() {
     // Create a SearchTabGroup and hold it to a global variable for use.    //
     SearchTabGroup = new TabGroup(document.getElementsByClassName("SearchTabGroup")[0])
 
-    document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
+    // document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
 
     document.getElementById("Show\/HideButton").onclick = CloseSideBar;
 }
+
+ipcRenderer.on("CloseTab", (event) => {
+    CloseCurrentTab();
+})
+
+ipcRenderer.on("CloseAllTabs", (event) => {
+    OnClearTabsPress();
+})
+
+ipcRenderer.on("Print", (event) => {
+    let title = SearchTabGroup.activeTab().title;
+    let type = SearchTabGroup.activeTab().type;
+    ipcRenderer.send("printPDF", MainInfo.innerHTML, title, type);
+})
+
+ipcRenderer.on("Edit", (event) => {
+    if (SearchTabGroup.activeTab().type !== "StudentCard") return;
+    
+    let Student = SearchTabGroup.activeTab().students;
+    ipcRenderer.send("OpenStudentEditor", Student);
+})
 
 // #endregion //

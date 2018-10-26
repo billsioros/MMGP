@@ -103,11 +103,11 @@ function createWindow() {
         {
             label: 'Database Management',
             submenu: [
-                {label: 'Create Database (overwrite everything)', click() {CreateDatabase();}},
+                {label: 'Create Database (overwrite everything)', accelerator: "CmdOrCtrl+Shift+D" ,click() {CreateDatabase();}},
                 {label: 'Backup Database', click() {BackupDatabase();}},
                 {label: 'Restore Database', click() {RestoreDatabase();}},
                 {type: 'separator'},
-                {label: 'Update Students', click() {UpdateStudents(false);}},
+                {label: 'Update Students', accelerator: "CmdOrCtrl+Shift+U", click() {UpdateStudents(false);}},
                 {label: 'Update Students (overwrite current addresses)', click() {UpdateStudents(true);}},
                 {label: 'Update Buses', click() {UpdateBuses(); win.reload(); printwin.reload();}},
                 {type: 'separator'},
@@ -142,6 +142,12 @@ function createWindow() {
                     printwin.hide();
                 }},
                 {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools(); printwin.webContents.toggleDevTools();}},
+                {type: 'separator'},
+                {label: 'Close Current Tab', accelerator: "CmdOrCtrl+T" ,click() {win.webContents.send("CloseTab");} },
+                {label: 'Close All Tabs', accelerator: "CmdOrCtrl+Shift+T" ,click() {win.webContents.send("CloseAllTabs");} },         
+                {label: 'Print Current Tab', accelerator: "CmdOrCtrl+P", click() {win.webContents.send("Print");} },
+                {type: 'separator'},
+                {label: 'Edit Current Student', accelerator: "CmdOrCtrl+E", click() {win.webContents.send("Edit");} }
             ]
         }
     ])
@@ -791,6 +797,41 @@ ipcMain.on("OpenStudentEditor", (event, Student) => {
         editwindow.webContents.send("LoadStudent", Student);
     }, 1000);
     
+})
+
+ipcMain.on("Save", (event, Schedules, Student) => {
+    const spawn = require("child_process").spawn;
+
+    Schedules.Database = DBFile;
+    Schedules.Student = Student.ID;
+
+    let proc = spawn('python', [pythondir + "SaveSchedules.py", JSON.stringify(Schedules)]);
+
+    const ProgressBar = require('electron-progressbar');
+
+    var progressBar = new ProgressBar({
+        title: "Saving..",
+        text: "Saving ",
+        detail: "Please Wait. This will not take long.\nDo not close this application!"
+    });
+
+    progressBar.on('completed', function() {
+        progressBar.detail = "Saving Complete.";
+        event.sender.send("SavedClose");
+    });
+
+    proc.on('close', function(code) {
+        console.log("Saved.");
+        progressBar.setCompleted();
+    })
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
+    })
+
+    proc.stderr.on('data', function(data) {
+        dialog.showErrorBox("Saving Error", data.toString());
+    })
 })
 
 // #endregion

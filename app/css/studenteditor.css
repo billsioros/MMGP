@@ -203,7 +203,8 @@ body {
 
 .HourMinuteSeparator {
     border: none;
-    margin: 1px;
+    margin: auto 2px;
+    font-size: 14px;
 }
 
 .DaysContent {

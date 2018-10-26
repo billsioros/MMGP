@@ -228,6 +228,8 @@ function Save() {
         }
         alert(fullError);
     }
+    else
+        ipcRenderer.send("Save", SchedulesToSave, CurrentStudent);
 
 }
 
