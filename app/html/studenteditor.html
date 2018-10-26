@@ -19,6 +19,10 @@
         ipcRenderer.on("LoadStudent", (event, Student) => {
             LoadStudents(Student);
         });
+
+        ipcRenderer.on("Save", (event) => {
+            Save();
+        })
     </script>
 
     <header id="StudentNameHeader" class="MainHeader"></header>

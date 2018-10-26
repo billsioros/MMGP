@@ -1,5 +1,5 @@
 // const ipcRenderer = require("electron").ipcRenderer;
-
+let newSchedules = [];
 let CurrentStudent;
 
 function LoadStudents(Student) {
@@ -16,6 +16,27 @@ function LoadStudents(Student) {
     CurrentStudent = Student;
 }
 
+function LoadSchedules(Student, DayPart) {
+    let DayPartSchedules = DayPart + "Schedules";
+
+    for (let i = 0; i < Student[DayPartSchedules].length; i++) {
+        
+        let Schedule = Student[DayPartSchedules][i];
+        LoadOneSchedule(Schedule, DayPartSchedules);    
+    }
+                            
+    let addbutton = document.createElement("button");
+    addbutton.className = "CreateScheduleButton";
+    addbutton.onclick = CreateSchedule;
+    
+    let img = document.createElement("img");
+    img.src = "../images/General/plus.png";
+    img.className = "CreateScheduleImage";
+    addbutton.appendChild(img);
+
+    document.getElementById(DayPartSchedules).appendChild(addbutton);
+}
+
 function LoadOneSchedule(Schedule, DayPartSchedules) {
 
     let DropOrPickup;
@@ -27,7 +48,6 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     let table = document.createElement("div");
     table.id = Schedule.ScheduleID;
     table.className = "ScheduleTable";
-
     // let table = document.createElement("div");
     // table.className = "ScheduleTableRow";
 
@@ -47,150 +67,23 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     SimpleLabelInput(table, "Schedule Name", "BusScheduleContent", Schedule.BusSchedule);
 
     // ScheduleTime
-    {
-        lab = document.createElement("label");
-        lab.className = "ScheduleTimeLabel";
-        lab.innerHTML = "Schedule Time";
-        table.appendChild(lab);
-        let hourminute = document.createElement("div");
-        hourminute.className = "ScheduleTimeContent HourMinuteContent";
+    TimeLabelInput(table, "Schedule Time", "ScheduleTime", Schedule.ScheduleTime, false);
 
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "ScheduleTimeHourContent HourContent";
-        input.placeholder = "Hour";
-        if (Schedule.ScheduleTime)
-            input.value = Schedule.ScheduleTime.charAt(0) + Schedule.ScheduleTime.charAt(1);
-        hourminute.appendChild(input);
-        input = document.createElement("p");
-        input.className = "HourMinuteSeparator";
-        input.innerHTML = ":";
-        hourminute.appendChild(input);
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "ScheduleTimeMinuteContent MinuteContent";
-        input.placeholder = "Minute";
-        if (Schedule.ScheduleTime)
-            input.value = Schedule.ScheduleTime.charAt(3) + Schedule.ScheduleTime.charAt(4);
-        hourminute.appendChild(input);
-
-        table.appendChild(hourminute);
-    }
 
     let EmptyTW = Schedule.Early === "00.00" && Schedule.Late === "23.59"
     let EmptyAround = Schedule.Around === "00.00" || !Schedule.Around;
 
     // Early
-    {
-        lab = document.createElement("label");
-        lab.className = "EarlyLabel";
-        lab.innerHTML = "Early " + DropOrPickup;
-        table.appendChild(lab);
-        hourminute = document.createElement("div");
-        hourminute.className = "EarlyContent HourMinuteContent";
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "EarlyHourContent HourContent";
-        input.placeholder = "Hour";
-        if (Schedule.Early && !EmptyTW)
-            input.value = Schedule.Early.charAt(0) + Schedule.Early.charAt(1);
-        hourminute.appendChild(input);
-        input = document.createElement("p");
-        input.className = "HourMinuteSeparator";    
-        input.innerHTML = ":";
-        hourminute.appendChild(input);
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "EarlyMinuteContent MinuteContent";
-        input.placeholder = "Minute";
-        if (Schedule.Early && !EmptyTW)
-            input.value = Schedule.Early.charAt(3) + Schedule.Early.charAt(4);
-        hourminute.appendChild(input);
-
-        table.appendChild(hourminute);
-    }
+    TimeLabelInput(table, "Early " + DropOrPickup, "Early", Schedule.Early, true);
 
     // Late
-    {
-        lab = document.createElement("label");
-        lab.className = "LateLabel";
-        lab.innerHTML = "Late " + DropOrPickup;
-        table.appendChild(lab);
-        hourminute = document.createElement("div");
-        hourminute.className = "LateContent HourMinuteContent";
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "LateHourContent HourContent";
-        input.placeholder = "Hour";
-        if (Schedule.Late && !EmptyTW)
-            input.value = Schedule.Late.charAt(0) + Schedule.Late.charAt(1);
-        hourminute.appendChild(input);
-        input = document.createElement("p");
-        input.className = "HourMinuteSeparator";
-        input.innerHTML = ":";
-        hourminute.appendChild(input);
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "LateMinuteContent MinuteContent";
-        input.placeholder = "Minute";
-        if (Schedule.Late && !EmptyTW)
-            input.value = Schedule.Late.charAt(3) + Schedule.Late.charAt(4);
-        hourminute.appendChild(input);
-
-        table.appendChild(hourminute);
-    }
+    TimeLabelInput(table, "Late " + DropOrPickup, "Late", Schedule.Late, true);
 
     // Around
-    {
-        lab = document.createElement("label");
-        lab.className = "AroundLabel";
-        lab.innerHTML = "Around " + DropOrPickup;
-        table.appendChild(lab);
-
-        hourminute = document.createElement("div");
-        hourminute.className = "AroundContent HourMinuteContent";
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "AroundHourContent HourContent";
-        input.placeholder = "Hour";
-        if (Schedule.Around && !EmptyAround)
-            input.value = Schedule.Around.charAt(0) + Schedule.Around.charAt(1);
-        hourminute.appendChild(input);
-
-        input = document.createElement("p");
-        input.className = "HourMinuteSeparator";
-        input.innerHTML = ":";
-        hourminute.appendChild(input);
-
-        input = document.createElement("input");
-        input.type = "text";
-        input.className = "AroundMinuteContent MinuteContent";
-        input.placeholder = "Minute";
-        if (Schedule.Around && !EmptyAround)
-            input.value = Schedule.Around.charAt(3) + Schedule.Around.charAt(4);
-        hourminute.appendChild(input);
-
-        table.appendChild(hourminute);
-    }
+    TimeLabelInput(table, "Around " + DropOrPickup, "Around", Schedule.Around, true);
 
     // Note
-    {
-        lab = document.createElement("label");
-        lab.className = "NotesLabel";
-        lab.innerHTML = "Notes";
-        table.appendChild(lab);
-        input = document.createElement("textarea");
-        input.type = "text";
-        input.className = "NotesContent";
-        input.value = Schedule.Notes;
-        table.appendChild(input)
-    }
+    SimpleLabelInput(table, "Notes", "NotesContent", Schedule.Notes, true);
 
     // Days
     {
@@ -227,13 +120,18 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     
 }
 
-function SimpleLabelInput(Parent, Label, InputClass, Value) {
+function SimpleLabelInput(Parent, Label, InputClass, Value, Textarea=false) {
     let lab = document.createElement("label");
     lab.innerHTML = Label;
     
-    let input = document.createElement("input");
+    let input;
+
+    if (!Textarea)
+        input = document.createElement("input");
+    else
+        input = document.createElement("textarea");
     input.type = "text";
-    input.className = "InputClass";
+    input.className = InputClass;
     if (Value)
         input.value = Value;
 
@@ -241,48 +139,57 @@ function SimpleLabelInput(Parent, Label, InputClass, Value) {
     Parent.appendChild(input);
 }
 
-function LoadSchedules(Student, DayPart) {
-    let DayPartSchedules = DayPart + "Schedules";
-
-    for (let i = 0; i < Student[DayPartSchedules].length; i++) {
-        
-        let Schedule = Student[DayPartSchedules][i];
-        LoadOneSchedule(Schedule, DayPartSchedules);    
-    }
-
-    let addButton = $(document.createElement("button"))
-    addButton.addClass("CreateScheduleButton");
-    console.log(addButton)
-                            
-    let addbutton = document.createElement("button");
-    addbutton.className = "CreateScheduleButton";
-    addbutton.onclick = CreateSchedule;
+function TimeLabelInput(Parent, Label, InputClass, Value, Empty) {
+    let lab = document.createElement("label");
+    lab.innerHTML = Label;
     
-    let img = document.createElement("img");
-    img.src = "../images/General/plus.png";
-    img.className = "CreateScheduleImage";
-    addbutton.appendChild(img);
+    let hourminute = document.createElement("div");
+    hourminute.classList.add(InputClass + "Content", "HourMinuteContent");
 
-    document.getElementById(DayPartSchedules).appendChild(addbutton);
+    let input = document.createElement("input");
+    input.type = "text";
+    input.classList.add(InputClass + "HourContent", "HourContent");
+    input.placeholder = "Hour";
+
+    if (Value && !Empty)
+        input.value = Value.charAt(0) + Value.charAt(1);
+    hourminute.appendChild(input);
+
+    let p = document.createElement("p");
+    p.className = "HourMinuteSeparator";
+    p.innerHTML = ":";
+    hourminute.appendChild(p);
+
+    input = document.createElement("input");
+    input.type = "text";
+    input.classList.add(InputClass + "MinuteContent", "MinuteContent");
+    input.placeholder = "Minute";
+
+    if (Value && !Empty)
+        input.value = Value.charAt(3) + Value.charAt(4);
+    hourminute.appendChild(input);
+
+    Parent.appendChild(lab);
+    Parent.appendChild(hourminute);
 }
 
-function SwitchDay() {
-    if (this.classList.contains("OnDay")) {
-        this.classList.replace("OnDay", "OffDay")
-    }
-    else if (this.classList.contains("OffDay")) {
-        this.classList.replace("OffDay", "OnDay");
-    }
-}
+
+
 
 function Save() {
     if (!confirm("Are you sure you want to save?"))
         return;
     
-    let DayParts = ["Morning", "Noon", "Study"]
-    let SchedulesToSave = [];
+    let DayParts = ["Morning", "Noon", "Study"];
+
+    let SchedulesToSave = {
+        New: [],
+        Existing: []
+    };
+
     let FormatErrors = [];
 
+    // Loaded Schedules
     for (let j = 0; j < DayParts.length; j++) {
         let dayPart = DayParts[j];
 
@@ -294,12 +201,24 @@ function Save() {
             let DomSchedule = document.getElementById(Schedule.ScheduleID);
 
             let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
+            // ScheduleChanges.ScheduleID = Schedule.ScheduleID;
 
             console.log('ScheduleChanges', ScheduleChanges);
-            SchedulesToSave.push(ScheduleChanges);
+            SchedulesToSave.Existing.push(ScheduleChanges);
         }
     }
 
+    // New Schedules
+
+    for (let i = 0; i < newSchedules.length; i++) {
+        let Schedule = newSchedules[i];
+        let DomSchedule = document.getElementById("New" + i)
+
+        let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
+
+        console.log('ScheduleChanges', ScheduleChanges);
+            SchedulesToSave.New.push(ScheduleChanges);
+    }
 
     if (FormatErrors.length !== 0) {
         let fullError = ""
@@ -314,16 +233,13 @@ function Save() {
 
 function GetScheduleChanges(Schedule, DomSchedule) {
 
-    if (Schedule) {
-        ScheduleChanges = {}
-    }
     let ScheduleChanges = {ScheduleID: Schedule.ScheduleID};
 
     let change = DomSchedule.querySelector(".RoadContent");
     if (Schedule.Address.Road !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value.toUpperCase();
+        change.value = change.value;
         ScheduleChanges.Address.Road = change.value;
     }
 
@@ -331,7 +247,7 @@ function GetScheduleChanges(Schedule, DomSchedule) {
     if (Schedule.Address.Number !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value.toUpperCase();
+        change.value = change.value;
         ScheduleChanges.Address.Number = change.value;
     }
 
@@ -339,7 +255,7 @@ function GetScheduleChanges(Schedule, DomSchedule) {
     if (Schedule.Address.ZipCode !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value.toUpperCase();
+        change.value = change.value;
         ScheduleChanges.Address.ZipCode = change.value;
     }
 
@@ -347,14 +263,14 @@ function GetScheduleChanges(Schedule, DomSchedule) {
     if (Schedule.Address.Municipal !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value.toUpperCase();
+        change.value = change.value;
         ScheduleChanges.Address.Municipal = change.value;
     }
 
 
     change = DomSchedule.querySelector(".BusScheduleContent");
     if (Schedule.BusSchedule !== change.value && change.value) {
-        change.value = change.value.toUpperCase();
+        change.value = change.value;
         ScheduleChanges.BusSchedule = change.value;
     }
 
@@ -402,7 +318,7 @@ function GetScheduleChanges(Schedule, DomSchedule) {
 
     change = DomSchedule.querySelector(".NotesContent");
     if (Schedule.Notes !== change.value && change.value) {
-        change.value = change.value.toUpperCase();
+        change.value = change.value;
         ScheduleChanges.Notes = change.value;
     }
 
@@ -439,10 +355,22 @@ function GetScheduleChanges(Schedule, DomSchedule) {
     }
 }
 
+
+
+
+function SwitchDay() {
+    if (this.classList.contains("OnDay")) {
+        this.classList.replace("OnDay", "OffDay")
+    }
+    else if (this.classList.contains("OffDay")) {
+        this.classList.replace("OffDay", "OnDay");
+    }
+}
+
 function CreateSchedule() {
     
     let newSchedule = {
-        ScheduleID: "New",
+        ScheduleID: "New" + newSchedules.length,
         Address: {
             Road: null,
             Number: null,
@@ -464,6 +392,8 @@ function CreateSchedule() {
         },
         DayPart: this.parentNode.id.replace("Schedules", "")
     }
+
+    newSchedules.push(newSchedule);
 
     LoadOneSchedule(newSchedule, this.parentNode.id);
 

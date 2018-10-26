@@ -94,7 +94,7 @@ body {
 }
 
 #BottomNavBar > button > img {
-    transition: 0.2s;
+    /* transition: 0.2s; */
     width: 35px;
     height: 35px;
 }

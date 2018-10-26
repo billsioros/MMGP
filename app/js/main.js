@@ -764,6 +764,28 @@ ipcMain.on("OpenStudentEditor", (event, Student) => {
         autoHideMenuBar: true
     });
 
+
+    var menu = Menu.buildFromTemplate([
+        {
+            label: 'File',
+            submenu: [
+                {label: 'Save', accelerator: 'CmdOrCtrl + S', click() {editwindow.webContents.send("Save")} },        
+                {type: 'separator'},
+                {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {KillSubProcesses(); editwindow.close()}}
+            ]
+        },
+        {
+            label: 'Window',
+            submenu: [
+                {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {
+                    editwindow.reload();
+                }},
+                {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {editwindow.toggleDevTools();}},
+            ]
+        }
+    ])
+    editwindow.setMenu(menu)
+
     editwindow.loadFile("html/studenteditor.html");
     setTimeout(() => {
         editwindow.webContents.send("LoadStudent", Student);

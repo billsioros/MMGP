@@ -86,7 +86,7 @@ body {
 
     width: 75px;
     height: 75px;
-    transition: 200ms;
+    transition: 0.1s;
 }
 
 .CreateScheduleButton:hover .CreateScheduleImage{
@@ -102,11 +102,10 @@ body {
 .CreateScheduleImage {
     width: 20px;
     height: 20px;
-    transition: 0.1s;
 }
 
 
-.ScheduleTable>input, .ScheduleTable>textarea {
+.ScheduleTable > input, .ScheduleTable > textarea {
     /* border-radius: 5px; */
     font-size: 14px;
 
@@ -117,6 +116,8 @@ body {
     margin: 1px;
 
     resize: none;
+
+    text-transform: uppercase;
 }
 
 .ScheduleTable label {
@@ -162,16 +163,12 @@ body {
     float: right;
 }
 
-#BottomNavBar > button:hover {
-
-    background-color: rgb(40, 40, 43);
-    transition: 0.5s;
+#BottomNavBar > button:hover img {
+    filter: brightness(200%);
 }
 
-#BottomNavBar > button:active {
-
-    background-color: rgb(24, 24, 26);
-    transition: 0.5s;
+#BottomNavBar > button:active img {
+    filter: brightness(150%);
 }
 
 #BottomNavBar > button > img {
