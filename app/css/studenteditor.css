@@ -78,29 +78,33 @@ body {
 }
 
 .CreateScheduleButton {
-    background-color: #2e2e2e;
+    background-color: inherit;
 
     border: none;  
     border-radius: 5px;
     margin: auto 10px;
 
-    width: 90px;
-    height: 90px;
-    transition: 0.1s;
+    width: 75px;
+    height: 75px;
+    transition: 200ms;
 }
 
-.CreateScheduleButton:hover {
-    background-color: #313131;
+.CreateScheduleButton:hover .CreateScheduleImage{
+    width: 25px;
+    height: 25px;
+    filter: brightness(200%);
 }
 
-.CreateScheduleButton:active {
-    background-color: #2e2e2e;
+.CreateScheduleButton:active .CreateScheduleImage{
+    filter: brightness(150%);
 }
 
 .CreateScheduleImage {
-    width: 75px;
-    height: 75px;
+    width: 20px;
+    height: 20px;
+    transition: 0.1s;
 }
+
 
 .ScheduleTable>input, .ScheduleTable>textarea {
     /* border-radius: 5px; */

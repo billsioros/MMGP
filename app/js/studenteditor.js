@@ -32,226 +32,192 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     // table.className = "ScheduleTableRow";
 
     // Road
-    let lab = document.createElement("label");
-    lab.className = "RoadLabel";
-    lab.innerHTML = "Road";
-    table.appendChild(lab);
-    let input = document.createElement("input");
-    input.type = "text";
-    input.className = "RoadContent";
-    if (Schedule.Address.Road)
-        input.value = Schedule.Address.Road;
-    table.appendChild(input);
+    SimpleLabelInput(table, "Road", "RoadContent", Schedule.Address.Road);
 
     // Number
-    lab = document.createElement("label");
-    lab.className = "NumberLabel";
-    lab.innerHTML = "Number";
-    table.appendChild(lab);
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "NumberContent";
-    if (Schedule.Address.Number)
-        input.value = Schedule.Address.Number;
-    table.appendChild(input);
+    SimpleLabelInput(table, "Number", "NumberContent", Schedule.Address.Number);
 
     // ZipCode
-    lab = document.createElement("label");
-    lab.className = "ZipCodeLabel";
-    lab.innerHTML = "Zip Code";
-    table.appendChild(lab);
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "ZipCodeContent";
-    if (Schedule.Address.ZipCode)
-        input.value = Schedule.Address.ZipCode;
-    table.appendChild(input);
+    SimpleLabelInput(table, "Zip Code", "ZipCodeContent", Schedule.Address.ZipCode);
 
     // Municipal
-    lab = document.createElement("label");
-    lab.className = "MunicipalLabel";
-    lab.innerHTML = "Municipal";
-    table.appendChild(lab);
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "MunicipalContent";
-    if (Schedule.Address.Municipal)
-        input.value = Schedule.Address.Municipal;
-    table.appendChild(input)
+    SimpleLabelInput(table, "Municipal", "MunicipalContent", Schedule.Address.Municipal);
 
     // BusSchedule
-    lab = document.createElement("label");
-    lab.className = "BusScheduleLabel";
-    lab.innerHTML = "Schedule Name";
-    table.appendChild(lab);
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "BusScheduleContent";
-    if (Schedule.BusSchedule)
-        input.value = Schedule.BusSchedule;
-    table.appendChild(input)
+    SimpleLabelInput(table, "Schedule Name", "BusScheduleContent", Schedule.BusSchedule);
 
     // ScheduleTime
-    lab = document.createElement("label");
-    lab.className = "ScheduleTimeLabel";
-    lab.innerHTML = "Schedule Time";
-    table.appendChild(lab);
-    let hourminute = document.createElement("div");
-    hourminute.className = "ScheduleTimeContent HourMinuteContent";
+    {
+        lab = document.createElement("label");
+        lab.className = "ScheduleTimeLabel";
+        lab.innerHTML = "Schedule Time";
+        table.appendChild(lab);
+        let hourminute = document.createElement("div");
+        hourminute.className = "ScheduleTimeContent HourMinuteContent";
 
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "ScheduleTimeHourContent HourContent";
-    input.placeholder = "Hour";
-    if (Schedule.ScheduleTime)
-        input.value = Schedule.ScheduleTime.charAt(0) + Schedule.ScheduleTime.charAt(1);
-    hourminute.appendChild(input);
-    input = document.createElement("p");
-    input.className = "HourMinuteSeparator";
-    input.innerHTML = ":";
-    hourminute.appendChild(input);
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "ScheduleTimeHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.ScheduleTime)
+            input.value = Schedule.ScheduleTime.charAt(0) + Schedule.ScheduleTime.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
 
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "ScheduleTimeMinuteContent MinuteContent";
-    input.placeholder = "Minute";
-    if (Schedule.ScheduleTime)
-        input.value = Schedule.ScheduleTime.charAt(3) + Schedule.ScheduleTime.charAt(4);
-    hourminute.appendChild(input);
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "ScheduleTimeMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.ScheduleTime)
+            input.value = Schedule.ScheduleTime.charAt(3) + Schedule.ScheduleTime.charAt(4);
+        hourminute.appendChild(input);
 
-    table.appendChild(hourminute);
+        table.appendChild(hourminute);
+    }
 
     let EmptyTW = Schedule.Early === "00.00" && Schedule.Late === "23.59"
     let EmptyAround = Schedule.Around === "00.00" || !Schedule.Around;
 
     // Early
-    lab = document.createElement("label");
-    lab.className = "EarlyLabel";
-    lab.innerHTML = "Early " + DropOrPickup;
-    table.appendChild(lab);
-    hourminute = document.createElement("div");
-    hourminute.className = "EarlyContent HourMinuteContent";
+    {
+        lab = document.createElement("label");
+        lab.className = "EarlyLabel";
+        lab.innerHTML = "Early " + DropOrPickup;
+        table.appendChild(lab);
+        hourminute = document.createElement("div");
+        hourminute.className = "EarlyContent HourMinuteContent";
 
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "EarlyHourContent HourContent";
-    input.placeholder = "Hour";
-    if (Schedule.Early && !EmptyTW)
-        input.value = Schedule.Early.charAt(0) + Schedule.Early.charAt(1);
-    hourminute.appendChild(input);
-    input = document.createElement("p");
-    input.className = "HourMinuteSeparator";    
-    input.innerHTML = ":";
-    hourminute.appendChild(input);
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "EarlyHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.Early && !EmptyTW)
+            input.value = Schedule.Early.charAt(0) + Schedule.Early.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";    
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
 
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "EarlyMinuteContent MinuteContent";
-    input.placeholder = "Minute";
-    if (Schedule.Early && !EmptyTW)
-        input.value = Schedule.Early.charAt(3) + Schedule.Early.charAt(4);
-    hourminute.appendChild(input);
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "EarlyMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.Early && !EmptyTW)
+            input.value = Schedule.Early.charAt(3) + Schedule.Early.charAt(4);
+        hourminute.appendChild(input);
 
-    table.appendChild(hourminute);
-
-    // Late
-    lab = document.createElement("label");
-    lab.className = "LateLabel";
-    lab.innerHTML = "Late " + DropOrPickup;
-    table.appendChild(lab);
-    hourminute = document.createElement("div");
-    hourminute.className = "LateContent HourMinuteContent";
-
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "LateHourContent HourContent";
-    input.placeholder = "Hour";
-    if (Schedule.Late && !EmptyTW)
-        input.value = Schedule.Late.charAt(0) + Schedule.Late.charAt(1);
-    hourminute.appendChild(input);
-    input = document.createElement("p");
-    input.className = "HourMinuteSeparator";
-    input.innerHTML = ":";
-    hourminute.appendChild(input);
-
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "LateMinuteContent MinuteContent";
-    input.placeholder = "Minute";
-    if (Schedule.Late && !EmptyTW)
-        input.value = Schedule.Late.charAt(3) + Schedule.Late.charAt(4);
-    hourminute.appendChild(input);
-
-    table.appendChild(hourminute);
-
-    // Around
-    lab = document.createElement("label");
-    lab.className = "AroundLabel";
-    lab.innerHTML = "Around " + DropOrPickup;
-    table.appendChild(lab);
-
-    hourminute = document.createElement("div");
-    hourminute.className = "AroundContent HourMinuteContent";
-
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "AroundHourContent HourContent";
-    input.placeholder = "Hour";
-    if (Schedule.Around && !EmptyAround)
-        input.value = Schedule.Around.charAt(0) + Schedule.Around.charAt(1);
-    hourminute.appendChild(input);
-
-    input = document.createElement("p");
-    input.className = "HourMinuteSeparator";
-    input.innerHTML = ":";
-    hourminute.appendChild(input);
-
-    input = document.createElement("input");
-    input.type = "text";
-    input.className = "AroundMinuteContent MinuteContent";
-    input.placeholder = "Minute";
-    if (Schedule.Around && !EmptyAround)
-        input.value = Schedule.Around.charAt(3) + Schedule.Around.charAt(4);
-    hourminute.appendChild(input);
-
-    table.appendChild(hourminute);
-
-    // Note
-    lab = document.createElement("label");
-    lab.className = "NotesLabel";
-    lab.innerHTML = "Notes";
-    table.appendChild(lab);
-    input = document.createElement("textarea");
-    input.type = "text";
-    input.className = "NotesContent";
-    input.value = Schedule.Notes;
-    table.appendChild(input)
-
-    // Days
-    let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    let Abbr = ["Mon", "Tue", "Wen", "Thu", "Fri"];
-    lab = document.createElement("label");
-    lab.className = "DaysLabel";
-    lab.innerHTML = "Days";
-    table.appendChild(lab);
-
-    let days = document.createElement("div");
-    days.className ="DaysContent";
-    table.appendChild(days);
-
-    for (let j = 0; j < WeekDays.length; j++) {
-        let button = document.createElement("button");
-        button.className = WeekDays[j] + " DayButton";
-        button.innerHTML = Abbr[j];
-        if (Schedule.Days[WeekDays[j]] === 1)
-            button.className += " OnDay";
-        else 
-            button.className += " OffDay";
-
-        button.onclick = SwitchDay;
-        days.appendChild(button);
+        table.appendChild(hourminute);
     }
 
+    // Late
+    {
+        lab = document.createElement("label");
+        lab.className = "LateLabel";
+        lab.innerHTML = "Late " + DropOrPickup;
+        table.appendChild(lab);
+        hourminute = document.createElement("div");
+        hourminute.className = "LateContent HourMinuteContent";
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "LateHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.Late && !EmptyTW)
+            input.value = Schedule.Late.charAt(0) + Schedule.Late.charAt(1);
+        hourminute.appendChild(input);
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "LateMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.Late && !EmptyTW)
+            input.value = Schedule.Late.charAt(3) + Schedule.Late.charAt(4);
+        hourminute.appendChild(input);
+
+        table.appendChild(hourminute);
+    }
+
+    // Around
+    {
+        lab = document.createElement("label");
+        lab.className = "AroundLabel";
+        lab.innerHTML = "Around " + DropOrPickup;
+        table.appendChild(lab);
+
+        hourminute = document.createElement("div");
+        hourminute.className = "AroundContent HourMinuteContent";
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "AroundHourContent HourContent";
+        input.placeholder = "Hour";
+        if (Schedule.Around && !EmptyAround)
+            input.value = Schedule.Around.charAt(0) + Schedule.Around.charAt(1);
+        hourminute.appendChild(input);
+
+        input = document.createElement("p");
+        input.className = "HourMinuteSeparator";
+        input.innerHTML = ":";
+        hourminute.appendChild(input);
+
+        input = document.createElement("input");
+        input.type = "text";
+        input.className = "AroundMinuteContent MinuteContent";
+        input.placeholder = "Minute";
+        if (Schedule.Around && !EmptyAround)
+            input.value = Schedule.Around.charAt(3) + Schedule.Around.charAt(4);
+        hourminute.appendChild(input);
+
+        table.appendChild(hourminute);
+    }
+
+    // Note
+    {
+        lab = document.createElement("label");
+        lab.className = "NotesLabel";
+        lab.innerHTML = "Notes";
+        table.appendChild(lab);
+        input = document.createElement("textarea");
+        input.type = "text";
+        input.className = "NotesContent";
+        input.value = Schedule.Notes;
+        table.appendChild(input)
+    }
+
+    // Days
+    {
+        let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        let Abbr = ["Mon", "Tue", "Wen", "Thu", "Fri"];
+        lab = document.createElement("label");
+        lab.className = "DaysLabel";
+        lab.innerHTML = "Days";
+        table.appendChild(lab);
+
+        let days = document.createElement("div");
+        days.className ="DaysContent";
+        table.appendChild(days);
+
+        for (let j = 0; j < WeekDays.length; j++) {
+            let button = document.createElement("button");
+            button.className = WeekDays[j] + " DayButton";
+            button.innerHTML = Abbr[j];
+            if (Schedule.Days[WeekDays[j]] === 1)
+                button.className += " OnDay";
+            else 
+                button.className += " OffDay";
+
+            button.onclick = SwitchDay;
+            days.appendChild(button);
+        }
+    }
 
     document.getElementById(DayPartSchedules).appendChild(table);
 
@@ -259,6 +225,20 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
         table.style.opacity = "1";
     }, 1);
     
+}
+
+function SimpleLabelInput(Parent, Label, InputClass, Value) {
+    let lab = document.createElement("label");
+    lab.innerHTML = Label;
+    
+    let input = document.createElement("input");
+    input.type = "text";
+    input.className = "InputClass";
+    if (Value)
+        input.value = Value;
+
+    Parent.appendChild(lab);
+    Parent.appendChild(input);
 }
 
 function LoadSchedules(Student, DayPart) {
@@ -270,6 +250,10 @@ function LoadSchedules(Student, DayPart) {
         LoadOneSchedule(Schedule, DayPartSchedules);    
     }
 
+    let addButton = $(document.createElement("button"))
+    addButton.addClass("CreateScheduleButton");
+    console.log(addButton)
+                            
     let addbutton = document.createElement("button");
     addbutton.className = "CreateScheduleButton";
     addbutton.onclick = CreateSchedule;
@@ -278,6 +262,7 @@ function LoadSchedules(Student, DayPart) {
     img.src = "../images/General/plus.png";
     img.className = "CreateScheduleImage";
     addbutton.appendChild(img);
+
     document.getElementById(DayPartSchedules).appendChild(addbutton);
 }
 

@@ -765,9 +765,9 @@ ipcMain.on("OpenStudentEditor", (event, Student) => {
     });
 
     editwindow.loadFile("html/studenteditor.html");
-    // setTimeout(() => {
+    setTimeout(() => {
         editwindow.webContents.send("LoadStudent", Student);
-    // }, 1000);
+    }, 1000);
     
 })
 
