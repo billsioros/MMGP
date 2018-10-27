@@ -1,19 +1,25 @@
 from DBmanagement import DBManager as DBM
 import sys
 import json
-import os
+from util import GetCredentials
 
 jsonRequest = sys.argv[1]
 
-data = json.loads(jsonRequest)
+data = json.loads(jsonRequest.decode("greek"))
 
 Database = data["Database"]
 StudentID = data["Student"]
+Settings = data["Settings"]
+
+ActiveCon, GoogleAPIKey, OpenAPIKey, ServerType, ServerName, DatabaseName, Username, Password = GetCredentials(Settings)
 
 ExistingSchedules = data["Existing"]
 NewSchedules = data["New"]
 
-DBManager = DBM(Database)
+DBManager = DBM(Database, GoogleAPIKey=GoogleAPIKey, OpenAPIKey=OpenAPIKey)
 
 for schedule in ExistingSchedules:
-    print schedule
+    DBManager.InsertSchedule(schedule, StudentID)
+
+for schedule in NewSchedules:
+    DBManager.InsertSchedule(schedule, StudentID, new=True)

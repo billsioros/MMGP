@@ -204,7 +204,8 @@ function Save() {
             // ScheduleChanges.ScheduleID = Schedule.ScheduleID;
 
             console.log('ScheduleChanges', ScheduleChanges);
-            SchedulesToSave.Existing.push(ScheduleChanges);
+            if (ScheduleChanges)
+                SchedulesToSave.Existing.push(ScheduleChanges);
         }
     }
 
@@ -215,8 +216,10 @@ function Save() {
         let DomSchedule = document.getElementById("New" + i)
 
         let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
+        ScheduleChanges.DayPart = Schedule.DayPart;
 
         console.log('ScheduleChanges', ScheduleChanges);
+        if (ScheduleChanges)
             SchedulesToSave.New.push(ScheduleChanges);
     }
 
@@ -236,43 +239,60 @@ function Save() {
 function GetScheduleChanges(Schedule, DomSchedule) {
 
     let ScheduleChanges = {ScheduleID: Schedule.ScheduleID};
+    let changedAddress = false;
 
     let change = DomSchedule.querySelector(".RoadContent");
+    change.value = change.value.toUpperCase();
     if (Schedule.Address.Road !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value;
         ScheduleChanges.Address.Road = change.value;
+        changedAddress = true;
     }
 
     change = DomSchedule.querySelector(".NumberContent");
+    change.value = change.value.toUpperCase();
     if (Schedule.Address.Number !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value;
         ScheduleChanges.Address.Number = change.value;
+        changedAddress = true;
     }
 
     change = DomSchedule.querySelector(".ZipCodeContent");
+    change.value = change.value.toUpperCase();
     if (Schedule.Address.ZipCode !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value;
         ScheduleChanges.Address.ZipCode = change.value;
+        changedAddress = true;
     }
 
     change = DomSchedule.querySelector(".MunicipalContent");
+    change.value = change.value.toUpperCase();
     if (Schedule.Address.Municipal !== change.value) {
         if (!ScheduleChanges.hasOwnProperty("Address"))
             ScheduleChanges.Address = {};
-        change.value = change.value;
         ScheduleChanges.Address.Municipal = change.value;
+        changedAddress = true;
+    }
+
+    // If one thing in address changed we need to rehash and regeocode it
+    if (changedAddress) {
+        if (!ScheduleChanges.Address.Road)
+            ScheduleChanges.Address.Road = DomSchedule.querySelector(".RoadContent").value.toUpperCase();
+        if (!ScheduleChanges.Address.Number)
+            ScheduleChanges.Address.Number = DomSchedule.querySelector(".NumberContent").value.toUpperCase();
+        if (!ScheduleChanges.Address.ZipCode)
+            ScheduleChanges.Address.ZipCode = DomSchedule.querySelector(".ZipCodeContent").value.toUpperCase();
+        if (!ScheduleChanges.Address.Municipal)
+            ScheduleChanges.Address.Municipal = DomSchedule.querySelector(".MunicipalContent").value.toUpperCase();
     }
 
 
     change = DomSchedule.querySelector(".BusScheduleContent");
+    change.value = change.value.toUpperCase();
     if (Schedule.BusSchedule !== change.value && change.value) {
-        change.value = change.value;
         ScheduleChanges.BusSchedule = change.value;
     }
 
@@ -319,9 +339,9 @@ function GetScheduleChanges(Schedule, DomSchedule) {
     }
 
     change = DomSchedule.querySelector(".NotesContent");
+    change.value = change.value.toUpperCase();
     if (Schedule.Notes !== change.value && change.value) {
-        change.value = change.value;
-        ScheduleChanges.Notes = change.value;
+        ScheduleChanges.FullNote = change.value;
     }
 
     
@@ -374,10 +394,10 @@ function CreateSchedule() {
     let newSchedule = {
         ScheduleID: "New" + newSchedules.length,
         Address: {
-            Road: null,
-            Number: null,
-            ZipCode: null,
-            Municipal: null
+            Road: "",
+            Number: "",
+            ZipCode: "",
+            Municipal: ""
         },
         ScheduleTime: null,
         BusSchedule: null,

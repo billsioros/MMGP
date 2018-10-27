@@ -389,6 +389,94 @@ class DBManager:
                                 Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
 
 
+    def InsertSchedule(self, Schedule, StudentID, new=False):
+
+        OldSchedules = self.GetSchedules()
+
+        if new:
+            import binascii
+
+            digits = [4,2,2,2,6]
+
+            found = True
+            ScheduleID = ""
+
+            while found:
+                ScheduleID = ""
+                for i in digits:
+                    ScheduleID += binascii.b2a_hex(os.urandom(i)).upper()
+                    ScheduleID += "-"
+                ScheduleID = ScheduleID[:-1]
+
+                if not OldSchedules.has_key(ScheduleID):
+                    found = False
+        else:
+            ScheduleID = Schedule["ScheduleID"]
+
+        OldAddresses = self.GetAddresses()
+
+        if Schedule.has_key("Address"):
+            FullAddress, TranslatedAddress = util.ConcatenateAddress(Schedule["Address"]["Road"], Schedule["Address"]["Number"],
+            Schedule["Address"]["ZipCode"], Schedule["Address"]["Municipal"], None, None, "GREECE")
+                
+            AddressID = self.__Hash(TranslatedAddress)
+
+            if not OldAddresses.has_key(AddressID):
+                self.__InitMapsHandler()
+
+                FormattedAddress, GPSX, GPSY = self._MapsHandler.Geocode(TranslatedAddress)
+
+                AddressList = [AddressID, Schedule["Address"]["Road"], Schedule["Address"]["Number"], Schedule["Address"]["ZipCode"], 
+                None, Schedule["Address"]["Municipal"], None, GPSX, GPSY,
+                FullAddress, TranslatedAddress, FormattedAddress]
+
+                print AddressList
+                self.Cursor.execute("Insert into Address    \
+                                    Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
+
+        if not new:
+            Keys = Schedule.keys()
+            sql = "Update Schedule Set "
+            for key in Keys:
+                
+                if key == "ScheduleID":
+                    continue
+                elif key == "Address":
+                    if not OldAddresses.has_key(AddressID):
+                        # that means address exists in Schedule, and addressID has been found and changed
+                        sql += "AddressID = \"" + AddressID + "\", "
+                elif key == "Days":
+                    for day in Schedule[key].keys():
+                        sql += day + " = " + str(Schedule[key][day]) + ", "
+                else:
+                    key = key.replace("\"", "")
+                    key = key.replace("'", "")
+
+                    sql += key + " = " + "\"" + Schedule[key] + "\", "
+
+            sql = sql[:-2] 
+            sql += " Where ScheduleID = \"" + ScheduleID + "\""
+            self.Cursor.execute(sql)
+
+        else:
+            allKeys = OldSchedules[ OldSchedules.keys()[0] ].keys()
+            
+            for key in allKeys:
+                if not Schedule.has_key(key):
+                    Schedule[key] = None
+                    
+            Values = [ScheduleID, StudentID, AddressID, 
+                    Schedule["Days"]["Monday"], Schedule["Days"]["Tuesday"], Schedule["Days"]["Wednesday"], Schedule["Days"]["Thursday"], Schedule["Days"]["Friday"],
+                    Schedule["DayPart"], Schedule["FullNote"], Schedule["Early"], Schedule["Late"], Schedule["Around"], Schedule["Comment"], Schedule["BusSchedule"],
+                    Schedule["ScheduleOrder"], Schedule["ScheduleTime"]]
+            self.Cursor.execute("Insert into Schedule   \
+                                Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", Values)
+
+        # self.__DiscardAddresses()
+        self.Commit()
+            
+        
+
     def InsertDistances(self, DayPart, direct=False, fileName=None):
 
 
@@ -540,11 +628,11 @@ class DBManager:
         self.Cursor.execute(sql)
         Rows = self.Cursor.fetchall()
 
-        Students = dict()
+        Schedules = dict()
         for Row in Rows:
-            Students[Row["ScheduleID"]] = Row
+            Schedules[Row["ScheduleID"]] = Row
 
-        return Students
+        return Schedules
 
     # Fix this!!
     def GetDistances(self, DayPart):
@@ -636,6 +724,17 @@ class DBManager:
                             Where Not Exists            \
                                 (Select * From Student  \
                                 Where Student.AddressID = Address.AddressID)")
+        
+        Addresses = self.Cursor.fetchall()
+
+        for Address in Addresses:
+            self.Cursor.execute("Delete From Address Where AddressID = ?", [Address["AddressID"]])
+
+        self.Cursor.execute("Select Address.AddressID   \
+                            From Address                \
+                            Where Not Exists            \
+                                (Select * From Schedule  \
+                                Where Schedule.AddressID = Address.AddressID)")
         
         Addresses = self.Cursor.fetchall()
 

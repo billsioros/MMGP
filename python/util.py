@@ -83,7 +83,10 @@ class GreekMunicipalConverter:
         "VOYLIAGMENIS": "VOYLIAGMENI"}
 
     def Convert(self, Municipal):
-        return self.Municipals[Municipal]
+        if self.Municipals.has_key(Municipal):
+            return self.Municipals[Municipal]
+        else: 
+            return ""
 
 
 class MapsHandler:

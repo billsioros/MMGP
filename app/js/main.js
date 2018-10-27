@@ -804,6 +804,7 @@ ipcMain.on("Save", (event, Schedules, Student) => {
 
     Schedules.Database = DBFile;
     Schedules.Student = Student.ID;
+    Schedules.Settings = settings
 
     let proc = spawn('python', [pythondir + "SaveSchedules.py", JSON.stringify(Schedules)]);
 
