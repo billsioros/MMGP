@@ -1090,14 +1090,12 @@ function DisplayStudentCard(student) {
 
                 // Address
                 p = document.createElement("p");
-                p.contentEditable = "true";
                 p.className = "RowData";
                 p.innerHTML = schedule.Address.FullAddress;
                 row.appendChild(p);
 
                 // Notes
                 p = document.createElement("p");
-                p.contentEditable = "true";
                 p.className = "RowData";
                 if (schedule.Notes)
                     p.innerHTML = schedule.Notes;
@@ -2102,7 +2100,7 @@ function CloseSideBar() {
 }
 
 function OpenBottomBar() {
-    document.getElementById("BottomNavBar").style.height = "60px";
+    document.getElementById("BottomNavBar").style.height = "50px";
 }
 
 function CloseBottomBar() {

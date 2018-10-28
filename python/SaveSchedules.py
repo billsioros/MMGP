@@ -15,6 +15,7 @@ ActiveCon, GoogleAPIKey, OpenAPIKey, ServerType, ServerName, DatabaseName, Usern
 
 ExistingSchedules = data["Existing"]
 NewSchedules = data["New"]
+DeletedSchedules = data["Deleted"]
 
 DBManager = DBM(Database, GoogleAPIKey=GoogleAPIKey, OpenAPIKey=OpenAPIKey)
 
@@ -23,3 +24,9 @@ for schedule in ExistingSchedules:
 
 for schedule in NewSchedules:
     DBManager.InsertSchedule(schedule, StudentID, new=True)
+
+for schedule in DeletedSchedules:
+    sql = "Delete From Schedule Where ScheduleID = \"" + schedule + "\""
+    DBManager.Execute(sql)
+
+DBManager.Commit()

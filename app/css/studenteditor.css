@@ -9,6 +9,10 @@ button {
     outline: none;
 }
 
+input, textarea {
+    outline: none;
+}
+
 body {
     word-break: break-word;
     background-color: #363636;
@@ -48,11 +52,6 @@ body {
     padding: 5px;
 }
 
-.ScheduleTables {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 500px);
-}
-
 .ScheduleHeader {
     font-weight: 700;
     font-size: 23px;
@@ -65,17 +64,59 @@ body {
     /* margin: 10px 0; */
 }
 
+.ScheduleTables {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 500px);
+}
+
+.TableClose {
+    display: grid;
+    grid-template-columns: auto 35px;
+}
+
+
 .ScheduleTable {
     opacity: 0;
     display: grid;
     grid-template-columns: 1fr 2fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 2fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 2fr 1fr;
     margin-left: 2px;
     margin-right: 5px;
     margin-top: 10px;
     margin-bottom: 10px;
-    transition: 0.5s;
+    transition: 0.3s;
 }
+
+.ScheduleCloseButton {
+    height: 30px;
+    width: 30px;
+    padding: 0%;
+    border: none;
+    
+    margin-right: 5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    opacity: 0;
+    transition: 0.3s;
+
+    background-color: #d51234;
+}
+
+.ScheduleCloseButton:hover {
+    background-color: #fc183e;
+}
+
+.ScheduleCloseButton:active {
+    background-color: #ca1130;
+}
+
+.ScheduleCloseButton > img {
+    height: 10px;
+    width: 10px;
+    filter: brightness(200%);
+}
+
 
 .CreateScheduleButton {
     background-color: inherit;
@@ -89,17 +130,17 @@ body {
     transition: 0.1s;
 }
 
-.CreateScheduleButton:hover .CreateScheduleImage{
+.CreateScheduleButton:hover .CreateScheduleImage {
     width: 25px;
     height: 25px;
     filter: brightness(200%);
 }
 
-.CreateScheduleButton:active .CreateScheduleImage{
+.CreateScheduleButton:active .CreateScheduleImage>img {
     filter: brightness(150%);
 }
 
-.CreateScheduleImage {
+.CreateScheduleButton > img {
     width: 20px;
     height: 20px;
 }
@@ -118,6 +159,13 @@ body {
     resize: none;
 
     text-transform: uppercase;
+
+    transition: 0.4s;
+}
+
+.ScheduleTable > input:hover, .ScheduleTable > textarea:hover, 
+.ScheduleTable > input:focus, .ScheduleTable > textarea:focus{
+    background-color: rgb(54, 54, 54);
 }
 
 .ScheduleTable label {
@@ -191,6 +239,12 @@ body {
     border: none;
     margin: 1px;
     padding: 0%;
+    
+    transition: 0.4s;
+}
+
+.HourContent:hover, .MinuteContent:hover, .HourContent:focus, .MinuteContent:focus {
+    background-color: rgb(54, 54, 54);
 }
 
 .HourContent {

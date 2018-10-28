@@ -430,7 +430,6 @@ class DBManager:
                 None, Schedule["Address"]["Municipal"], None, GPSX, GPSY,
                 FullAddress, TranslatedAddress, FormattedAddress]
 
-                print AddressList
                 self.Cursor.execute("Insert into Address    \
                                     Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
 
@@ -473,7 +472,6 @@ class DBManager:
                                 Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", Values)
 
         # self.__DiscardAddresses()
-        self.Commit()
             
         
 

@@ -66,6 +66,7 @@ body {
     background-color: rgb(32, 32, 34);
 
     width: 80vw;
+    /* height is 60px */
     height: 0;
     
     position: fixed;
@@ -486,18 +487,24 @@ main {
 
 /* More Button */
 
-.MoreButtonImage {
+.MoreButton > img {
     width: 50%;
     height: 50%;
+    transition: 0.4s;
 }
 
 .MoreButton {
     cursor: pointer;
     outline: none;
+    transition: 0.4s;
 }
 
 .MoreButton:hover {
     background-color: rgb(73, 73, 73);
+}
+
+.MoreButton:hover > img {
+    filter: brightness(200%);
 }
 
 .MoreButton:active {
