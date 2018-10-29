@@ -66,12 +66,13 @@ body {
 
 .ScheduleTables {
     display: grid;
-    grid-template-columns: repeat(auto-fit, 500px);
+    grid-template-columns: repeat(auto-fit, 550px);
 }
 
 .TableClose {
     display: grid;
-    grid-template-columns: auto 35px;
+    grid-template-rows: 1fr 13fr;
+    margin-left: 10px;
 }
 
 
@@ -82,33 +83,41 @@ body {
     grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 2fr 1fr;
     margin-left: 2px;
     margin-right: 5px;
-    margin-top: 10px;
+    /* margin-top: 10px; */
     margin-bottom: 10px;
     transition: 0.3s;
 }
 
 .ScheduleCloseButton {
-    height: 30px;
-    width: 30px;
+    height: 35px;
+    width: 35px;
     padding: 0%;
     border: none;
     
-    margin-right: 5px;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 0 auto;
+    float: right;
 
     opacity: 0;
     transition: 0.3s;
 
-    background-color: #d51234;
+    background-color: inherit;
+}
+
+.ScheduleTopBar {
+    border: none;
+    margin-top: 10px;
+    margin-left: 2px;
+    margin-right: 5px;
+    transition: 0.3s;
+    background-color: #1f1e1e;
 }
 
 .ScheduleCloseButton:hover {
-    background-color: #fc183e;
+    background-color: #d51234;
 }
 
 .ScheduleCloseButton:active {
-    background-color: #ca1130;
+    background-color: #be102d;
 }
 
 .ScheduleCloseButton > img {
@@ -285,4 +294,12 @@ body {
     background-color: rgb(36, 36, 36);
 
     padding: 7px ;
+}
+
+.OnDay:hover {
+    background-color: rgb(174, 174, 174);
+}
+
+.OffDay:hover {
+    background-color: rgb(43, 43, 43);
 }

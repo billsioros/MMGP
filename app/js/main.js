@@ -10,8 +10,9 @@ let win
 let printwin
 let pythondir = __dirname + "/../../python/"
 let datadir = __dirname + "/../../data/"
-let settings = datadir + "MMGP_settings.json"
+let Settings = datadir + "MMGP_Settings.json"
 let DBFile = datadir + "MMGP_data.db"
+let ScheduleChangesFile = datadir + "ScheduleChanges.json"
 let closing = false
 
 let OpenProcesses = {};
@@ -54,22 +55,22 @@ function createWindow() {
     initPrintWindow();
 
     let fs = require("fs");
-    let data = fs.readFileSync(settings)
-    let settingsObj = JSON.parse(data)
+    let data = fs.readFileSync(Settings)
+    let SettingsObj = JSON.parse(data)
 
     let native = false;
     
-    if (settingsObj.Connection.Active === "Native") {
+    if (SettingsObj.Connection.Active === "Native") {
         native = true;
     }
 
     let oldYear = false;
     let newYear = false;
     let bothYears = false;
-    if( settingsObj.Current_Year.Active === "Old") {
+    if( SettingsObj.Current_Year.Active === "Old") {
         oldYear = true;
     }
-    else if (settingsObj.Current_Year.Active === "New") {
+    else if (SettingsObj.Current_Year.Active === "New") {
         newYear = true;
     }
     else {
@@ -110,6 +111,7 @@ function createWindow() {
                 {label: 'Update Students', accelerator: "CmdOrCtrl+Shift+U", click() {UpdateStudents(false);}},
                 {label: 'Update Students (overwrite current addresses)', click() {UpdateStudents(true);}},
                 {label: 'Update Buses', click() {UpdateBuses(); win.reload(); printwin.reload();}},
+                {label: 'Insert Schedule Changes', click() {InsertScheduleChanges();}},
                 {type: 'separator'},
 
                 {label: 'Update All Distances (approx. 25min)', click() {UpdateAllDistances();}},
@@ -202,7 +204,7 @@ function CreateDatabase() {
     jsonfile = datadir + "tmp/createdatabase.json"
 
     let toJson = {    
-        Settings: settings,
+        Settings: Settings,
         Database: DBFile
     }
     console.log('toJson', JSON.stringify(toJson));
@@ -252,7 +254,7 @@ function BackupDatabase() {
     jsonfile = datadir + "tmp/backupdatabase.json"
 
     let toJson = {
-        Settings: settings,
+        Settings: Settings,
         Database: DBFile
     }
 
@@ -309,7 +311,7 @@ function RestoreDatabase() {
         jsonfile = datadir + "tmp/backupdatabase.json"
 
         let toJson = {
-            Settings: settings,
+            Settings: Settings,
             Database: DBFile,
             Backup: fileNames[0]
         }
@@ -360,7 +362,7 @@ function UpdateStudents(overwrite=false) {
     jsonfile = datadir + "tmp/updatestudents.json"
 
     let toJson = {
-        Settings: settings,
+        Settings: Settings,
         Database: DBFile,
         Overwrite: overwrite
     }
@@ -406,7 +408,7 @@ function UpdateBuses() {
     jsonfile = datadir + "tmp/updatebuses.json"
 
     let toJson = {
-        Settings: settings,
+        Settings: Settings,
         Database: DBFile
     }
 
@@ -425,6 +427,42 @@ function UpdateBuses() {
 
     proc.stdout.on('data', function(data) {
         console.log(data.toString());
+    })
+}
+
+function InsertScheduleChanges() {
+    const spawn = require("child_process").spawn;
+
+    let toJson = {}
+    toJson.Database = DBFile;
+    toJson.JSONFile = ScheduleChangesFile;
+    toJson.Settings = Settings
+
+    let proc = spawn('python', [pythondir + "InsertScheduleChanges.py", JSON.stringify(toJson)]);
+
+    const ProgressBar = require('electron-progressbar');
+
+    var progressBar = new ProgressBar({
+        title: "Inserting..",
+        text: "Inserting..",
+        detail: "Please Wait. This will not take long.\nDo not close this application!"
+    });
+
+    progressBar.on('completed', function() {
+        progressBar.detail = "Inserting Complete.";
+    });
+
+    proc.on('close', function(code) {
+        console.log("Inserted.");
+        progressBar.setCompleted();
+    })
+
+    proc.stdout.on('data', function(data) {
+        console.log(data.toString());
+    })
+
+    proc.stderr.on('data', function(data) {
+        dialog.showErrorBox("Inserting Error", data.toString());
     })
 }
 
@@ -592,7 +630,7 @@ function UpdateDayPartDistances(DayPart, direct=false, fileName=undefined) {
     jsonfile = datadir + "tmp/update" + DayPart + "distances.json"
 
     let toJson = {
-        Settings: settings,
+        Settings: Settings,
         Database: DBFile,
         DayPart: DayPart,
         direct: direct,
@@ -632,13 +670,13 @@ function setActiveConnection(con) {
     let fs = require("fs");
 
     var json_content;
-    let raw_data = fs.readFileSync(settings);
+    let raw_data = fs.readFileSync(Settings);
     let data = JSON.parse(raw_data)
 
     let toJson = data
     data.Connection.Active = con
 
-    fs.writeFile(settings, JSON.stringify(data), (err) => {
+    fs.writeFile(Settings, JSON.stringify(data), (err) => {
         if (err) {
             dialog.showErrorBox("File System Error", err);
             console.error(err);
@@ -651,13 +689,13 @@ function setActiveCurrentYear(year) {
     let fs = require("fs");
 
     var json_content;
-    let raw_data = fs.readFileSync(settings);
+    let raw_data = fs.readFileSync(Settings);
     let data = JSON.parse(raw_data)
 
     let toJson = data
     data.Current_Year.Active = year
 
-    fs.writeFile(settings, JSON.stringify(data), (err) => {
+    fs.writeFile(Settings, JSON.stringify(data), (err) => {
         if (err) {
             dialog.showErrorBox("File System Error", err);
             console.error(err);
@@ -763,7 +801,7 @@ ipcMain.on("CanceledPrinting", (event) => {
 
 ipcMain.on("OpenStudentEditor", (event, Student) => {
     let editwindow = new BrowserWindow({
-        width: 560, 
+        width: 600, 
         height: 900, 
         title: Student.LastName + " " + Student.FirstName, 
         opacity: 1.0,
@@ -803,10 +841,10 @@ ipcMain.on("Save", (event, Schedules, Student) => {
     const spawn = require("child_process").spawn;
 
     Schedules.Database = DBFile;
-    Schedules.Student = Student.ID;
-    Schedules.Settings = settings
+    Schedules.JSONFile = ScheduleChangesFile;
+    Schedules.Settings = Settings
 
-    let proc = spawn('python', [pythondir + "SaveSchedules.py", JSON.stringify(Schedules)]);
+    let proc = spawn('python', [pythondir + "SaveSchedules.py", JSON.stringify(Schedules), "-k"]);
 
     const ProgressBar = require('electron-progressbar');
 

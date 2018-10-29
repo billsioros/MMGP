@@ -389,27 +389,30 @@ class DBManager:
                                 Values (?,?,?,?,?,?,?,?,?,?,?,?)", AddressList)
 
 
-    def InsertSchedule(self, Schedule, StudentID, new=False):
+    def InsertSchedule(self, Schedule, SchedID=None, new=False):
 
         OldSchedules = self.GetSchedules()
 
         if new:
-            import binascii
+            if SchedID and not OldSchedules.has_key(SchedID):
+                ScheduleID = SchedID
+            else:
+                import binascii
 
-            digits = [4,2,2,2,6]
+                digits = [4,2,2,2,6]
 
-            found = True
-            ScheduleID = ""
-
-            while found:
+                found = True
                 ScheduleID = ""
-                for i in digits:
-                    ScheduleID += binascii.b2a_hex(os.urandom(i)).upper()
-                    ScheduleID += "-"
-                ScheduleID = ScheduleID[:-1]
 
-                if not OldSchedules.has_key(ScheduleID):
-                    found = False
+                while found:
+                    ScheduleID = ""
+                    for i in digits:
+                        ScheduleID += binascii.b2a_hex(os.urandom(i)).upper()
+                        ScheduleID += "-"
+                    ScheduleID = ScheduleID[:-1]
+
+                    if not OldSchedules.has_key(ScheduleID):
+                        found = False
         else:
             ScheduleID = Schedule["ScheduleID"]
 
@@ -459,19 +462,23 @@ class DBManager:
 
         else:
             allKeys = OldSchedules[ OldSchedules.keys()[0] ].keys()
+            tmpSched = dict()
             
             for key in allKeys:
                 if not Schedule.has_key(key):
-                    Schedule[key] = None
+                    tmpSched[key] = None
+                else:
+                    tmpSched[key] = Schedule[key]
                     
-            Values = [ScheduleID, StudentID, AddressID, 
-                    Schedule["Days"]["Monday"], Schedule["Days"]["Tuesday"], Schedule["Days"]["Wednesday"], Schedule["Days"]["Thursday"], Schedule["Days"]["Friday"],
-                    Schedule["DayPart"], Schedule["FullNote"], Schedule["Early"], Schedule["Late"], Schedule["Around"], Schedule["Comment"], Schedule["BusSchedule"],
-                    Schedule["ScheduleOrder"], Schedule["ScheduleTime"]]
+            Values = [ScheduleID, tmpSched["StudentID"], AddressID, 
+                    tmpSched["Monday"], tmpSched["Tuesday"], tmpSched["Wednesday"], tmpSched["Thursday"], tmpSched["Friday"],
+                    tmpSched["DayPart"], tmpSched["FullNote"], tmpSched["Early"], tmpSched["Late"], tmpSched["Around"], 
+                    tmpSched["Comment"], tmpSched["BusSchedule"],
+                    tmpSched["ScheduleOrder"], tmpSched["ScheduleTime"]]
             self.Cursor.execute("Insert into Schedule   \
                                 Values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", Values)
 
-        # self.__DiscardAddresses()
+        return ScheduleID
             
         
 

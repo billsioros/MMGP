@@ -59,6 +59,10 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     closeImg.className = "ScheduleCloseButtonImage"
     closeButton.appendChild(closeImg);
 
+    let topBar = document.createElement("div");
+    topBar.className = "ScheduleTopBar";
+    topBar.appendChild(closeButton);
+
     // Road
     SimpleLabelInput(table, "Road", "RoadContent", Schedule.Address.Road);
 
@@ -126,11 +130,12 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     let container = document.createElement("div");
     container.className = "TableClose";
     document.getElementById(DayPartSchedules).appendChild(container);
+    container.appendChild(topBar);
     container.appendChild(table)
-    container.appendChild(closeButton);
-
+    
     setTimeout(() => {
         table.style.opacity = "1";
+        topBar.style.opacity = "1";
         closeButton.style.opacity = "1";
     }, 1);
     
@@ -214,18 +219,21 @@ function Save() {
         
         for (let i = 0; i < CurrentStudent[DayPartSchedules].length; i++) {
 
-            if ( deletedSchedules.includes(CurrentStudent[DayPartSchedules][i].ScheduleID) )
+            if ( findInDeleted(CurrentStudent[DayPartSchedules][i].ScheduleID) )
                 continue;
 
             let Schedule = CurrentStudent[DayPartSchedules][i];
             let DomSchedule = document.getElementById(Schedule.ScheduleID);
 
             let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
-            // ScheduleChanges.ScheduleID = Schedule.ScheduleID;
+
+            
+            if (ScheduleChanges) {
+                ScheduleChanges.StudentID = CurrentStudent.ID;
+                SchedulesToSave.Existing.push(ScheduleChanges);
+            }
 
             console.log('ScheduleChanges', ScheduleChanges);
-            if (ScheduleChanges)
-                SchedulesToSave.Existing.push(ScheduleChanges);
         }
     }
 
@@ -233,18 +241,20 @@ function Save() {
 
     for (let i = 0; i < newSchedules.length; i++) {
 
-        if ( deletedSchedules.includes(newSchedules[i].ScheduleID) )
+        if ( findInDeleted(newSchedules[i].ScheduleID) )
             continue;
 
         let Schedule = newSchedules[i];
         let DomSchedule = document.getElementById("New" + i)
 
         let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
-        ScheduleChanges.DayPart = Schedule.DayPart;
-
-        console.log('ScheduleChanges', ScheduleChanges);
         if (ScheduleChanges)
+            ScheduleChanges.DayPart = Schedule.DayPart;
+            ScheduleChanges.StudentID = CurrentStudent.ID;
             SchedulesToSave.New.push(ScheduleChanges);
+        
+        console.log('ScheduleChanges', ScheduleChanges);          
+            
     }
 
     if (FormatErrors.length !== 0) {
@@ -256,7 +266,10 @@ function Save() {
         alert(fullError);
     }
     else
-        ipcRenderer.send("Save", SchedulesToSave, CurrentStudent);
+        if (SchedulesToSave.New.length > 0 || SchedulesToSave.Existing.length > 0 || SchedulesToSave.Deleted.length > 0)
+            ipcRenderer.send("Save", SchedulesToSave, CurrentStudent);
+        else
+            alert("Nothing to save..");
 
 }
 
@@ -322,7 +335,10 @@ function GetScheduleChanges(Schedule, DomSchedule) {
 
     change = DomSchedule.querySelector(".ScheduleOrderContent");
     change.value = change.value.toUpperCase();
-    if (Schedule.ScheduleOrder !== change.value && change.value) {
+    if (change.value && isNaN(parseInt(change.value))) {
+        FormatErrors = "Error: Invalid Schedule Order format: " + change.value
+    }
+    else if (Schedule.ScheduleOrder !== parseInt(change.value) && change.value) {
         ScheduleChanges.ScheduleOrder = change.value;
     }
 
@@ -410,13 +426,14 @@ function GetScheduleChanges(Schedule, DomSchedule) {
 
 
 function DeleteSchedule() {
-    deletedSchedules.push(this.parentNode.firstChild.id);
-    this.parentNode.firstChild.style.opacity = "0";
+    deletedSchedules.push( { ScheduleID: this.parentNode.parentNode.childNodes[1].id } );
+    this.parentNode.parentNode.childNodes[1].style.opacity = "0";
     this.style.opacity = "0";
+    this.parentNode.style.opacity = "0"
     setTimeout(() => {
-        this.parentNode.parentNode.removeChild(this.parentNode);
+        this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);
     }, 300);
-    console.log(deletedSchedules);
+    // console.log(deletedSchedules);
 }
 
 
@@ -552,4 +569,16 @@ function SubMinutes(StartTime, Offset) {
     if (Minute.length === 1) Minute = "0" + Minute;
 
     return Hour + "." + Minute;
+}
+
+function findInDeleted(ID) {
+    let found = false;
+    for (let i = 0; i < deletedSchedules.length; i++) {
+        if (deletedSchedules[i].ScheduleID === ID) {
+            found = true;
+            break;
+        }
+    }
+
+    return found
 }
