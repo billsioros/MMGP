@@ -21,38 +21,14 @@ let OpenProcesses = {};
 
 
 
-// #region Window Handlers  //
-
-function initPrintWindow() {
-    if (closing) {
-        printwin = null;
-    }
-    printwin = new BrowserWindow({
-        width:1640, 
-        height:840, 
-        title:"MMGP_Print", 
-        opacity: 1.0,
-        frame: false});
-    printwin.loadFile("html/printer.html")
-    printwin.maximize();
-    printwin.hide();
-    // printwin.webContents.openDevTools();
-    printwin.on("closed", () => {
-        if (closing) {
-            printwin = null;
-        }
-        else {
-            initPrintWindow();
-        }
-    });
-}
+// #region Window Handlers  //;
 
 function createWindow() {
     // Create the browser window.
     win = new BrowserWindow({width:1640, height:840, title:"MMGP", opacity: 1.0})
     win.maximize();
 
-    initPrintWindow();
+    // initPrintWindow();
 
     let fs = require("fs");
     let data = fs.readFileSync(Settings)
@@ -86,7 +62,6 @@ function createWindow() {
             submenu: [
                 {label: 'Run MMGP Algorithm'},        
                 {type: 'separator'},
-                {label: 'Hide Print Window', click() {printwin.hide()}},
                 {label: 'Exit', accelerator: 'CmdOrCtrl+Shift+W', click() {KillSubProcesses(); app.quit()}}
             ]
         },
@@ -110,7 +85,7 @@ function createWindow() {
                 {type: 'separator'},
                 {label: 'Update Students', accelerator: "CmdOrCtrl+Shift+U", click() {UpdateStudents(false);}},
                 {label: 'Update Students (overwrite current addresses)', click() {UpdateStudents(true);}},
-                {label: 'Update Buses', click() {UpdateBuses(); win.reload(); printwin.reload();}},
+                {label: 'Update Buses', click() {UpdateBuses(); win.reload();}},
                 {label: 'Insert Schedule Changes', click() {InsertScheduleChanges();}},
                 {type: 'separator'},
 
@@ -140,10 +115,8 @@ function createWindow() {
             submenu: [
                 {label: 'Reload', accelerator: 'CmdOrCtrl+R', click() {
                     win.reload();
-                    printwin.reload();
-                    printwin.hide();
                 }},
-                {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools(); printwin.webContents.toggleDevTools();}},
+                {label: 'Debug', accelerator: 'CmdOrCtrl+Shift+I', click() {win.toggleDevTools();}},
                 {type: 'separator'},
                 {label: 'Close Current Tab', accelerator: "CmdOrCtrl+T" ,click() {win.webContents.send("CloseTab");} },
                 {label: 'Close All Tabs', accelerator: "CmdOrCtrl+Shift+T" ,click() {win.webContents.send("CloseAllTabs");} },         
@@ -161,8 +134,6 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
-        closing = true;
-        printwin.close();
         KillSubProcesses();
         app.quit();
     })
@@ -746,16 +717,27 @@ function KillSubProcesses() {
 
 
 
-// #region Message Getter for printing  //
+// #region Message Getter for Printing  //
 
 // retransmit it to printwin
-ipcMain.on("printPDF", (event, content, title, type) => {
-    printwin.show();
-    printwin.webContents.send("printPDF", content, title, type);
+ipcMain.on("Print", (event, content, title, type) => {
+    printwin = new BrowserWindow({
+        width: 600, 
+        height: 900, 
+        title: "Printer",
+        opacity: 1.0,
+        autoHideMenuBar: true
+    });
+    printwin.loadFile("html/printer.html");
+    printwin.maximize();
+    setTimeout(() => {
+        printwin.webContents.send("Print", content, title, type);
+    }, 1000);
+    
 });
 
 // when worker window is ready
-ipcMain.on("readyToPrintPDF", (event, title, type) => {
+ipcMain.on("readyToPrint", (event, title) => {
 
     dialog.showOpenDialog({
             defaultPath: datadir, 
@@ -767,32 +749,24 @@ ipcMain.on("readyToPrintPDF", (event, title, type) => {
         }, 
         (fileNames) => {
             if (!fileNames) {
-                printwin.hide();
+                event.sender.send("Printed")
                 dialog.showErrorBox("Error", "Undefined Filename!")
                 return;
             }
 
-            const pdfPath = fileNames[0] + "/" + title + ".pdf"
+            const pdfPath = fileNames[0] + "/" + title + "_print.pdf"
 
             printwin.webContents.print({printBackground: true}, function (success) {
                 if (!success) {
                     dialog.showErrorBox("Printing failed or canceled.")
-                    printwin.hide();
-                    return
+                    event.sender.send("Printed")
+                    return;
                 } 
-
-                event.sender.send('wrote-pdf', pdfPath)
-                printwin.hide();
+                event.sender.send("Printed")
             })
-            printwin.hide();
         });
         
 });
-
-ipcMain.on("CanceledPrinting", (event) => {
-    printwin.hide();
-    event.sender.send('canceled-printing')
-})
 
 // #endregion   //
 

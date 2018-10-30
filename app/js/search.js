@@ -83,6 +83,38 @@ function GetActiveBus() {
 }
 
 // Bus Search Button Generation //
+
+function GenerateDayPartButtons() {
+    let DayPartContainer = document.getElementById("DayPartSelectorButtonsContainer");
+    DayPartContainer.innerHTML = "";
+
+    // We can be sure that we have at least one bus.
+    sql = "Select distinct(DayPart) From Schedule Order By DayPart ASC"
+
+    let searchobj = ExecuteSQLToProc(sql, function() {
+        
+        let json_content;
+        let raw_data = fs.readFileSync(searchobj.json_file);
+        let raw_students = JSON.parse(raw_data)
+        let Rows = raw_students.Rows;
+
+        for (let i = 0; i < Rows.length; i++) {
+            let button = document.createElement("button");
+            button.className = "DayPartSelectorButton SelectorButton";
+            button.innerHTML = Rows[i].DayPart;
+            button.onclick = OnDayPartClick;
+            DayPartContainer.appendChild(button);
+        }
+
+        fs.unlink(searchobj.json_file, (err) => {
+            if (err) {
+                alert(err);
+                console.error(err)
+            }
+        })
+    })
+}
+
 function GenerateScheduleButtons() {
     let ScheduleContainer = document.getElementById("ScheduleSelectorContainer");
     ScheduleContainer.innerHTML = "";
@@ -194,7 +226,46 @@ function GenerateBusButtons() {
     })
 }
 
-    // #endregion //
+function GenerateBusDayPartButtons() {
+    const BusButtons = document.getElementById("BusButtonsContainer");
+
+    let sql = "Select Number From Bus Order By Number";
+
+    let searchobj = ExecuteSQLToProc(sql, function() {
+        
+        let json_content;
+        let raw_data = fs.readFileSync(searchobj.json_file);
+        let raw_students = JSON.parse(raw_data)
+        let Rows = raw_students.Rows;
+
+        for (let i = 0; i < Rows.length; i++) {
+            let row = Rows[i];
+            const newButton = document.createElement("button");
+            newButton.type = "button";
+            newButton.className = "BusButton";
+            if (row.Number.toString().length < 2) {
+                row.Number = "0" + row.Number.toString();
+            }
+            newButton.id = row.Number;
+            newButton.innerHTML = row.Number;
+            newButton.onclick = OnBusClick;
+
+            BusButtons.appendChild(newButton);
+        }
+
+        fs.unlink(searchobj.json_file, (err) => {
+            if (err) {
+                alert(err);
+                console.error(err)
+            }
+        })
+
+        GenerateDayPartButtons();
+
+    })
+}
+
+// #endregion //
 
 
     // #region Click Handlers                   //
@@ -2119,7 +2190,7 @@ function PrintHandler() {
     document.getElementById("PrintButton").addEventListener("click", () => {
         let title = SearchTabGroup.activeTab().title;
         let type = SearchTabGroup.activeTab().type;
-        ipcRenderer.send("printPDF", MainInfo.innerHTML, title, type);
+        ipcRenderer.send("Print", MainInfo.innerHTML, title, type);
     });
 }
 
@@ -2134,7 +2205,6 @@ function StudentEditorHandler() {
     // Loader
 function OnCreateWindow() {
     DBFile = datadir + "MMGP_data.db";
-    console.log(DBFile);
     spawn = require('child_process').spawn;
     fs = require('fs');
 
@@ -2146,7 +2216,8 @@ function OnCreateWindow() {
 
     // ipcRenderer = require("electron").ipcRenderer;
     
-    GenerateBusButtons();
+    // GenerateBusButtons();
+    GenerateBusDayPartButtons();
     OnSearchClearStudent();
     KeyDownSearchBars();
     PrintHandler();
@@ -2156,7 +2227,7 @@ function OnCreateWindow() {
     // Create a SearchTabGroup and hold it to a global variable for use.    //
     SearchTabGroup = new TabGroup(document.getElementsByClassName("SearchTabGroup")[0])
 
-    // document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
+    document.getElementById("ClearTabsButton").onclick = OnClearTabsPress;
 
     ReassignAllButtons();
 

@@ -26,6 +26,10 @@ body {
     transition: .4s;
 }
 
+::-webkit-input-placeholder {
+    text-transform: capitalize;
+}
+
 
 /* Side Nav Bar */
 #ShowBar {
@@ -55,6 +59,10 @@ body {
     height: 1fr;
 
     margin: 0 auto;
+}
+
+#Show\/HideButton:hover img {
+    filter: brightness(200%);
 }
 
 #Show\/HideImage {
@@ -128,7 +136,7 @@ main {
     grid-column: 2 / 3;
 
     display: grid;
-    grid-template-columns: 13fr 1fr
+    grid-template-columns: 17fr 1fr;
 }
 
 #InfoMapTabHeader {
@@ -136,7 +144,7 @@ main {
     background-color: #252526;
 
     display: grid;
-    grid-template-columns: 12fr 1fr 1fr
+    grid-template-columns: 16fr 1fr 1fr;
 }
 
 /* Main Section */
@@ -220,7 +228,7 @@ main {
 }
 
 .BusButton.active, .ScheduleButton.active {
-    background-color: #414141
+    background-color: rgb(30, 87, 153);
 }
 
 .BusButton:active, .ScheduleButton:active {
@@ -261,7 +269,7 @@ main {
 
 .SelectorButtonsContainer {
     display: grid;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: repeat(auto-fit, 1fr);
 
     height: 117.69px;
 }
@@ -282,7 +290,7 @@ main {
 }
 
 .SelectorButton.active {
-    background-color: #414141
+    background-color: rgb(30, 87, 153);
 }
 
 .SelectorButton:active {
@@ -314,6 +322,11 @@ main {
     outline: none;
 
     width: 95%;
+    text-transform: uppercase;
+}
+
+#DayPartBar {
+    text-transform: capitalize;
 }
 
 .SearchBar:hover {
@@ -322,6 +335,10 @@ main {
 
 .SearchBar:focus {
     background-color: #404040;
+}
+
+.SearchBar:not(:placeholder-shown) {
+    background-color: rgb(30, 87, 153);
 }
 
 .SearchButton {
@@ -335,6 +352,7 @@ main {
     margin: 1px;
 
     width: 45%;
+    transition: 0.2s;
 }
 
 .SearchButton:disabled, #CalculateDurationButton:disabled, #PrintButton:disabled {
@@ -343,13 +361,48 @@ main {
 }
 
 .SearchButton:hover:not([disabled]), #ClearTabsButton:hover, #CalculateDurationButton:hover:not([disabled]), #PrintButton:hover:not([disabled]) {
-    background-color: rgb(55, 55, 55);
+    background-color: rgb(30, 87, 153);
 }
 
 .SearchButton:active:not([disabled]), #ClearTabsButton:active, #CalculateDurationButton:active:not([disabled]), #PrintButton:active:not([disabled]) {
-    background-color: rgb(45, 45, 45);
+    background-color: rgb(26, 77, 134);
 }
 
+.SideButtonImage {
+    transition: 0.3s;
+}
+
+#ClearTabsImage {
+    width: 10px;
+    height: 10px;
+}
+
+#CalculateDurationImage {
+    width: 30px;
+    height: 30px;
+    filter: brightness(200%)
+}
+
+#PrintImage {
+    width: 30px;
+    height: 30px;
+}
+
+.ClearButton:hover {
+    background-color: #d51234 !important ;
+}
+
+.ClearButton:active {
+    background-color: #b8112d !important ;
+}
+
+.SideButton:hover:not([disabled]) > img {
+    filter: brightness(200%);
+}
+
+.SideButton:hover:not([disabled]) > #CalculateDurationImage {
+    filter: brightness(300%)
+}
 
 #ClearTabsButton, #CalculateDurationButton, #PrintButton {
     font-size: 15px;
@@ -360,14 +413,11 @@ main {
     border-radius: 5px;
     margin: 0.5px;
 
-    height: 100%;
-
     cursor: pointer;
     
     overflow: hidden;
     word-break: normal;
-
-    /* position: fixed; */
+    transition: 0.2s;
 }
 
 
@@ -375,8 +425,8 @@ main {
 #CalculateDurationButton .loadingGif {
     border: none;
     background: none;
-    height: 30px;
-    width: 30px;
+    height: 20px;
+    width: 20px;
     float: left;
     padding: 0%;
     margin-top: 5%;
@@ -496,7 +546,7 @@ main {
 .MoreButton {
     cursor: pointer;
     outline: none;
-    transition: 0.4s;
+    transition: 0.2s;
 }
 
 .MoreButton:hover {

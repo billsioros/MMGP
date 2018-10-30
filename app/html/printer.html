@@ -9,11 +9,10 @@
 <body>
     <script>
         const ipcRenderer = require("electron").ipcRenderer;
+        const remote = require("electron").remote;
 
-        ipcRenderer.on("printPDF", (event, content, title, type) => {
+        ipcRenderer.on("Print", (event, content, title, type) => {
             document.body.innerHTML = content;
-
-            
             
             if (type === "Schedule" || type === "Student") {
 
@@ -36,12 +35,17 @@
             
             setTimeout(() => {
                 if (confirm("Printing. Are you sure?"))
-                    ipcRenderer.send("readyToPrintPDF", title);
+                    ipcRenderer.send("readyToPrint", title);
                 else {
-                    ipcRenderer.send("CanceledPrinting", title);
+                    remote.getCurrentWindow().close();
                 }
             }, 1000)
             
         });
+
+        ipcRenderer.on("Printed", (event) => {
+            remote.getCurrentWindow().close();
+        });
+
     </script>
 </body>

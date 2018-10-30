@@ -35,9 +35,10 @@
         <div class="SearchTabGroup">
 
         </div>
-        <!-- <button type=button id="ClearTabsButton" name="ClearTabs">
-            Clear Tabs
-        </button>     -->
+        <button type=button class = "ClearButton SideButton" id="ClearTabsButton" name="ClearTabs">
+            <!-- <img src="../images/General/x.png" id="ClearTabsImage" class="SideButtonImage"> -->
+            <span>Clear Tabs</span>
+        </button>    
     </header>
 
     <div class = "SideBar">
@@ -53,9 +54,6 @@
             <div id="DayPartSelector" class = "Selector">
                 <h2 class="SelectorHeader">Day Part</h2>
                 <div id="DayPartSelectorButtonsContainer" class="SelectorButtonsContainer">
-                    <button class="DayPartSelectorButton SelectorButton">Morning</button>
-                    <button class="DayPartSelectorButton SelectorButton">Noon</button>
-                    <button class="DayPartSelectorButton SelectorButton">Study</button>
                 </div> 
             </div>
 
@@ -77,7 +75,7 @@
                     <img src="../images/General/loading.gif" class="loadingGif" hidden>
                     <span>Add Schedule(s)</span>
                 </button>
-                <button type='button' id = "ClearBusButton" class="SearchButton">
+                <button type='button' id = "ClearBusButton" class="SearchButton ClearButton">
                     <span>Clear</span>
                 </button>
             </div>
@@ -106,7 +104,7 @@
                     <img src="../images/General/loading.gif" class="loadingGif" hidden>
                     <span>Search Student(s)</span>
             </button>
-            <button type='button' id = "StudentClearButton" class="SearchButton">Clear Bars</button>          
+            <button type='button' id = "StudentClearButton" class="SearchButton ClearButton">Clear Bars</button>          
         </div>
 
         
@@ -117,15 +115,18 @@
             <div class="InfoMapTabGroup">
 
             </div>
-            <button type=button id="PrintButton" name="Print" disabled>
+
+            <button type=button title="Calculate Duration" id="CalculateDurationButton" class = "SideButton" name="CalculateDuration" disabled>
                 <img src="../images/General/loading.gif" class="loadingGif" hidden>
-                <span>Print</span>
-            </button> 
-            
-            <button type=button id="CalculateDurationButton" name="CalculateDuration" disabled>
-                <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                <!-- <img src="../images/General/stopwatch.png" id="CalculateDurationImage" class="SideButtonImage"> -->
                 <span>Calculate Duration</span>
             </button>  
+
+            <button type=button title="Print" id="PrintButton" class = "SideButton" name="Print" disabled>
+                <img src="../images/General/loading.gif" class="loadingGif" hidden>
+                <!-- <img src="../images/General/print.png" id="PrintImage" class="SideButtonImage"> -->
+                <span>Print</span>
+            </button> 
         </header>
         <div class="MainInfo"></div>
         

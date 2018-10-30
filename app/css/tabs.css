@@ -41,6 +41,7 @@
 
 .brewtabs-tab-closebutton:hover {
     background: none;
+    filter:brightness(200%);
 }
 
 .brewtabs-tab-closebutton:active {
