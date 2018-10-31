@@ -1532,9 +1532,9 @@ function OnCloseTabPress() {
     else {
         DisplaySearchTab(SearchTabGroup.activeTab());
         SearchTabGroup.activeTab().activate(false);
-        CheckDisabledScheduleButton(SearchTabGroup.activeTab())
         ReassignAllButtons();
     }
+    CheckDisabledScheduleButton(SearchTabGroup.activeTab())
 }
 
 function CloseCurrentTab() {
@@ -1548,10 +1548,10 @@ function CloseCurrentTab() {
     }
     else {
         DisplaySearchTab(SearchTabGroup.activeTab());
-        SearchTabGroup.activeTab().activate(false);
-        CheckDisabledScheduleButton(SearchTabGroup.activeTab())
+        SearchTabGroup.activeTab().activate(false); 
         ReassignAllButtons();
     }
+    CheckDisabledScheduleButton(SearchTabGroup.activeTab())
 }
 
 // "Info - Map" Click handlers

@@ -450,6 +450,8 @@ class DBManager:
                 elif key == "Days":
                     for day in Schedule[key].keys():
                         sql += day + " = " + str(Schedule[key][day]) + ", "
+                elif key == "TemporalID":
+                    continue
                 else:
                     key = key.replace("\"", "")
                     key = key.replace("'", "")
@@ -458,6 +460,7 @@ class DBManager:
 
             sql = sql[:-2] 
             sql += " Where ScheduleID = \"" + ScheduleID + "\""
+            print sql
             self.Cursor.execute(sql)
 
         else:

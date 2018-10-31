@@ -92,18 +92,27 @@ body {
 
     border: none;  
     border-radius: 5px;
-    margin: 5px 10px;
+    /* margin: 5px 10px; */
 
-    width: 45px;
+    width: 80px;
     height: 100%;
 
     transition: 0.2s;
     
     float: right;
+    display: block;
+}
+
+#BottomNavBar > button:hover {
+    background-color: rgb(30, 87, 153);
+}
+
+#BottomNavBar > button:active {
+    background-color: rgb(26, 77, 134);
 }
 
 #BottomNavBar > button > img {
-    /* transition: 0.2s; */
+    transition: 0.2s;
     width: 35px;
     height: 35px;
 }
@@ -119,7 +128,6 @@ body {
 
 main {
     background-color: #3b3b3b;
-    grid-column: 2 / 3;
     
     display: grid;
     grid-template-areas: "tabs"
@@ -132,11 +140,9 @@ main {
 #SearchTabHeader {
     grid-area: header;
     background-color: #252526;
-    
-    grid-column: 2 / 3;
 
     display: grid;
-    grid-template-columns: 17fr 1fr;
+    grid-template-columns: 20fr 1fr;
 }
 
 #InfoMapTabHeader {
@@ -144,7 +150,7 @@ main {
     background-color: #252526;
 
     display: grid;
-    grid-template-columns: 16fr 1fr 1fr;
+    grid-template-columns: 19fr 1fr 1fr;
 }
 
 /* Main Section */
@@ -339,6 +345,10 @@ main {
 
 .SearchBar:not(:placeholder-shown) {
     background-color: rgb(30, 87, 153);
+}
+
+.SearchBar:hover:not(:placeholder-shown) {
+    background-color: rgb(32, 96, 168);
 }
 
 .SearchButton {

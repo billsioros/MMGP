@@ -2,6 +2,11 @@
 let newSchedules = [];
 let deletedSchedules = [];
 let CurrentStudent;
+let allSchedules = {};
+
+let blue = "rgb(30, 87, 153)";
+let red = "#be102d";
+let grey = "rgb(46, 46, 46)";
 
 function LoadStudents(Student) {
     $(document).ready(function() {
@@ -12,7 +17,9 @@ function LoadStudents(Student) {
         DayParts.forEach((dayPart) => {
             LoadSchedules(Student, dayPart);
         });
+
     });
+    console.log(allSchedules)
 
     CurrentStudent = Student;
 }
@@ -23,7 +30,8 @@ function LoadSchedules(Student, DayPart) {
     for (let i = 0; i < Student[DayPartSchedules].length; i++) {
         
         let Schedule = Student[DayPartSchedules][i];
-        LoadOneSchedule(Schedule, DayPartSchedules);    
+        LoadOneSchedule(Schedule, DayPartSchedules);
+        allSchedules[Schedule.ScheduleID] = Schedule;
     }
                             
     let addbutton = document.createElement("button");
@@ -86,6 +94,7 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
 
 
     let EmptyTW = Schedule.Early === "00.00" && Schedule.Late === "23.59"
+    console.log('Schedule.Early', Schedule.Early);
     let EmptyAround = Schedule.Around === "00.00" || !Schedule.Around;
 
     // Early
@@ -132,6 +141,9 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
     document.getElementById(DayPartSchedules).appendChild(container);
     container.appendChild(topBar);
     container.appendChild(table)
+
+    $("#" + table.id + " input").change(traceChange);
+    $("#" + table.id + " textarea").change(traceChange);
     
     setTimeout(() => {
         table.style.opacity = "1";
@@ -473,6 +485,7 @@ function CreateSchedule() {
     }
 
     newSchedules.push(newSchedule);
+    allSchedules[newSchedule.ScheduleID] = newSchedule;
 
     LoadOneSchedule(newSchedule, this.parentNode.id);
 
@@ -511,8 +524,8 @@ function checkTimeFormat(ContainerName, Hour, Minute) {
         errorMessage = ContainerName + ": Invalid Format: \"" + Hour + "." + Minute + "\"";
     }
 
-    if (Hour.length === 1) Hour = "0" + Hour;
-    if (Minute.length === 1) Minute = "0" + Minute;
+    if (Hour.length === 1 && !error) Hour = "0" + Hour;
+    if (Minute.length === 1 && !error) Minute = "0" + Minute;
 
     let retval = {
         Hour: Hour,
@@ -581,4 +594,115 @@ function findInDeleted(ID) {
     }
 
     return found
+}
+
+function traceChange() {
+    if (this.classList.contains("HourContent") || this.classList.contains("MinuteContent")) {
+
+        let id = this.parentNode.parentNode.id;
+
+        let other;
+        let time;
+        let changed = false;
+
+        if (this.classList.contains("HourContent")) {
+            other = this.parentNode.childNodes[2];
+
+            if (!other.value) return;
+
+            time = checkTimeFormat(this.parentNode.classList[0].replace("Content", ""), this.value, other.value);
+
+            this.value = time.Hour;
+            other.value = time.Minute;
+
+            let HourSelector = allSchedules[id][ this.classList[0].replace("HourContent", "") ]
+            let MinuteSelector = allSchedules[id][ other.classList[0].replace("MinuteContent", "") ]
+
+            if ( HourSelector && HourSelector.charAt(0) + HourSelector.charAt(1) !== this.value ||
+            MinuteSelector && MinuteSelector.charAt(0) + MinuteSelector.charAt(1) !== other.value ) {
+                changed = true;
+            }
+        }
+        else {
+            other = this.parentNode.childNodes[0];
+
+            if (!other.value) return;
+
+            time = checkTimeFormat(this.parentNode.classList[0].replace("Content", ""), other.value, this.value);
+
+            other.value = time.Hour;
+            this.value = time.Minute;
+
+            let HourSelector = allSchedules[id][ other.classList[0].replace("HourContent", "") ]
+            let MinuteSelector = allSchedules[id][ this.classList[0].replace("MinuteContent", "") ]
+
+            if ( HourSelector && HourSelector.charAt(0) + HourSelector.charAt(1) !== other.value ||
+            MinuteSelector && MinuteSelector.charAt(0) + MinuteSelector.charAt(1) !== this.value ) {
+                changed = true;
+            }
+        }
+
+        if (time.Error) {
+            this.style.backgroundColor = red;
+            other.style.backgroundColor = red;
+            this.parentNode.title = "Error: \"" + time.ErrorMessage;
+        }
+        else {
+            if (changed) {
+                this.style.backgroundColor = blue;
+                this.classList.add("ValidChanged");
+
+                other.style.backgroundColor = blue;
+                other.classList.add("ValidChanged");
+            }
+
+            this.parentNode.removeAttribute("title");
+        }
+    }
+    else {
+        let id = this.parentNode.id;
+
+        let className = this.className.replace("Content", "")
+        className = className.replace("ValidChanged", "");
+        className = className.replace("InvalidChanged", "");
+        className = className.trim();
+
+        let selector;
+        
+        if (className === "Road" || className === "Number" || className === "ZipCode" || className === "Municipal") {
+            selector = allSchedules[id].Address[className];
+        }
+        else selector = allSchedules[id][className];
+
+        console.log('selector', selector);
+
+        if (selector !== this.value.toUpperCase()) {
+            if (className === "ScheduleOrder") {
+                if (selector !== parseInt(this.value)) {
+
+                    if (this.value && isNaN(parseInt(this.value))) {
+                        this.style.backgroundColor = red;
+                        this.title = "Error: \"" + this.value.toUpperCase() + "\" is not a number.";
+                    }
+                    else {
+                        this.style.backgroundColor = blue;
+                        this.classList.add("ValidChanged");
+                        this.removeAttribute("title");
+                    }
+                }
+                else {
+                    this.style.backgroundColor = grey;
+                    this.removeAttribute("title");
+                }
+            }
+            else {
+                this.style.backgroundColor = blue;
+                this.classList.add("ValidChanged");
+            }
+        }
+        else {
+            this.style.backgroundColor = grey;
+        }
+
+    }
 }
