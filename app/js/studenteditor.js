@@ -3,6 +3,7 @@ let newSchedules = [];
 let deletedSchedules = [];
 let CurrentStudent;
 let allSchedules = {};
+let FormatErrors = [];
 
 let blue = "rgb(30, 87, 153)";
 let red = "#be102d";
@@ -19,7 +20,6 @@ function LoadStudents(Student) {
         });
 
     });
-    console.log(allSchedules)
 
     CurrentStudent = Student;
 }
@@ -94,17 +94,16 @@ function LoadOneSchedule(Schedule, DayPartSchedules) {
 
 
     let EmptyTW = Schedule.Early === "00.00" && Schedule.Late === "23.59"
-    console.log('Schedule.Early', Schedule.Early);
     let EmptyAround = Schedule.Around === "00.00" || !Schedule.Around;
 
     // Early
-    TimeLabelInput(table, "Early " + DropOrPickup, "Early", Schedule.Early, true);
+    TimeLabelInput(table, "Early " + DropOrPickup, "Early", Schedule.Early, EmptyTW);
 
     // Late
-    TimeLabelInput(table, "Late " + DropOrPickup, "Late", Schedule.Late, true);
+    TimeLabelInput(table, "Late " + DropOrPickup, "Late", Schedule.Late, EmptyTW);
 
     // Around
-    TimeLabelInput(table, "Around " + DropOrPickup, "Around", Schedule.Around, true);
+    TimeLabelInput(table, "Around " + DropOrPickup, "Around", Schedule.Around, EmptyAround);
 
     // Note
     SimpleLabelInput(table, "Notes", "NotesContent", Schedule.Notes, true);
@@ -212,6 +211,15 @@ function TimeLabelInput(Parent, Label, InputClass, Value, Empty) {
 function Save() {
     if (!confirm("Are you sure you want to save?"))
         return;
+
+    const invalidChanged = document.getElementsByClassName("InvalidChanged");
+
+    console.log('invalidChanged', invalidChanged);
+    
+    if (invalidChanged.length > 0) {
+        alert("There are errors to be solved..");
+        return;
+    }
     
     let DayParts = ["Morning", "Noon", "Study"];
 
@@ -220,8 +228,6 @@ function Save() {
         Existing: [],
         Deleted: deletedSchedules
     };
-
-    let FormatErrors = [];
 
     // Loaded Schedules
     for (let j = 0; j < DayParts.length; j++) {
@@ -235,9 +241,8 @@ function Save() {
                 continue;
 
             let Schedule = CurrentStudent[DayPartSchedules][i];
-            let DomSchedule = document.getElementById(Schedule.ScheduleID);
 
-            let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
+            let ScheduleChanges = GetScheduleChanges(Schedule);
 
             
             if (ScheduleChanges) {
@@ -257,9 +262,9 @@ function Save() {
             continue;
 
         let Schedule = newSchedules[i];
-        let DomSchedule = document.getElementById("New" + i)
 
-        let ScheduleChanges = GetScheduleChanges(Schedule, DomSchedule);
+        let ScheduleChanges = GetScheduleChanges(Schedule);
+
         if (ScheduleChanges)
             ScheduleChanges.DayPart = Schedule.DayPart;
             ScheduleChanges.StudentID = CurrentStudent.ID;
@@ -269,172 +274,13 @@ function Save() {
             
     }
 
-    if (FormatErrors.length !== 0) {
-        let fullError = ""
-        for (let i = 0; i < FormatErrors.length; i++) {
-            fullError += ("\n" + FormatErrors[i]);
-            console.error(FormatErrors[i]);
-        }
-        alert(fullError);
-    }
+    
+    if (SchedulesToSave.New.length > 0 || SchedulesToSave.Existing.length > 0 || SchedulesToSave.Deleted.length > 0)
+        ;// ipcRenderer.send("Save", SchedulesToSave, CurrentStudent);
     else
-        if (SchedulesToSave.New.length > 0 || SchedulesToSave.Existing.length > 0 || SchedulesToSave.Deleted.length > 0)
-            ipcRenderer.send("Save", SchedulesToSave, CurrentStudent);
-        else
-            alert("Nothing to save..");
+        alert("Nothing to save..");
 
 }
-
-function GetScheduleChanges(Schedule, DomSchedule) {
-
-    let ScheduleChanges = {ScheduleID: Schedule.ScheduleID};
-    let changedAddress = false;
-
-    let change = DomSchedule.querySelector(".RoadContent");
-    change.value = change.value.toUpperCase();
-    if (Schedule.Address.Road !== change.value) {
-        if (!ScheduleChanges.hasOwnProperty("Address"))
-            ScheduleChanges.Address = {};
-        ScheduleChanges.Address.Road = change.value;
-        changedAddress = true;
-    }
-
-    change = DomSchedule.querySelector(".NumberContent");
-    change.value = change.value.toUpperCase();
-    if (Schedule.Address.Number !== change.value) {
-        if (!ScheduleChanges.hasOwnProperty("Address"))
-            ScheduleChanges.Address = {};
-        ScheduleChanges.Address.Number = change.value;
-        changedAddress = true;
-    }
-
-    change = DomSchedule.querySelector(".ZipCodeContent");
-    change.value = change.value.toUpperCase();
-    if (Schedule.Address.ZipCode !== change.value) {
-        if (!ScheduleChanges.hasOwnProperty("Address"))
-            ScheduleChanges.Address = {};
-        ScheduleChanges.Address.ZipCode = change.value;
-        changedAddress = true;
-    }
-
-    change = DomSchedule.querySelector(".MunicipalContent");
-    change.value = change.value.toUpperCase();
-    if (Schedule.Address.Municipal !== change.value) {
-        if (!ScheduleChanges.hasOwnProperty("Address"))
-            ScheduleChanges.Address = {};
-        ScheduleChanges.Address.Municipal = change.value;
-        changedAddress = true;
-    }
-
-    // If one thing in address changed we need to rehash and regeocode it
-    if (changedAddress) {
-        if (!ScheduleChanges.Address.Road)
-            ScheduleChanges.Address.Road = DomSchedule.querySelector(".RoadContent").value.toUpperCase();
-        if (!ScheduleChanges.Address.Number)
-            ScheduleChanges.Address.Number = DomSchedule.querySelector(".NumberContent").value.toUpperCase();
-        if (!ScheduleChanges.Address.ZipCode)
-            ScheduleChanges.Address.ZipCode = DomSchedule.querySelector(".ZipCodeContent").value.toUpperCase();
-        if (!ScheduleChanges.Address.Municipal)
-            ScheduleChanges.Address.Municipal = DomSchedule.querySelector(".MunicipalContent").value.toUpperCase();
-    }
-
-
-    change = DomSchedule.querySelector(".BusScheduleContent");
-    change.value = change.value.toUpperCase();
-    if (Schedule.BusSchedule !== change.value && change.value) {
-        ScheduleChanges.BusSchedule = change.value;
-    }
-
-    change = DomSchedule.querySelector(".ScheduleOrderContent");
-    change.value = change.value.toUpperCase();
-    if (change.value && isNaN(parseInt(change.value))) {
-        FormatErrors = "Error: Invalid Schedule Order format: " + change.value
-    }
-    else if (Schedule.ScheduleOrder !== parseInt(change.value) && change.value) {
-        ScheduleChanges.ScheduleOrder = change.value;
-    }
-
-
-    let TimeContainers = [
-        "ScheduleTime",
-        "Early",
-        "Late",
-        "Around"
-    ];
-
-    for (let i = 0; i < TimeContainers.length; i++) {
-        let changeHour = DomSchedule.querySelector("." + TimeContainers[i] + "HourContent")
-        let changeMinute = DomSchedule.querySelector("." + TimeContainers[i] + "MinuteContent")
-
-        if (Schedule[TimeContainers[i]] !== (changeHour.value + "." + changeMinute.value) && (changeHour.value || changeMinute.value) ) {
-            let time = checkTimeFormat(TimeContainers[i], changeHour.value, changeMinute.value);
-
-            if (time.Error) {
-                FormatErrors.push(time.ErrorMessage);
-            }
-            else {
-                ScheduleChanges[TimeContainers[i]] = time.Time;
-                changeHour.value = time.Hour;
-                changeMinute.value = time.Minute;
-            }
-        }
-    }
-
-    // Fix Early & Late according to Around if Around was changed.
-    // (If it was not changed that means, Early & Late were fixed beforehand)
-    if (ScheduleChanges.hasOwnProperty("Around")) {
-        if (!ScheduleChanges.hasOwnProperty("Early") && !ScheduleChanges.hasOwnProperty("Late")) {
-            ScheduleChanges.Early = SubMinutes(ScheduleChanges.Around, 7);
-            
-            DomSchedule.querySelector(".EarlyHourContent").value = ScheduleChanges.Early.charAt(0) + ScheduleChanges.Early.charAt(1);
-            DomSchedule.querySelector(".EarlyMinuteContent").value = ScheduleChanges.Early.charAt(3) + ScheduleChanges.Early.charAt(4);
-
-            ScheduleChanges.Late = AddMinutes(ScheduleChanges.Around, 7);
-
-            DomSchedule.querySelector(".LateHourContent").value = ScheduleChanges.Late.charAt(0) + ScheduleChanges.Late.charAt(1);
-            DomSchedule.querySelector(".LateMinuteContent").value = ScheduleChanges.Late.charAt(3) + ScheduleChanges.Late.charAt(4);
-        }
-    }
-
-    change = DomSchedule.querySelector(".NotesContent");
-    change.value = change.value.toUpperCase();
-    if (Schedule.Notes !== change.value && change.value) {
-        ScheduleChanges.FullNote = change.value;
-    }
-
-    
-    let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-
-    // Always write days
-    let DaysChange = false;
-    ScheduleChanges.Days = {};
-    for (let j = 0; j < WeekDays.length; j++) {
-        let DayBit = DomSchedule.querySelector("." + WeekDays[j]).classList.contains("OnDay");
-        if (DayBit && Schedule.Days[WeekDays[j]]) {
-            ScheduleChanges.Days[WeekDays[j]] = 1;
-        }
-        else if(!DayBit && !Schedule.Days[WeekDays[j]]) {
-            ScheduleChanges.Days[WeekDays[j]] = 0;
-        }
-        else if (DayBit && !Schedule.Days[WeekDays[j]]) {
-            ScheduleChanges.Days[WeekDays[j]] = 1;
-            DaysChange = true;
-        }
-        else if (!DayBit && Schedule.Days[WeekDays[j]]) {
-            ScheduleChanges.Days[WeekDays[j]] = 0;
-            DaysChange = true;
-        }
-    }
-
-    
-    if (Object.keys(ScheduleChanges).length !== 2 || DaysChange) {
-        return ScheduleChanges;
-    }
-    else {
-        return null;
-    }
-}
-
 
 
 function DeleteSchedule() {
@@ -596,71 +442,172 @@ function findInDeleted(ID) {
     return found
 }
 
+function GetScheduleChanges(Schedule) {
+    let ID = Schedule.ScheduleID;
+    let DomSchedule = document.getElementById(ID);
+    let ScheduleChanges = {ScheduleID: ID};
+    let changedAddress = false;
+
+    let AddressValues = {};
+
+    $("#" + ID + " .ValidChanged").each(function() {
+
+        let dom = $(this).get()[0];
+
+        if (dom.classList.contains("HourMinuteContent") ) {
+            let className = dom.classList[0].replace("Content", "");
+            if (dom.childNodes[0].value && dom.childNodes[2].value)
+                ScheduleChanges[className] = dom.childNodes[0].value + "." + dom.childNodes[2].value;
+            else
+                ScheduleChanges[className] = null;
+        }
+        else {
+            let className = dom.classList[0].replace("Content", "");
+            if (className === "Road" || className === "Number" || className === "ZipCode" || className === "Municipal") {
+                changedAddress = true;
+                AddressValues[className] = dom.value;
+            }
+            else
+                ScheduleChanges[className] = dom.value;
+        }
+    })
+
+    if (changedAddress) {
+        ScheduleChanges.Address = {};
+        ScheduleChanges.Address.Road = AddressValues.Road;
+        ScheduleChanges.Address.Number = AddressValues.Number;
+        ScheduleChanges.Address.ZipCode = AddressValues.ZipCode;
+        ScheduleChanges.Address.Municipal = AddressValues.Municipal;
+    }
+
+    // Fix Early & Late according to Around if Around was changed.
+    // (If it was not changed that means, Early & Late were fixed beforehand)
+    if (ScheduleChanges.hasOwnProperty("Around")) {
+        if (!ScheduleChanges.hasOwnProperty("Early") && !ScheduleChanges.hasOwnProperty("Late")) {
+            ScheduleChanges.Early = SubMinutes(ScheduleChanges.Around, 7);
+            
+            DomSchedule.querySelector(".EarlyHourContent").value = ScheduleChanges.Early.charAt(0) + ScheduleChanges.Early.charAt(1);
+            DomSchedule.querySelector(".EarlyMinuteContent").value = ScheduleChanges.Early.charAt(3) + ScheduleChanges.Early.charAt(4);
+
+            ScheduleChanges.Late = AddMinutes(ScheduleChanges.Around, 7);
+
+            DomSchedule.querySelector(".LateHourContent").value = ScheduleChanges.Late.charAt(0) + ScheduleChanges.Late.charAt(1);
+            DomSchedule.querySelector(".LateMinuteContent").value = ScheduleChanges.Late.charAt(3) + ScheduleChanges.Late.charAt(4);
+        }
+    }
+
+
+    let WeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    // Always write days
+    let DaysChange = false;
+    ScheduleChanges.Days = {};
+    for (let j = 0; j < WeekDays.length; j++) {
+
+        let DayBit = DomSchedule.querySelector("." + WeekDays[j]).classList.contains("OnDay");
+
+        if (DayBit && Schedule.Days[WeekDays[j]]) {
+            ScheduleChanges.Days[WeekDays[j]] = 1;
+        }
+        else if(!DayBit && !Schedule.Days[WeekDays[j]]) {
+            ScheduleChanges.Days[WeekDays[j]] = 0;
+        }
+        else if (DayBit && !Schedule.Days[WeekDays[j]]) {
+            ScheduleChanges.Days[WeekDays[j]] = 1;
+            DaysChange = true;
+        }
+        else if (!DayBit && Schedule.Days[WeekDays[j]]) {
+            ScheduleChanges.Days[WeekDays[j]] = 0;
+            DaysChange = true;
+        }
+    }
+
+    
+    
+    if (Object.keys(ScheduleChanges).length !== 2 || DaysChange) {
+        return ScheduleChanges;
+    }
+    else {
+        return null;
+    }
+}
+
 function traceChange() {
     if (this.classList.contains("HourContent") || this.classList.contains("MinuteContent")) {
 
         let id = this.parentNode.parentNode.id;
-
-        let other;
-        let time;
         let changed = false;
 
+        let Hour;
+        let Minute;
+
         if (this.classList.contains("HourContent")) {
-            other = this.parentNode.childNodes[2];
-
-            if (!other.value) return;
-
-            time = checkTimeFormat(this.parentNode.classList[0].replace("Content", ""), this.value, other.value);
-
-            this.value = time.Hour;
-            other.value = time.Minute;
-
-            let HourSelector = allSchedules[id][ this.classList[0].replace("HourContent", "") ]
-            let MinuteSelector = allSchedules[id][ other.classList[0].replace("MinuteContent", "") ]
-
-            if ( HourSelector && HourSelector.charAt(0) + HourSelector.charAt(1) !== this.value ||
-            MinuteSelector && MinuteSelector.charAt(0) + MinuteSelector.charAt(1) !== other.value ) {
-                changed = true;
-            }
+            Hour = this;
+            Minute = this.parentNode.childNodes[2];
         }
         else {
-            other = this.parentNode.childNodes[0];
+            Hour = this.parentNode.childNodes[0];
+            Minute = this;
+        }
 
-            if (!other.value) return;
+        let time = checkTimeFormat(this.parentNode.classList[0].replace("Content", ""), Hour.value, Minute.value);
+        Hour.value = time.Hour;
+        Minute.value = time.Minute;
 
-            time = checkTimeFormat(this.parentNode.classList[0].replace("Content", ""), other.value, this.value);
+        // this returns whole hour (e.g 08.34)
+        let Selector = allSchedules[id][ Hour.classList[0].replace("HourContent", "") ];
 
-            other.value = time.Hour;
-            this.value = time.Minute;
-
-            let HourSelector = allSchedules[id][ other.classList[0].replace("HourContent", "") ]
-            let MinuteSelector = allSchedules[id][ this.classList[0].replace("MinuteContent", "") ]
-
-            if ( HourSelector && HourSelector.charAt(0) + HourSelector.charAt(1) !== other.value ||
-            MinuteSelector && MinuteSelector.charAt(0) + MinuteSelector.charAt(1) !== this.value ) {
+        if (Selector) {
+            if ( (Selector.charAt(0) + Selector.charAt(1) !== Hour.value) ||
+                (Selector.charAt(3) + Selector.charAt(4) !== Minute.value) )
+            {
                 changed = true;
+                if (Hour.value === "" && Minute.value === "") {
+                    time.Error = false;
+                }
+            }
+        }
+        // If selector is empty that values started empty as well
+        else {
+            if (Hour.value !== "" || Minute.value !== "") {
+                changed = true;      
+            }
+            else {
+                time.Error = false;
             }
         }
 
         if (time.Error) {
-            this.style.backgroundColor = red;
-            other.style.backgroundColor = red;
+            Hour.style.backgroundColor = red;
+            Minute.style.backgroundColor = red;
             this.parentNode.title = "Error: \"" + time.ErrorMessage;
-        }
-        else {
-            if (changed) {
-                this.style.backgroundColor = blue;
-                this.classList.add("ValidChanged");
 
-                other.style.backgroundColor = blue;
-                other.classList.add("ValidChanged");
-            }
+            this.parentNode.classList.remove("ValidChanged");
+            this.parentNode.classList.add("InvalidChanged");
+        }
+        else if (changed) {
+            Hour.style.backgroundColor = blue;
+            Minute.style.backgroundColor = blue;
+
+            this.parentNode.classList.add("ValidChanged");
+            this.parentNode.classList.remove("InvalidChanged");
 
             this.parentNode.removeAttribute("title");
         }
+        else {
+            Hour.style.backgroundColor = grey;
+            Minute.style.backgroundColor = grey;
+            this.parentNode.removeAttribute("title");
+
+            this.parentNode.classList.remove("ValidChanged");
+            this.parentNode.classList.remove("InvalidChanged");
+        }
+
+        
     }
     else {
         let id = this.parentNode.id;
+        this.value = this.value.toUpperCase();
 
         let className = this.className.replace("Content", "")
         className = className.replace("ValidChanged", "");
@@ -674,18 +621,21 @@ function traceChange() {
         }
         else selector = allSchedules[id][className];
 
-        console.log('selector', selector);
-
-        if (selector !== this.value.toUpperCase()) {
+        if (selector !== this.value) {
             if (className === "ScheduleOrder") {
                 if (selector !== parseInt(this.value)) {
 
                     if (this.value && isNaN(parseInt(this.value))) {
                         this.style.backgroundColor = red;
+
+                        this.classList.add("InvalidChanged");
+                        this.classList.remove("ValidChanged");
+
                         this.title = "Error: \"" + this.value.toUpperCase() + "\" is not a number.";
                     }
                     else {
                         this.style.backgroundColor = blue;
+                        this.classList.remove("InvalidChanged");
                         this.classList.add("ValidChanged");
                         this.removeAttribute("title");
                     }
@@ -693,15 +643,20 @@ function traceChange() {
                 else {
                     this.style.backgroundColor = grey;
                     this.removeAttribute("title");
+                    this.classList.remove("InvalidChanged");
+                    this.classList.remove("ValidChanged");
                 }
             }
             else {
                 this.style.backgroundColor = blue;
+                this.classList.remove("InvalidChanged");
                 this.classList.add("ValidChanged");
             }
         }
         else {
             this.style.backgroundColor = grey;
+            this.classList.remove("InvalidChanged");
+            this.classList.remove("ValidChanged");
         }
 
     }
