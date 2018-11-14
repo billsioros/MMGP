@@ -16,24 +16,24 @@
                 "../../cpp/SQLiteCpp/src/Database.cpp",
                 "../../cpp/SQLiteCpp/src/Exception.cpp",
                 "../../cpp/SQLiteCpp/src/Statement.cpp",
-                "../../cpp/SQLiteCpp/src/Transaction.cpp",
-                "../../cpp/SQLiteCpp//src/sqlite3.c"
+                "../../cpp/SQLiteCpp/src/Transaction.cpp"
             ],
             "include_dirs":
             [
                 "../../cpp/include/",
                 "../../cpp/SQLiteCpp/include/",
-                "../../cpp/nlohmann/"
+                "../../cpp/nlohmann/",
+                "../../cpp/sqlite/"
             ],
             "cflags!": [ "-fno-exceptions" ],
-            "cflags": [ "-W", "-g3", "-std=c++14" ],
+            "cflags": [ "-W", "-g3", "-std=c++17" ],
             "cflags_cc!": [ "-fno-exceptions" ],
-            "cflags_cc": [ "-W", "-g3", "-std=c++14" ],
-            # 'link_settings': {
-            #     'libraries': [
-            #         '-lsqlite3'
-            #     ]
-            # }
+            "cflags_cc": [ "-W", "-g3", "-std=c++17" ],
+            'link_settings': {
+                'libraries': [
+                    '-L libsqlite3'
+                ]
+            }
         }
     ]
 }
