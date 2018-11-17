@@ -4,7 +4,7 @@
 #include "tsp.hpp"
 #include "log.hpp"
 #include "wrapper.hpp"
-#include <chrono>
+#include <benchmark.hpp>
 #include <node.h>
 #include <uv.h>
 
@@ -108,11 +108,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
     }
     catch (std::exception& e)
     {
-        worker->log
-        (
-            Log::Code::Error,
-            worker->err = std::string(e.what()) + " (departure-time)"
-        );
+        worker->log(Log::Code::Error, "departure-time-exception=?", worker->err = e.what());
     }
 
     worker->serviceTime = args[3].As<v8::Uint32>()->Uint32Value();
@@ -149,12 +145,7 @@ void route(const v8::FunctionCallbackInfo<v8::Value>& args)
         }
         catch (std::exception& e)
         {
-            worker->log
-            (
-                Log::Code::Error,
-                worker->err = std::string(e.what()) +
-                "(student=" + static_cast<std::string>(student) + ")"
-            );
+            worker->log(Log::Code::Error, "? (student=?)", worker->err = e.what(), student);
         }
     }
 
@@ -171,8 +162,6 @@ void Worker::work(uv_work_t * request)
         return;
 
     worker->log(Log::Code::Message, "Worker thread initializing distance matrix...");
-
-    auto beg = std::chrono::high_resolution_clock::now();
 
     using DVector = std::unordered_map<Manager::Student, double>;
     using DMatrix = std::unordered_map<Manager::Student, DVector>;
@@ -200,19 +189,8 @@ void Worker::work(uv_work_t * request)
         return;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-
-    double diff = static_cast<double>
-    (
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
-    ) / 1000.0;
-
-    worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
-
     // Local Optimization
     worker->log(Log::Code::Message, "Optimizing Route...");
-
-    beg = std::chrono::high_resolution_clock::now();
 
     try
     {
@@ -242,18 +220,17 @@ void Worker::work(uv_work_t * request)
         return;
     }
 
-    worker->path = worker->path.nneighbour();
-    worker->path = worker->path.opt2();
-    worker->path = worker->path.cannealing();
-
-    end = std::chrono::high_resolution_clock::now();
-
-    diff = static_cast<double>
+    auto [ms, ticks] = utility::benchmark
     (
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
-    ) / 1000.0;
+        [worker]()
+        {
+            worker->path = worker->path.nneighbour();
+            worker->path = worker->path.opt2();
+            worker->path = worker->path.cannealing();
+        }
+    );
 
-    worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
+    worker->log(Log::Code::Message, "? milliseconds / ? ticks elapsed", ms, ticks);
 
     if (worker->students.size() != worker->path.elements().size())
     {

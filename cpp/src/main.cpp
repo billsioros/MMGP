@@ -5,7 +5,7 @@
 #include "tsp.hpp"
 #include "log.hpp"
 #include <iostream>
-#include <chrono>
+#include <benchmark.hpp>
 
 using DVector = std::unordered_map<Manager::Student, double>;
 using DMatrix = std::unordered_map<Manager::Student, DVector>;
@@ -90,11 +90,7 @@ int main(int argc, char * argv[])
     }
     catch (std::exception& e)
     {
-        log
-        (
-            Log::Code::Error,
-            "database=" + dbname + " day-part=" + dayPart + " sqlitecpp-exception=" + e.what()
-        );
+        log(Log::Code::Error, "database=? day-part=? sqlitecpp-exception=?", dbname, dayPart, e.what());
         
         return -1;
     }
@@ -111,33 +107,32 @@ int main(int argc, char * argv[])
         return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
     };
 
-    log(Log::Code::Message, "Clustering students...");
+    std::unordered_map<Vector2, std::vector<Manager::Student>> mpositions;
+    std::vector<Vector2> vpositions;
 
-    auto beg = std::chrono::high_resolution_clock::now();
-
-    std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
-    (
-        students,
-        24UL,
-        [&haversine](const Manager::Student& A, const Manager::Student& B)
+    for (const auto& student : students)
+    {
+        if (mpositions.find(student._position) == mpositions.end())
         {
-            return haversine(A._position, B._position);
-        },
-        [](const Manager::Student& student) { return 1.0; }
+            mpositions[student._position] = std::vector<Manager::Student>();
+            vpositions.emplace_back(student._position);
+        }
+
+        mpositions[student._position].emplace_back(student);
+    }
+
+    auto [ms, ticks, groups] = utility::benchmark
+    (
+        Cluster<Vector2>::cmeans,
+        vpositions,
+        29UL,
+        [&haversine](const Vector2& A, const Vector2& B) { return std::exp(haversine(A, B)); },
+        [&mpositions](const Vector2& v) { return mpositions[v].size(); }
     );
 
-    auto end = std::chrono::high_resolution_clock::now();
-
-    double diff = static_cast<double>
-    (
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
-    ) / 1000.0;
-
-    log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
+    log(Log::Code::Message, "Clustering students... (? milliseconds / ? ticks elapsed)", ms, ticks);
 
     log(Log::Code::Message, "Optimizing routes...");
-
-    beg = std::chrono::high_resolution_clock::now();
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
@@ -154,9 +149,18 @@ int main(int argc, char * argv[])
         Manager::Bus& bus = schedules.back()[busId++];
 
         for (const auto& element : group.elements())
-            bus._students.push_back(*element);
+        {
+            for (const auto& student : mpositions[*element])
+                bus._students.emplace_back(student);
+        }     
 
-        tsp<Manager::Student> path = route(depot, bus._students, cost);
+        auto [ms, ticks, path] = utility::benchmark
+        (
+            route,
+            depot,
+            bus._students,
+            cost
+        );
 
         bus._students = path.elements(); bus._cost = path.cost();
 
@@ -171,17 +175,8 @@ int main(int argc, char * argv[])
         << std::fixed << std::setprecision(4) << path.cost() / 60.00
         << " minutes";
 
-        log(Log::Code::Message, ss.str());
+        log(Log::Code::Message, "? (? milliseconds / ? ticks elapsed)", ss.str(), ms, ticks);
     }
-
-    end = std::chrono::high_resolution_clock::now();
-
-    diff = static_cast<double>
-    (
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
-    ) / 1000.0;
-
-    log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
 
     nlohmann::json json = Manager::json(dayPart, schedules);
 

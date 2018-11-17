@@ -9,7 +9,7 @@
 #include "cmeans.hpp"
 #include "log.hpp"
 #include "wrapper.hpp"
-#include <chrono>
+#include <benchmark.hpp>
 #include <node.h>
 #include <uv.h>
 
@@ -77,7 +77,7 @@ void group(const v8::FunctionCallbackInfo<v8::Value>& args)
         );
 
         args.GetReturnValue().Set(v8::Undefined(iso)); return;
-    }   
+    }
 
     Worker * worker = new Worker("group");
 
@@ -123,10 +123,6 @@ void Worker::work(uv_work_t * request)
         return;
     }
 
-    worker->log(Log::Code::Message, "Worker thread initiating clustering...");
-
-    auto beg = std::chrono::high_resolution_clock::now();
-
     const std::size_t CAPACITY = static_cast<std::size_t>
     (
         std::ceil
@@ -161,8 +157,9 @@ void Worker::work(uv_work_t * request)
         return 2.0 * 6.371 * std::asin(std::sqrt(u1 * u1 + std::cos(f1) * std::cos(f2) * u2 * u2));
     };
 
-    std::vector<Cluster<Manager::Student>> groups = Cluster<Manager::Student>::cmeans
+    auto [ms, ticks, groups] = utility::benchmark
     (
+        Cluster<Manager::Student>::cmeans,
         students,
         CAPACITY,
         [&haversine](const Manager::Student& A, const Manager::Student& B)
@@ -175,14 +172,7 @@ void Worker::work(uv_work_t * request)
         }
     );
 
-    auto end = std::chrono::high_resolution_clock::now();
-
-    double diff = static_cast<double>
-    (
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
-    ) / 1000.0;
-
-    worker->log(Log::Code::Message, std::to_string(diff) + " seconds elapsed");
+    worker->log(Log::Code::Message, "Clustering students... (? milliseconds / ? ticks elapsed)", ms, ticks);
 
     const std::size_t total = std::accumulate
     (

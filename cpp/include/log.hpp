@@ -1,8 +1,9 @@
 
 #pragma once
 
-#include <fstream>  // std::ofstream
-#include <string>   // std::string
+#include "formatter.hpp"
+#include <fstream>          // std::ofstream
+#include <string>           // std::string
 
 class Log
 {
@@ -24,4 +25,10 @@ public:
     ~Log();
 
     void operator()(Code, const std::string&);
+
+    template <typename ...Args>
+    void operator()(Code code, const std::string& message, Args&&... args)
+    {
+        operator()(code, utility::format(message, std::forward<Args>(args)...));
+    }
 };

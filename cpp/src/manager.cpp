@@ -146,13 +146,7 @@ void Manager::load(
         student._studentId = _studentId; student._addressId = _addressId;
         if (!set.insert(student).second)
         {
-            log
-            (
-                Log::Code::Warning,
-                std::string("duplicate detected (student=") +
-                static_cast<std::string>(student) +
-                ")"
-            );
+            log(Log::Code::Warning, "duplicate detected ?", student);
 
             continue;
         }
@@ -183,7 +177,7 @@ void Manager::load(
         students.emplace_back(_studentId, _addressId, _position, _timewindow);
     }
 
-    log(Log::Code::Message, std::to_string(students.size()) + " students successfully loaded");
+    log(Log::Code::Message, "? students successfully loaded", students.size());
 }
 
 void Manager::load(SQLite::Database& database, Buses& buses, Log& log)
@@ -208,7 +202,7 @@ void Manager::load(SQLite::Database& database, Buses& buses, Log& log)
         );
     }
 
-    log(Log::Code::Message, std::to_string(buses.size()) + " buses successfully loaded");
+    log(Log::Code::Message, "? buses successfully loaded", buses.size());
 }
 
 nlohmann::json Manager::json(
@@ -288,14 +282,7 @@ double Manager::distance(
     }
     catch (std::exception& e)
     {
-        log
-        (
-            Log::Code::Error,
-            "Unable to retrieve the distance between " +
-            static_cast<std::string>(A) +
-            " and " +
-            static_cast<std::string>(B)
-        );
+        log(Log::Code::Error, "Unable to retrieve the distance between ? and ?", A, B);
         
         throw;
     }

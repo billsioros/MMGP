@@ -1,10 +1,13 @@
 
 #pragma once
 
+#include <functional>   // std::hash
 #include <iosfwd>       // std::istream & std::ostream
 
 class Vector2
 {
+    friend struct std::hash<Vector2>;
+
     double _x, _y;
 
 public:
@@ -42,3 +45,15 @@ public:
     friend bool operator==(const Vector2&, const Vector2&);
     friend bool operator!=(const Vector2&, const Vector2&);
 };
+
+namespace std
+{
+    template <>
+    struct hash<Vector2>
+    {
+        size_t operator()(const Vector2& v) const noexcept
+        {
+            return (std::hash<double>{}(v._x) ^ (std::hash<double>{}(v._y) << 1));
+        }
+    };
+}

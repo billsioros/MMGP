@@ -1,7 +1,7 @@
 
 CCNAME = MMGP
 CC = g++
-CCFLAGS = -W -g3 -std=c++14
+CCFLAGS = -W -g3 -std=c++17
 
 PATH_SRC = ./src
 PATH_INC = ./include
@@ -15,7 +15,7 @@ PATH_JSN_INC = ./nlohmann
 TIME_DEP = $(PATH_INC)/timewindow.hpp $(PATH_SRC)/timewindow.cpp
 VEC2_DEP = $(PATH_INC)/vector2.hpp $(PATH_SRC)/vector2.cpp
 MNGR_DEP = $(PATH_SQL_INC)/Database.h $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_INC)/, timewindow.hpp vector2.hpp manager.hpp log.hpp) $(PATH_SRC)/manager.cpp
-LOG__DEP = $(PATH_INC)/log.hpp $(PATH_SRC)/log.cpp
+LOG__DEP = $(addprefix $(PATH_INC)/, log.hpp formatter.hpp) $(PATH_SRC)/log.cpp
 MAIN_DEP = $(PATH_JSN_INC)/json.hpp $(addprefix $(PATH_SQL_INC)/, Database.h Statement.h) $(addprefix $(PATH_INC)/, cmeans.hpp manager.hpp tsp.hpp annealing.hpp log.hpp) $(PATH_SRC)/main.cpp
 
 BACK_DEP = $(addprefix $(PATH_SQL_INC)/, Backup.h Exception.h) $(PATH_SQL_SRC)/Backup.cpp
