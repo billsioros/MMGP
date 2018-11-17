@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "annealing.hpp"
+#include <annealing.hpp>
 #include <functional>       // std::function
 #include <vector>           // std::vector
 #include <utility>          // std::pair

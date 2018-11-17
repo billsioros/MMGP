@@ -1,15 +1,18 @@
 
 #pragma once
 
-#include "timewindow.hpp"
-#include "vector2.hpp"
-#include "Database.h"
-#include "json.hpp"
-#include "log.hpp"
+#include <timewindow.hpp>
+#include <vector2.hpp>
+#include <Database.h>
+#include <log.hpp>
 #include <vector>           // std::vector
 #include <string>           // std::string
 #include <vector>           // std::vector
 #include <iosfwd>           // std::ostream
+
+#if defined (__JSON_OUTPUT__)
+    #include <json.hpp>
+#endif
 
 namespace Manager
 {
@@ -64,7 +67,9 @@ namespace Manager
     void load(SQLite::Database&, std::vector<Student>&, const std::string&, Log&);
     void load(SQLite::Database&, std::vector<Bus>&, Log&);
 
-    nlohmann::json json(const std::string&, const Schedules&);
+    #if defined (__JSON_OUTPUT__)
+        nlohmann::json json(const std::string&, const Schedules&);
+    #endif
 
     double distance
     (

@@ -4,11 +4,11 @@
     #include <cmath>
 #endif
 
-#include "SQLiteCpp.h"
-#include "manager.hpp"
-#include "cmeans.hpp"
-#include "log.hpp"
-#include "wrapper.hpp"
+#include <SQLiteCpp.h>
+#include <manager.hpp>
+#include <cmeans.hpp>
+#include <log.hpp>
+#include <wrapper.hpp>
 #include <benchmark.hpp>
 #include <node.h>
 #include <uv.h>

@@ -1,9 +1,8 @@
 
-#include "manager.hpp"
-#include "timewindow.hpp"
-#include "vector2.hpp"
-#include "Database.h"
-#include "json.hpp"
+#include <manager.hpp>
+#include <timewindow.hpp>
+#include <vector2.hpp>
+#include <Database.h>
 #include <vector>           // std::vector
 #include <string>           // std::string
 #include <fstream>          // std::ostream
@@ -205,58 +204,57 @@ void Manager::load(SQLite::Database& database, Buses& buses, Log& log)
     log(Log::Code::Message, "? buses successfully loaded", buses.size());
 }
 
-nlohmann::json Manager::json(
-    const std::string& dayPart,
-    const Schedules& schedules
-)
-{
-    nlohmann::json json;
-    
-    for (const auto& buses : schedules)
+#if defined (__JSON_OUTPUT__)
+    nlohmann::json Manager::json(const std::string& dayPart, const Schedules& schedules)
     {
-        if (buses.empty())
-            continue;
-
-        json.emplace_back(nlohmann::json::object());
-
-        for (const auto& bus : buses)
+        nlohmann::json json;
+        
+        for (const auto& buses : schedules)
         {
-            if (bus._students.empty())
+            if (buses.empty())
                 continue;
 
-            json.back()["buses"].emplace_back
-            (
-                nlohmann::json::object
-                (
-                    {
-                        { "busId", bus._busId },
-                        { "cost",  bus._cost }
-                    }
-                )
-            );
+            json.emplace_back(nlohmann::json::object());
 
-            for (const auto& student : bus._students)
+            for (const auto& bus : buses)
             {
-                json.back()["buses"].back()["students"].emplace_back
+                if (bus._students.empty())
+                    continue;
+
+                json.back()["buses"].emplace_back
                 (
                     nlohmann::json::object
                     (
                         {
-                            { "studentId", student._studentId         },
-                            { "addressId", student._addressId         },
-                            { "longitude", student._position.x()      },
-                            { "latitude",  student._position.y()      },
-                            { "early",  student._timewindow.first  },
-                            { "late",    student._timewindow.second }
+                            { "busId", bus._busId },
+                            { "cost",  bus._cost }
                         }
                     )
                 );
+
+                for (const auto& student : bus._students)
+                {
+                    json.back()["buses"].back()["students"].emplace_back
+                    (
+                        nlohmann::json::object
+                        (
+                            {
+                                { "studentId", student._studentId         },
+                                { "addressId", student._addressId         },
+                                { "longitude", student._position.x()      },
+                                { "latitude",  student._position.y()      },
+                                { "early",  student._timewindow.first  },
+                                { "late",    student._timewindow.second }
+                            }
+                        )
+                    );
+                }
             }
         }
-    }
 
-    return json;
-}
+        return json;
+    }
+#endif
 
 double Manager::distance(
     SQLite::Database& database,

@@ -1,9 +1,9 @@
 
-#include "SQLiteCpp.h"
-#include "manager.hpp"
-#include "cmeans.hpp"
-#include "tsp.hpp"
-#include "log.hpp"
+#include <SQLiteCpp.h>
+#include <manager.hpp>
+#include <cmeans.hpp>
+#include <tsp.hpp>
+#include <log.hpp>
 #include <iostream>
 #include <benchmark.hpp>
 
@@ -178,17 +178,19 @@ int main(int argc, char * argv[])
         log(Log::Code::Message, "? (? milliseconds / ? ticks elapsed)", ss.str(), ms, ticks);
     }
 
-    nlohmann::json json = Manager::json(dayPart, schedules);
+    #if defined (__JSON_OUTPUT__)
+        nlohmann::json json = Manager::json(dayPart, schedules);
 
-    std::ofstream ofs(dayPart + Log::timestamp("%04d%02d%02d%02d%02d%02d%03lld") + ".json");
-    if (!ofs.is_open())
-    {
-        log(Log::Code::Error, "Unable to save the data in json format");
+        std::ofstream ofs(dayPart + Log::timestamp("%04d%02d%02d%02d%02d%02d%03lld") + ".json");
+        if (!ofs.is_open())
+        {
+            log(Log::Code::Error, "Unable to save the data in json format");
 
-        std::exit(EXIT_FAILURE);
-    }
+            std::exit(EXIT_FAILURE);
+        }
 
-    ofs << std::setw(4) << json;
+        ofs << std::setw(4) << json;
+    #endif
 
     return 0;
 }
