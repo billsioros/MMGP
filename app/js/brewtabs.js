@@ -48,6 +48,7 @@ class TabGroup {
             closebutton.className = "brewtabs-tab-closebutton";
             closebutton.onclick = OnClose;
             closebutton.type = "button";
+            closebutton.title = "Close (Ctrl-T)"
 
             let closeimg = document.createElement("img");
             closeimg.src = "../images/General/x.png";
@@ -197,6 +198,7 @@ class Tab {
     activate(change=true) {
         this.active = true;
         this.tabButton.classList.add("active")
+        this.tabButton.style.borderWidth = "100%";
 
         if(change) {
             for (let i = 0; i < this.elements.length; i++) {
