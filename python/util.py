@@ -1,6 +1,6 @@
 from itertools import izip
 from googlemaps import geocoding as ggeo, distance_matrix as gd, directions, Client as gclient
-from openrouteservice import distance_matrix as od, geocoding as ogeo, client as orclient
+from openrouteservice import distance_matrix as od, geocode as ogeo, client as orclient
 import time
 import sys
 import csv
